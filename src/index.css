@@ -1,0 +1,233 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===========================================================
+   QUANTUM CORE — Global Design System
+   Black bg · neon green · cyan · glass · soft glow · grid
+   =========================================================== */
+
+@layer base {
+  :root {
+    --qc-bg: #04060a;
+    --qc-grid: rgba(57, 255, 20, 0.045);
+    --qc-neon: #39ff14;
+    --qc-cyan: #00f0ff;
+    --qc-font-scale: 1;
+    --qc-anim: 1;
+    --qc-particles: 1;
+    --qc-matrix: 1;
+  }
+
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    font-size: calc(16px * var(--qc-font-scale));
+  }
+
+  body {
+    @apply bg-ink-950 text-slate-200 font-sans antialiased;
+    background-image:
+      radial-gradient(1200px 600px at 50% -10%, rgba(0, 240, 255, 0.07), transparent 60%),
+      radial-gradient(900px 500px at 100% 100%, rgba(57, 255, 20, 0.05), transparent 60%),
+      linear-gradient(var(--qc-grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--qc-grid) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 44px 44px, 44px 44px;
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+
+  /* Respect reduced motion + user animation toggle */
+  body[data-anim='0'] *,
+  body[data-anim='0'] *::before,
+  body[data-anim='0'] *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      transition-duration: 0.001ms !important;
+    }
+  }
+
+  ::selection {
+    background: rgba(57, 255, 20, 0.25);
+    color: #e8ffe2;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #070b12;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: linear-gradient(#123f08, #0a2a05);
+    border-radius: 999px;
+    border: 2px solid #070b12;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(#1a8a09, #125f06);
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-display tracking-tight text-white;
+  }
+
+  a {
+    @apply transition-colors;
+  }
+}
+
+@layer components {
+  /* ---------- Glass panels ---------- */
+  .glass {
+    @apply relative rounded-2xl border border-white/5 bg-white/[0.03] backdrop-blur-xl;
+    box-shadow:
+      0 1px 0 0 rgba(255, 255, 255, 0.04) inset,
+      0 8px 40px -16px rgba(0, 0, 0, 0.8);
+  }
+  .glass-hover {
+    @apply transition-all duration-300 hover:border-neon-400/30 hover:bg-white/[0.05];
+  }
+  .glass-cyan {
+    @apply border-cyan-400/15;
+  }
+
+  /* ---------- Neon button ---------- */
+  .btn-neon {
+    @apply relative inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5
+      font-mono text-sm font-medium uppercase tracking-wider
+      text-neon-50 bg-neon-400/10 border border-neon-400/40
+      transition-all duration-300
+      hover:bg-neon-400/20 hover:border-neon-400/70 hover:shadow-glow
+      active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2
+      font-mono text-sm uppercase tracking-wider
+      text-slate-300 border border-white/10 bg-white/[0.02]
+      transition-all duration-300 hover:text-white hover:border-white/25 hover:bg-white/[0.05];
+  }
+  .btn-cyan {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5
+      font-mono text-sm font-medium uppercase tracking-wider
+      text-cyan-50 bg-cyan-400/10 border border-cyan-400/40
+      transition-all duration-300 hover:bg-cyan-400/20 hover:border-cyan-400/70 hover:shadow-glow-cyan;
+  }
+
+  /* ---------- Chips / tags ---------- */
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1
+      font-mono text-[11px] uppercase tracking-wider
+      border border-white/10 bg-white/[0.03] text-slate-300;
+  }
+  .chip-neon {
+    @apply border-neon-400/30 bg-neon-400/10 text-neon-100;
+  }
+  .chip-cyan {
+    @apply border-cyan-400/30 bg-cyan-400/10 text-cyan-100;
+  }
+  .chip-warn {
+    @apply border-warn-500/30 bg-warn-500/10 text-warn-400;
+  }
+  .chip-err {
+    @apply border-err-500/30 bg-err-500/10 text-err-400;
+  }
+
+  /* ---------- Section heading ---------- */
+  .section-title {
+    @apply font-display text-xl font-semibold text-white;
+  }
+  .section-eyebrow {
+    @apply font-mono text-[11px] uppercase tracking-[0.25em] text-neon-400/80;
+  }
+
+  /* ---------- Terminal ---------- */
+  .terminal {
+    @apply rounded-xl border border-neon-400/15 bg-black/70 font-mono text-[13px] leading-relaxed
+      text-neon-300 shadow-panel;
+  }
+  .term-line {
+    @apply flex gap-2;
+  }
+  .term-prompt {
+    @apply text-cyan-400 select-none;
+  }
+  .term-cursor::after {
+    content: '▋';
+    @apply text-neon-400 animate-blink ml-0.5;
+  }
+
+  /* ---------- Progress bar ---------- */
+  .qc-bar {
+    @apply h-1.5 w-full overflow-hidden rounded-full bg-white/5;
+  }
+  .qc-bar > span {
+    @apply block h-full rounded-full bg-gradient-to-r from-neon-500 to-cyan-400 transition-all duration-700;
+  }
+
+  /* ---------- Callout boxes (textbook) ---------- */
+  .callout {
+    @apply rounded-xl border p-4 text-sm leading-relaxed;
+  }
+  .callout-info {
+    @apply border-cyan-400/25 bg-cyan-400/[0.06] text-cyan-50;
+  }
+  .callout-warn {
+    @apply border-warn-500/25 bg-warn-500/[0.06] text-warn-400;
+  }
+  .callout-danger {
+    @apply border-err-500/25 bg-err-500/[0.06] text-err-400;
+  }
+  .callout-note {
+    @apply border-neon-400/25 bg-neon-400/[0.06] text-neon-50;
+  }
+
+  /* ---------- Scanline overlay ---------- */
+  .scanlines::before {
+    content: '';
+    @apply pointer-events-none absolute inset-0 z-0 opacity-[0.06];
+    background: repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.4) 0px,
+      rgba(255, 255, 255, 0.4) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+  }
+
+  /* ---------- Focus ring ---------- */
+  .qc-focus:focus-visible {
+    @apply outline-none ring-2 ring-neon-400/50 ring-offset-2 ring-offset-ink-950;
+  }
+}
+
+@layer utilities {
+  .text-glow {
+    text-shadow: 0 0 12px rgba(57, 255, 20, 0.45);
+  }
+  .text-glow-cyan {
+    text-shadow: 0 0 12px rgba(0, 240, 255, 0.45);
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .mask-fade-b {
+    -webkit-mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+    mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+  }
+}
