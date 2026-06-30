@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>QUANTUM CORE :: Linux Lab Engine</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.min.css" />
+<style>
+  @font-face { /* graceful no-op if a VT323-like font isn't available locally */ }
+
+  :root{
+    --qc-bg: #02060a;
+    --qc-panel: #060d12;
+    --qc-green: #39ff6a;
+    --qc-green-dim: #1b8f3c;
+    --qc-amber: #ffb000;
+    --qc-red: #ff3b3b;
+    --qc-border: #0e2a1a;
+  }
+  *{ box-sizing:border-box; }
+  html,body{
+    margin:0; padding:0; height:100%; background:var(--qc-bg);
+    font-family:'Share Tech Mono','Courier New',monospace; color:var(--qc-green); overflow:hidden;
+  }
+  #scanlines{
+    position:fixed; inset:0; pointer-events:none; z-index:50; mix-blend-mode:overlay;
+    background:repeating-linear-gradient(0deg, rgba(0,0,0,0.25) 0px, rgba(0,0,0,0.25) 1px, transparent 2px, transparent 3px);
+    opacity:0.35;
+  }
+  #frame{
+    height:100vh; display:flex; flex-direction:column;
+  }
+  #topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 18px; background:linear-gradient(180deg,#081410,#04090a);
+    border-bottom:1px solid var(--qc-border);
+    font-family:'Courier New',monospace; font-size:22px; letter-spacing:2px;
+  }
+  #topbar .brand{ color:var(--qc-green); text-shadow:0 0 8px rgba(57,255,106,0.6); }
+  #topbar .brand span{ color:var(--qc-amber); }
+  #status{
+    font-family:'Share Tech Mono','Courier New',monospace; font-size:12px; color:var(--qc-green-dim);
+    display:flex; gap:14px;
+  }
+  #status .dot{ display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--qc-green); box-shadow:0 0 6px var(--qc-green); margin-right:5px; }
+  #termwrap{
+    flex:1; padding:14px 16px 6px; min-height:0;
+    background:
+      radial-gradient(ellipse at top left, rgba(57,255,106,0.04), transparent 60%),
+      var(--qc-panel);
+  }
+  #termbox{ height:100%; border:1px solid var(--qc-border); border-radius:4px; padding:8px; background:#000; box-shadow: inset 0 0 40px rgba(0,255,90,0.05); }
+  #footbar{
+    padding:6px 18px; font-size:11px; color:var(--qc-green-dim);
+    border-top:1px solid var(--qc-border); background:#04090a;
+    display:flex; justify-content:space-between;
+  }
+  .xterm{ padding:4px; }
+  .xterm-viewport::-webkit-scrollbar{ width:8px; }
+  .xterm-viewport::-webkit-scrollbar-thumb{ background:var(--qc-green-dim); border-radius:4px; }
+</style>
+</head>
+<body>
+<div id="scanlines"></div>
+<div id="frame">
+  <div id="topbar">
+    <div class="brand">QUANTUM CORE <span>// LINUX LAB ENGINE</span></div>
+    <div id="status">
+      <span><span class="dot"></span>VFS: LOADED</span>
+      <span id="status-user">operator@quantumcore</span>
+    </div>
+  </div>
+  <div id="termwrap"><div id="termbox"></div></div>
+  <div id="footbar">
+    <span>100% browser-native &middot; no backend &middot; no docker &middot; IndexedDB persistence</span>
+    <span id="footclock"></span>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
+
+<script>
+/* ============================================================================
+   QUANTUM CORE :: LINUX LAB ENGINE
+   ----------------------------------------------------------------------------
+   Architecture (intentionally separated into independent modules so future
+   commands/subsystems — git, python, apt, gcc, networking, docker, missions —
+   can be bolted on without touching the core):
+
+     Utils        -> pure helper functions (path math, formatting, ids)
+     VFS          -> in-memory Linux-style filesystem (the single source of truth)
+     Persistence  -> IndexedDB read/write of the VFS + shell state
+     Parser       -> tokenizes a raw command line into argv (quotes, spaces, etc)
+     Environment  -> env vars + aliases, expansion ($VAR, ~, aliases)
+     CommandRegistry -> pluggable command modules (each command = one module)
+     Shell        -> ties Parser + Environment + VFS + CommandRegistry together,
+                      owns cwd, history, exit codes
+     TerminalUI   -> xterm.js wrapper: rendering, key handling, history nav,
+                      tab completion hook, cursor movement, shortcuts
+
+   No command ever hardcodes output — every command reads/writes the VFS graph
+   or shell/environment state and the UI just renders whatever the command
+   returns.
+============================================================================ */
+
+/* ----------------------------------- Utils -------------------------------- */
+const Utils = (() => {
+  function normalize(path) {
+    if (!path) return '.';
+    const isAbs = path.startsWith('/');
+    const parts = path.split('/').filter(p => p.length && p !== '.');
+    const stack = [];
+    for (const p of parts) {
+      if (p === '..') { if (stack.length) stack.pop(); }
+      else stack.push(p);
+    }
+    return (isAbs ? '/' : '') + stack.join('/');
+  }
+
+  function resolve(cwd, target, home) {
+    if (!target || target === '') return cwd;
+    let t = target;
+    if (t === '~') t = home;
+    else if (t.startsWith('~/')) t = home + '/' + t.slice(2);
+    const base = t.startsWith('/') ? '/' : (cwd === '/' ? '/' : cwd + '/');
+    const joined = t.startsWith('/') ? t : base + t;
+    const norm = normalize(joined);
+    return norm === '' ? '/' : norm;
+  }
+
+  function dirname(path) {
+    if (path === '/') return '/';
+    const idx = path.lastIndexOf('/');
+    if (idx <= 0) return '/';
+    return path.slice(0, idx);
+  }
+
+  function basename(path) {
+    if (path === '/') return '/';
+    const idx = path.lastIndexOf('/');
+    return idx === -1 ? path : path.slice(idx + 1);
+  }
+
+  function segments(path) {
+    return path.split('/').filter(Boolean);
+  }
+
+  function humanSize(bytes) {
+    if (bytes < 1024) return bytes + 'B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + 'K';
+    return (bytes / (1024 * 1024)).toFixed(1) + 'M';
+  }
+
+  function pad(str, len) {
+    str = String(str);
+    return str.length >= len ? str : str + ' '.repeat(len - str.length);
+  }
+
+  function tokenize(line) {
+    // Handles quoted strings ("...", '...'), escaped spaces, multiple spaces,
+    // and basic $VAR tokens left intact for later expansion.
+    const tokens = [];
+    let cur = '';
+    let inS = false, inD = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (inS) {
+        if (ch === "'") { inS = false; } else cur += ch;
+        continue;
+      }
+      if (inD) {
+        if (ch === '"') { inD = false; }
+        else if (ch === '\\' && line[i + 1] === '"') { cur += '"'; i++; }
+        else cur += ch;
+        continue;
+      }
+      if (ch === "'") { inS = true; continue; }
+      if (ch === '"') { inD = true; continue; }
+      if (ch === '\\' && line[i + 1] === ' ') { cur += ' '; i++; continue; }
+      if (/\s/.test(ch)) {
+        if (cur.length) { tokens.push(cur); cur = ''; }
+        continue;
+      }
+      cur += ch;
+    }
+    if (cur.length) tokens.push(cur);
+    return tokens;
+  }
+
+  function uid() {
+    return Math.random().toString(36).slice(2, 10);
+  }
+
+  return { normalize, resolve, dirname, basename, segments, humanSize, pad, tokenize, uid };
+})();
+
+/* ------------------------------------ VFS ---------------------------------- */
+/* In-memory Linux-style filesystem. Every node:
+   { type: 'dir'|'file', name, mode, mtime, content?: string, children?: {} }
+   Commands operate exclusively through this API — never on raw objects —
+   so the storage/representation can change later without breaking commands. */
+class VFS {
+  constructor() {
+    this.root = this._makeDir('/', '755');
+    this._seed();
+  }
+
+  _makeDir(name, mode = '755') {
+    return { type: 'dir', name, mode, mtime: Date.now(), children: {} };
+  }
+  _makeFile(name, content = '', mode = '644') {
+    return { type: 'file', name, mode, mtime: Date.now(), content };
+  }
+
+  _seed() {
+    const dirs = [
+      '/home/operator/Desktop',
+      '/home/operator/Documents',
+      '/home/operator/Downloads',
+      '/home/operator/Projects',
+      '/etc',
+      '/var/log',
+      '/usr/bin',
+      '/usr/local',
+      '/tmp',
+      '/bin',
+      '/opt',
+    ];
+    dirs.forEach(d => this.mkdirp(d));
+    this.writeFile('/etc/motd',
+      'QUANTUM CORE LAB ENVIRONMENT\nType `help` to list available commands.\n');
+    this.writeFile('/etc/hostname', 'quantumcore\n');
+    this.writeFile('/home/operator/Documents/readme.txt',
+      'Welcome operator.\nThis filesystem is real (well, real enough) — every command\nyou run actually mutates it, and it persists across reloads.\n');
+  }
+
+  // Walk to the node at `path`, returns node or null
+  _walk(path) {
+    const segs = Utils.segments(Utils.normalize(path));
+    let node = this.root;
+    for (const s of segs) {
+      if (node.type !== 'dir' || !node.children[s]) return null;
+      node = node.children[s];
+    }
+    return node;
+  }
+
+  exists(path) { return !!this._walk(path); }
+
+  stat(path) {
+    const node = this._walk(path);
+    if (!node) return null;
+    return {
+      name: node.name,
+      type: node.type,
+      mode: node.mode,
+      mtime: node.mtime,
+      size: node.type === 'file' ? node.content.length : (node.children ? Object.keys(node.children).length : 0),
+    };
+  }
+
+  isDir(path) { const n = this._walk(path); return !!n && n.type === 'dir'; }
+  isFile(path) { const n = this._walk(path); return !!n && n.type === 'file'; }
+
+  list(path) {
+    const node = this._walk(path);
+    if (!node || node.type !== 'dir') return null;
+    return Object.values(node.children)
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  mkdirp(path) {
+    const segs = Utils.segments(Utils.normalize(path));
+    let node = this.root;
+    for (const s of segs) {
+      if (!node.children[s]) node.children[s] = this._makeDir(s);
+      if (node.children[s].type !== 'dir') throw new Error(`mkdir: '${s}' exists and is not a directory`);
+      node = node.children[s];
+    }
+    return node;
+  }
+
+  mkdir(path, opts = {}) {
+    const norm = Utils.normalize(path);
+    const parent = Utils.dirname(norm);
+    const name = Utils.basename(norm);
+    if (opts.parents) return this.mkdirp(norm);
+    const parentNode = this._walk(parent);
+    if (!parentNode || parentNode.type !== 'dir') throw new Error(`mkdir: cannot create directory '${path}': No such file or directory`);
+    if (parentNode.children[name]) throw new Error(`mkdir: cannot create directory '${path}': File exists`);
+    parentNode.children[name] = this._makeDir(name);
+    return parentNode.children[name];
+  }
+
+  touch(path) {
+    const norm = Utils.normalize(path);
+    const existing = this._walk(norm);
+    if (existing) { existing.mtime = Date.now(); return existing; }
+    const parent = this._walk(Utils.dirname(norm));
+    if (!parent || parent.type !== 'dir') throw new Error(`touch: cannot touch '${path}': No such file or directory`);
+    const name = Utils.basename(norm);
+    parent.children[name] = this._makeFile(name, '');
+    return parent.children[name];
+  }
+
+  writeFile(path, content, { append = false } = {}) {
+    const norm = Utils.normalize(path);
+    const existing = this._walk(norm);
+    if (existing) {
+      if (existing.type !== 'file') throw new Error(`${path}: Is a directory`);
+      existing.content = append ? existing.content + content : content;
+      existing.mtime = Date.now();
+      return existing;
+    }
+    const parent = this._walk(Utils.dirname(norm));
+    if (!parent || parent.type !== 'dir') throw new Error(`cannot create '${path}': No such file or directory`);
+    const name = Utils.basename(norm);
+    parent.children[name] = this._makeFile(name, content);
+    return parent.children[name];
+  }
+
+  readFile(path) {
+    const node = this._walk(path);
+    if (!node) throw new Error(`cat: ${path}: No such file or directory`);
+    if (node.type !== 'file') throw new Error(`cat: ${path}: Is a directory`);
+    return node.content;
+  }
+
+  remove(path, { recursive = false } = {}) {
+    const norm = Utils.normalize(path);
+    if (norm === '/') throw new Error('rm: refusing to remove root directory');
+    const parent = this._walk(Utils.dirname(norm));
+    const name = Utils.basename(norm);
+    if (!parent || !parent.children[name]) throw new Error(`rm: cannot remove '${path}': No such file or directory`);
+    const node = parent.children[name];
+    if (node.type === 'dir' && Object.keys(node.children).length && !recursive) {
+      throw new Error(`rm: cannot remove '${path}': Directory not empty (use -r)`);
+    }
+    delete parent.children[name];
+  }
+
+  copy(src, dest) {
+    const node = this._walk(src);
+    if (!node) throw new Error(`cp: cannot stat '${src}': No such file or directory`);
+    const clone = JSON.parse(JSON.stringify(node));
+    this._reAttach(clone, Date.now());
+    let destNorm = Utils.normalize(dest);
+    if (this.isDir(destNorm)) destNorm = Utils.normalize(destNorm + '/' + Utils.basename(src));
+    const parent = this._walk(Utils.dirname(destNorm));
+    if (!parent || parent.type !== 'dir') throw new Error(`cp: cannot create '${dest}': No such file or directory`);
+    clone.name = Utils.basename(destNorm);
+    parent.children[clone.name] = clone;
+  }
+
+  _reAttach(node, t) {
+    node.mtime = t;
+    if (node.type === 'dir') Object.values(node.children).forEach(c => this._reAttach(c, t));
+  }
+
+  move(src, dest) {
+    const node = this._walk(src);
+    if (!node) throw new Error(`mv: cannot stat '${src}': No such file or directory`);
+    let destNorm = Utils.normalize(dest);
+    if (this.isDir(destNorm)) destNorm = Utils.normalize(destNorm + '/' + Utils.basename(src));
+    const destParent = this._walk(Utils.dirname(destNorm));
+    if (!destParent || destParent.type !== 'dir') throw new Error(`mv: cannot move to '${dest}': No such file or directory`);
+    const srcParent = this._walk(Utils.dirname(Utils.normalize(src)));
+    delete srcParent.children[Utils.basename(Utils.normalize(src))];
+    node.name = Utils.basename(destNorm);
+    destParent.children[node.name] = node;
+  }
+
+  chmod(path, mode) {
+    const node = this._walk(path);
+    if (!node) throw new Error(`chmod: cannot access '${path}': No such file or directory`);
+    node.mode = mode;
+  }
+
+  // Serialize/deserialize for persistence
+  serialize() { return JSON.stringify(this.root); }
+  static deserialize(json) {
+    const vfs = Object.create(VFS.prototype);
+    vfs.root = JSON.parse(json);
+    return vfs;
+  }
+}
+
+/* ------------------------------- Persistence -------------------------------*/
+/* Thin IndexedDB wrapper. Stores the serialized VFS tree + misc shell state
+   (cwd, history, env, aliases) under a single object store so the user's
+   session survives a reload. */
+class Persistence {
+  constructor(dbName = 'quantum-core-db', storeName = 'state') {
+    this.dbName = dbName;
+    this.storeName = storeName;
+    this.db = null;
+  }
+
+  open() {
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open(this.dbName, 1);
+      req.onupgradeneeded = () => {
+        req.result.createObjectStore(this.storeName);
+      };
+      req.onsuccess = () => { this.db = req.result; resolve(this.db); };
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async get(key) {
+    if (!this.db) await this.open();
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction(this.storeName, 'readonly');
+      const req = tx.objectStore(this.storeName).get(key);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async set(key, value) {
+    if (!this.db) await this.open();
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction(this.storeName, 'readwrite');
+      tx.objectStore(this.storeName).put(value, key);
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+}
+
+/* -------------------------------- Environment ------------------------------*/
+/* Env vars + aliases + expansion. Kept separate from Shell so future
+   subsystems (e.g. a `python` venv, an `apt` package db) can read/write
+   environment state through one consistent API. */
+class Environment {
+  constructor() {
+    this.vars = {
+      USER: 'operator',
+      HOME: '/home/operator',
+      SHELL: '/bin/qsh',
+      PATH: '/bin:/usr/bin:/usr/local',
+      PS1: '\\u@\\h:\\w\\$',
+      TERM: 'xterm-256color',
+    };
+    this.aliases = {
+      ll: 'ls -la',
+      la: 'ls -a',
+      cls: 'clear',
+      '..': 'cd ..',
+    };
+  }
+
+  get(name) { return this.vars[name]; }
+  set(name, value) { this.vars[name] = value; }
+
+  expand(token) {
+    return token.replace(/\$(\w+)|\$\{(\w+)\}/g, (_, a, b) => {
+      const name = a || b;
+      return this.vars[name] !== undefined ? this.vars[name] : '';
+    });
+  }
+
+  resolveAlias(cmd, seen = new Set()) {
+    if (this.aliases[cmd] && !seen.has(cmd)) {
+      seen.add(cmd);
+      const expanded = this.aliases[cmd];
+      const [head, ...rest] = expanded.split(' ');
+      const resolvedHead = this.resolveAlias(head, seen);
+      return [resolvedHead.cmd, ...rest, ...(resolvedHead.extra || [])].join(' ').trim() && {
+        cmd: resolvedHead.cmd, extra: [...rest, ...(resolvedHead.extra || [])]
+      };
+    }
+    return { cmd, extra: [] };
+  }
+
+  toJSON() { return { vars: this.vars, aliases: this.aliases }; }
+  static fromJSON(obj) {
+    const e = new Environment();
+    if (obj) { e.vars = obj.vars || e.vars; e.aliases = obj.aliases || e.aliases; }
+    return e;
+  }
+}
+
+/* ---------------------------------- Parser ---------------------------------*/
+/* Turns a raw line into a structured command: { name, args, flags, raw } */
+const Parser = {
+  parse(line, env) {
+    const rawTokens = Utils.tokenize(line.trim());
+    if (!rawTokens.length) return null;
+    const tokens = rawTokens.map(t => env ? env.expand(t) : t);
+    const [name, ...rest] = tokens;
+    const flags = {};
+    const args = [];
+    for (const t of rest) {
+      if (/^--[\w-]+/.test(t)) {
+        const [k, v] = t.slice(2).split('=');
+        flags[k] = v === undefined ? true : v;
+      } else if (/^-[A-Za-z]+$/.test(t)) {
+        for (const ch of t.slice(1)) flags[ch] = true;
+      } else {
+        args.push(t);
+      }
+    }
+    return { name, args, flags, raw: line };
+  }
+};
+
+/* ------------------------------ CommandRegistry -----------------------------*/
+/* Every command is its own self-contained module: { name, help, run(ctx) }.
+   ctx = { vfs, env, shell, args, flags, term }
+   A command returns a string (or '') to print, or throws Error for stderr-style
+   output. This is the extension point for git/python/apt/gcc/networking/docker/
+   missions later — just register more modules, nothing else changes. */
+class CommandRegistry {
+  constructor() { this.commands = {}; }
+  register(name, def) { this.commands[name] = def; }
+  get(name) { return this.commands[name]; }
+  has(name) { return !!this.commands[name]; }
+  names() { return Object.keys(this.commands).sort(); }
+}
+
+function buildCommandRegistry() {
+  const reg = new CommandRegistry();
+
+  reg.register('help', {
+    help: 'List available commands',
+    run: ({ shell }) => {
+      const names = shell.commands.names();
+      const lines = ['Available commands:', ''];
+      const cols = [];
+      for (let i = 0; i < names.length; i += 5) cols.push(names.slice(i, i + 5).map(n => Utils.pad(n, 12)).join(''));
+      return [...lines, ...cols, '', 'Type `man <command>` is not implemented yet — try `<command> --help`-style usage by reading source.'].join('\n');
+    }
+  });
+
+  reg.register('pwd', {
+    help: 'Print working directory',
+    run: ({ shell }) => shell.cwd
+  });
+
+  reg.register('cd', {
+    help: 'Change directory',
+    run: ({ shell, args, env }) => {
+      const target = args[0] || env.get('HOME');
+      const dest = Utils.resolve(shell.cwd, target, env.get('HOME'));
+      if (!shell.vfs.exists(dest)) throw new Error(`cd: ${target}: No such file or directory`);
+      if (!shell.vfs.isDir(dest)) throw new Error(`cd: ${target}: Not a directory`);
+      shell.cwd = dest;
+      return '';
+    }
+  });
+
+  reg.register('ls', {
+    help: 'List directory contents',
+    run: ({ shell, args, flags, env }) => {
+      const target = args[0] ? Utils.resolve(shell.cwd, args[0], env.get('HOME')) : shell.cwd;
+      const items = shell.vfs.list(target);
+      if (!items) throw new Error(`ls: cannot access '${args[0] || '.'}': No such file or directory`);
+      const visible = items.filter(i => flags.a || !i.name.startsWith('.'));
+      if (flags.l) {
+        return visible.map(i => {
+          const t = i.type === 'dir' ? 'd' : '-';
+          const size = i.type === 'file' ? i.content.length : 0;
+          const date = new Date(i.mtime).toLocaleString();
+          return `${t}rwx${i.mode.padStart(3, '0')}  ${Utils.pad(Utils.humanSize(size), 6)} ${date}  ${i.name}${i.type === 'dir' ? '/' : ''}`;
+        }).join('\n');
+      }
+      return visible.map(i => i.type === 'dir' ? i.name + '/' : i.name).join('  ');
+    }
+  });
+
+  reg.register('tree', {
+    help: 'Recursively list directory as a tree',
+    run: ({ shell, args, env }) => {
+      const start = args[0] ? Utils.resolve(shell.cwd, args[0], env.get('HOME')) : shell.cwd;
+      if (!shell.vfs.exists(start)) throw new Error(`tree: ${args[0]}: No such file or directory`);
+      const lines = [start];
+      const walk = (path, prefix) => {
+        const items = shell.vfs.list(path) || [];
+        items.forEach((item, idx) => {
+          const last = idx === items.length - 1;
+          lines.push(prefix + (last ? '└── ' : '├── ') + item.name + (item.type === 'dir' ? '/' : ''));
+          if (item.type === 'dir') walk(Utils.normalize(path + '/' + item.name), prefix + (last ? '    ' : '│   '));
+        });
+      };
+      walk(start, '');
+      return lines.join('\n');
+    }
+  });
+
+  reg.register('mkdir', {
+    help: 'Create a directory',
+    run: ({ shell, args, flags, env }) => {
+      if (!args.length) throw new Error('mkdir: missing operand');
+      args.forEach(a => shell.vfs.mkdir(Utils.resolve(shell.cwd, a, env.get('HOME')), { parents: !!flags.p }));
+      return '';
+    }
+  });
+
+  reg.register('touch', {
+    help: 'Create an empty file / update mtime',
+    run: ({ shell, args, env }) => {
+      if (!args.length) throw new Error('touch: missing file operand');
+      args.forEach(a => shell.vfs.touch(Utils.resolve(shell.cwd, a, env.get('HOME'))));
+      return '';
+    }
+  });
+
+  reg.register('cat', {
+    help: 'Print file contents',
+    run: ({ shell, args, env }) => {
+      if (!args.length) throw new Error('cat: missing file operand');
+      return args.map(a => shell.vfs.readFile(Utils.resolve(shell.cwd, a, env.get('HOME')))).join('').replace(/\n$/, '');
+    }
+  });
+
+  reg.register('echo', {
+    help: 'Print text / write to file with redirection',
+    run: ({ args, flags, raw, shell, env }) => {
+      // basic redirection support: echo "text" > file  /  >> file
+      const redirMatch = raw.match(/(>{1,2})\s*(\S+)\s*$/);
+      let text = args.join(' ');
+      if (redirMatch) {
+        const before = raw.slice(0, redirMatch.index).trim();
+        const echoArgs = Utils.tokenize(before).slice(1).map(t => env.expand(t));
+        text = echoArgs.join(' ');
+        const append = redirMatch[1] === '>>';
+        const dest = Utils.resolve(shell.cwd, redirMatch[2], env.get('HOME'));
+        shell.vfs.writeFile(dest, text + '\n', { append });
+        return '';
+      }
+      return text;
+    }
+  });
+
+  reg.register('rm', {
+    help: 'Remove files or directories',
+    run: ({ shell, args, flags, env }) => {
+      if (!args.length) throw new Error('rm: missing operand');
+      args.forEach(a => shell.vfs.remove(Utils.resolve(shell.cwd, a, env.get('HOME')), { recursive: !!(flags.r || flags.f) }));
+      return '';
+    }
+  });
+
+  reg.register('cp', {
+    help: 'Copy files',
+    run: ({ shell, args, env }) => {
+      if (args.length < 2) throw new Error('cp: missing destination file operand');
+      const [src, dest] = args;
+      shell.vfs.copy(Utils.resolve(shell.cwd, src, env.get('HOME')), Utils.resolve(shell.cwd, dest, env.get('HOME')));
+      return '';
+    }
+  });
+
+  reg.register('mv', {
+    help: 'Move/rename files',
+    run: ({ shell, args, env }) => {
+      if (args.length < 2) throw new Error('mv: missing destination file operand');
+      const [src, dest] = args;
+      shell.vfs.move(Utils.resolve(shell.cwd, src, env.get('HOME')), Utils.resolve(shell.cwd, dest, env.get('HOME')));
+      return '';
+    }
+  });
+
+  reg.register('find', {
+    help: 'Search for files by name',
+    run: ({ shell, args, env }) => {
+      const start = args[0] ? Utils.resolve(shell.cwd, args[0], env.get('HOME')) : shell.cwd;
+      const nameIdx = args.indexOf('-name');
+      const pattern = nameIdx !== -1 ? args[nameIdx + 1] : null;
+      const regex = pattern ? new RegExp('^' + pattern.replace(/\*/g, '.*').replace(/\?/g, '.') + '$') : null;
+      const results = [];
+      const walk = (path) => {
+        results.push(path);
+        const items = shell.vfs.list(path) || [];
+        items.forEach(item => {
+          const full = Utils.normalize(path + '/' + item.name);
+          if (item.type === 'dir') walk(full);
+          else results.push(full);
+        });
+      };
+      if (!shell.vfs.exists(start)) throw new Error(`find: '${args[0]}': No such file or directory`);
+      walk(start);
+      const filtered = regex ? results.filter(r => regex.test(Utils.basename(r))) : results;
+      return filtered.join('\n');
+    }
+  });
+
+  reg.register('chmod', {
+    help: 'Change file mode bits',
+    run: ({ shell, args, env }) => {
+      if (args.length < 2) throw new Error('chmod: missing operand');
+      const [mode, path] = args;
+      shell.vfs.chmod(Utils.resolve(shell.cwd, path, env.get('HOME')), mode);
+      return '';
+    }
+  });
+
+  reg.register('stat', {
+    help: 'Show file/directory metadata',
+    run: ({ shell, args, env }) => {
+      if (!args.length) throw new Error('stat: missing operand');
+      const path = Utils.resolve(shell.cwd, args[0], env.get('HOME'));
+      const s = shell.vfs.stat(path);
+      if (!s) throw new Error(`stat: cannot stat '${args[0]}': No such file or directory`);
+      return [
+        `File: ${path}`,
+        `Size: ${s.size}\tType: ${s.type}`,
+        `Mode: (${s.mode})`,
+        `Modify: ${new Date(s.mtime).toString()}`
+      ].join('\n');
+    }
+  });
+
+  reg.register('clear', {
+    help: 'Clear the terminal screen',
+    run: ({ term }) => { term.clear(); return null; }
+  });
+
+  reg.register('history', {
+    help: 'Show command history',
+    run: ({ shell }) => shell.history.map((h, i) => `${Utils.pad(i + 1, 5)} ${h}`).join('\n')
+  });
+
+  reg.register('whoami', { help: 'Print current user', run: ({ env }) => env.get('USER') });
+  reg.register('hostname', { help: 'Print hostname', run: ({ shell }) => shell.vfs.readFile('/etc/hostname').trim() });
+
+  reg.register('env', {
+    help: 'Print environment variables',
+    run: ({ env }) => Object.entries(env.vars).map(([k, v]) => `${k}=${v}`).join('\n')
+  });
+
+  reg.register('export', {
+    help: 'Set an environment variable: export NAME=value',
+    run: ({ env, args }) => {
+      args.forEach(a => {
+        const [k, v] = a.split('=');
+        if (k) env.set(k, v ?? '');
+      });
+      return '';
+    }
+  });
+
+  reg.register('alias', {
+    help: 'Define a command alias: alias name="cmd"',
+    run: ({ env, args }) => {
+      if (!args.length) return Object.entries(env.aliases).map(([k, v]) => `alias ${k}='${v}'`).join('\n');
+      args.forEach(a => {
+        const eq = a.indexOf('=');
+        if (eq === -1) return;
+        env.aliases[a.slice(0, eq)] = a.slice(eq + 1);
+      });
+      return '';
+    }
+  });
+
+  reg.register('date', { help: 'Print current date/time', run: () => new Date().toString() });
+
+  reg.register('reset-fs', {
+    help: 'Danger: wipe and reseed the virtual filesystem',
+    run: ({ shell }) => { shell.vfs = new VFS(); shell.cwd = '/home/operator'; return 'Filesystem reset.'; }
+  });
+
+  reg.register('neofetch', {
+    help: 'Show system summary banner',
+    run: ({ env }) => [
+      '       /\\        ' + 'operator@quantumcore',
+      '      /  \\       ' + '--------------------',
+      '     / /\\ \\      ' + `OS: QuantumCore Lab vOS`,
+      '    / ____ \\     ' + `Shell: ${env.get('SHELL')}`,
+      '   /_/    \\_\\    ' + `Engine: in-browser VFS`,
+      '                 ' + `Persistence: IndexedDB`,
+    ].join('\n')
+  });
+
+  return reg;
+}
+
+/* ----------------------------------- Shell ----------------------------------*/
+/* Owns cwd, history, exit codes. Wires Parser -> Environment(alias/expand) ->
+   CommandRegistry -> VFS together for each executed line. */
+class Shell {
+  constructor({ vfs, env, commands }) {
+    this.vfs = vfs;
+    this.env = env;
+    this.commands = commands;
+    this.cwd = env.get('HOME');
+    this.history = [];
+    this.historyIndex = -1;
+  }
+
+  prompt() {
+    const home = this.env.get('HOME');
+    const short = this.cwd === home ? '~' : (this.cwd.startsWith(home + '/') ? '~' + this.cwd.slice(home.length) : this.cwd);
+    return `${this.env.get('USER')}@quantumcore:${short}$ `;
+  }
+
+  execute(line, term) {
+    if (!line.trim()) return { output: '', ok: true };
+    this.history.push(line);
+    this.historyIndex = this.history.length;
+
+    const parsedRaw = Parser.parse(line, null); // get raw name before alias/expansion
+    if (!parsedRaw) return { output: '', ok: true };
+
+    const resolvedAlias = this.env.resolveAlias(parsedRaw.name);
+    const effectiveLine = resolvedAlias.cmd === parsedRaw.name
+      ? line
+      : [resolvedAlias.cmd, ...resolvedAlias.extra, ...parsedRaw.args.map(a => a)].join(' ') +
+        (parsedRaw.raw.includes('>') ? ' ' + parsedRaw.raw.split(parsedRaw.name)[1].match(/>.*/)?.[0] || '' : '');
+
+    const parsed = Parser.parse(effectiveLine, this.env);
+    if (!parsed) return { output: '', ok: true };
+
+    const cmd = this.commands.get(parsed.name);
+    if (!cmd) {
+      return { output: `qsh: command not found: ${parsed.name}`, ok: false };
+    }
+    try {
+      const out = cmd.run({ shell: this, vfs: this.vfs, env: this.env, args: parsed.args, flags: parsed.flags, raw: line, term });
+      return { output: out === null || out === undefined ? '' : out, ok: true };
+    } catch (e) {
+      return { output: e.message || String(e), ok: false };
+    }
+  }
+
+  // ---- Tab completion architecture -----------------------------------------
+  // Returns an array of candidate completions for the current input. Designed
+  // so future commands (git, apt, python) can register their own completers
+  // later (e.g. this.commands.get('git').complete(ctx)) without changing this
+  // method's contract.
+  complete(line) {
+    const tokens = Utils.tokenize(line);
+    const endsWithSpace = /\s$/.test(line);
+    const completingArg = tokens.length > 1 || (tokens.length === 1 && endsWithSpace);
+
+    if (!completingArg) {
+      const partial = tokens[0] || '';
+      return this.commands.names().filter(n => n.startsWith(partial));
+    }
+    const partial = endsWithSpace ? '' : tokens[tokens.length - 1];
+    const dir = Utils.dirname(Utils.resolve(this.cwd, partial, this.env.get('HOME')));
+    const base = Utils.basename(partial);
+    const items = this.vfs.list(partial.endsWith('/') ? Utils.resolve(this.cwd, partial, this.env.get('HOME')) : dir) || [];
+    return items
+      .map(i => i.name + (i.type === 'dir' ? '/' : ''))
+      .filter(n => n.startsWith(partial.endsWith('/') ? '' : base));
+  }
+
+  toState() {
+    return {
+      vfs: this.vfs.serialize(),
+      cwd: this.cwd,
+      history: this.history,
+      env: this.env.toJSON(),
+    };
+  }
+
+  static fromState(state, commands) {
+    const vfs = state?.vfs ? VFS.deserialize(state.vfs) : new VFS();
+    const env = Environment.fromJSON(state?.env);
+    const shell = new Shell({ vfs, env, commands });
+    if (state?.cwd) shell.cwd = state.cwd;
+    if (state?.history) { shell.history = state.history; shell.historyIndex = shell.history.length; }
+    return shell;
+  }
+}
+
+/* --------------------------------- TerminalUI --------------------------------*/
+/* xterm.js wrapper. Owns rendering + keystrokes only — never touches the VFS
+   directly, always goes through Shell.execute(). Designed for responsiveness:
+   no React re-render per keystroke, raw DOM/xterm writes only. */
+class TerminalUI {
+  constructor(container, shell, persistence) {
+    this.shell = shell;
+    this.persistence = persistence;
+    this.term = new Terminal({
+      fontFamily: "'Share Tech Mono','Courier New',monospace",
+      fontSize: 15,
+      lineHeight: 1.2,
+      cursorBlink: true,
+      cursorStyle: 'block',
+      theme: {
+        background: '#000000',
+        foreground: '#39ff6a',
+        cursor: '#39ff6a',
+        cursorAccent: '#000000',
+        selectionBackground: 'rgba(57,255,106,0.3)',
+        black: '#000000', green: '#39ff6a', brightGreen: '#7CFFA0',
+        yellow: '#ffb000', red: '#ff3b3b', white: '#c8ffd8'
+      },
+      scrollback: 5000,
+      allowTransparency: true,
+    });
+    this.container = container;
+    this.term.open(container);
+    this._fit();
+    requestAnimationFrame(() => this._fit());
+    window.addEventListener('resize', () => this._fit());
+    new ResizeObserver(() => this._fit()).observe(container);
+
+    this.buffer = '';
+    this.cursorPos = 0;
+
+    this._bindKeys();
+    this._banner();
+    this._writePrompt();
+  }
+
+  _fit() {
+    // Manual replacement for xterm-addon-fit (avoids an unreliable CDN path).
+    // Measures the actual rendered character cell from xterm's own DOM and
+    // computes how many cols/rows fit the container.
+    const core = this.term._core;
+    let cellWidth = 9, cellHeight = 17;
+    if (core && core._renderService && core._renderService.dimensions) {
+      const d = core._renderService.dimensions.css.cell;
+      if (d && d.width && d.height) { cellWidth = d.width; cellHeight = d.height; }
+    }
+    const cols = Math.max(20, Math.floor(this.container.clientWidth / cellWidth));
+    const rows = Math.max(10, Math.floor(this.container.clientHeight / cellHeight));
+    if (cols !== this.term.cols || rows !== this.term.rows) {
+      this.term.resize(cols, rows);
+    }
+  }
+
+  _banner() {
+    const motd = this.shell.vfs.readFile('/etc/motd');
+    this.term.writeln('\x1b[1;32m' + '═'.repeat(60) + '\x1b[0m');
+    this.term.writeln('\x1b[1;32m  QUANTUM CORE :: LINUX LAB ENGINE\x1b[0m');
+    this.term.writeln('\x1b[1;32m' + '═'.repeat(60) + '\x1b[0m');
+    motd.split('\n').forEach(l => this.term.writeln(l));
+  }
+
+  _writePrompt() {
+    this.term.write('\r\n\x1b[1;32m' + this.shell.prompt() + '\x1b[0m');
+  }
+
+  _redrawLine() {
+    // Clear current line and rewrite buffer with cursor at the right spot.
+    this.term.write('\x1b[2K\r');
+    this.term.write('\x1b[1;32m' + this.shell.prompt() + '\x1b[0m' + this.buffer);
+    const back = this.buffer.length - this.cursorPos;
+    if (back > 0) this.term.write(`\x1b[${back}D`);
+  }
+
+  clear() { this.term.clear(); }
+
+  _bindKeys() {
+    this.term.onKey(({ key, domEvent }) => {
+      const ev = domEvent;
+
+      // Ctrl+C: cancel current line
+      if (ev.ctrlKey && ev.key.toLowerCase() === 'c') {
+        this.term.write('^C');
+        this.buffer = ''; this.cursorPos = 0;
+        this._writePrompt();
+        return;
+      }
+      // Ctrl+L: clear screen, keep buffer
+      if (ev.ctrlKey && ev.key.toLowerCase() === 'l') {
+        this.term.clear();
+        this._writePrompt();
+        this.term.write(this.buffer);
+        return;
+      }
+
+      switch (ev.key) {
+        case 'Enter': {
+          const line = this.buffer;
+          this.term.write('\r\n');
+          this.buffer = ''; this.cursorPos = 0;
+          if (line.trim()) {
+            const result = this.shell.execute(line, this.term);
+            if (result.output) {
+              const color = result.ok ? '' : '\x1b[1;31m';
+              const reset = result.ok ? '' : '\x1b[0m';
+              result.output.split('\n').forEach(l => this.term.writeln(color + l + reset));
+            }
+            this._persist();
+          }
+          this._writePrompt();
+          return;
+        }
+        case 'Backspace': {
+          if (this.cursorPos > 0) {
+            this.buffer = this.buffer.slice(0, this.cursorPos - 1) + this.buffer.slice(this.cursorPos);
+            this.cursorPos--;
+            this._redrawLine();
+          }
+          return;
+        }
+        case 'Delete': {
+          if (this.cursorPos < this.buffer.length) {
+            this.buffer = this.buffer.slice(0, this.cursorPos) + this.buffer.slice(this.cursorPos + 1);
+            this._redrawLine();
+          }
+          return;
+        }
+        case 'ArrowLeft':
+          if (this.cursorPos > 0) { this.cursorPos--; this.term.write('\x1b[1D'); }
+          return;
+        case 'ArrowRight':
+          if (this.cursorPos < this.buffer.length) { this.cursorPos++; this.term.write('\x1b[1C'); }
+          return;
+        case 'ArrowUp': {
+          if (this.shell.historyIndex > 0) {
+            this.shell.historyIndex--;
+            this.buffer = this.shell.history[this.shell.historyIndex] || '';
+            this.cursorPos = this.buffer.length;
+            this._redrawLine();
+          }
+          return;
+        }
+        case 'ArrowDown': {
+          if (this.shell.historyIndex < this.shell.history.length - 1) {
+            this.shell.historyIndex++;
+            this.buffer = this.shell.history[this.shell.historyIndex] || '';
+          } else {
+            this.shell.historyIndex = this.shell.history.length;
+            this.buffer = '';
+          }
+          this.cursorPos = this.buffer.length;
+          this._redrawLine();
+          return;
+        }
+        case 'Home':
+          this.term.write(`\x1b[${this.cursorPos}D`);
+          this.cursorPos = 0;
+          return;
+        case 'End': {
+          const fwd = this.buffer.length - this.cursorPos;
+          if (fwd > 0) this.term.write(`\x1b[${fwd}C`);
+          this.cursorPos = this.buffer.length;
+          return;
+        }
+        case 'Tab': {
+          ev.preventDefault();
+          const candidates = this.shell.complete(this.buffer);
+          if (candidates.length === 1) {
+            const tokens = this.buffer.split(' ');
+            tokens[tokens.length - 1] = candidates[0];
+            this.buffer = tokens.join(' ');
+            this.cursorPos = this.buffer.length;
+            this._redrawLine();
+          } else if (candidates.length > 1) {
+            this.term.write('\r\n' + candidates.join('  '));
+            this._writePrompt();
+            this.term.write(this.buffer);
+          }
+          return;
+        }
+        default:
+          if (!ev.ctrlKey && !ev.metaKey && key.length === 1) {
+            this.buffer = this.buffer.slice(0, this.cursorPos) + key + this.buffer.slice(this.cursorPos);
+            this.cursorPos++;
+            this._redrawLine();
+          }
+      }
+    });
+
+    // Native copy/paste support via xterm's built-in handling + paste event
+    this.term.attachCustomKeyEventHandler((ev) => {
+      if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'v') return true;
+      if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'c' && this.term.hasSelection()) return true;
+      return true;
+    });
+    this.term.onData((data) => {
+      // onKey already handles single-char & control keys; onData additionally
+      // catches IME/paste bulk-text input.
+      if (data.length > 1 && !data.startsWith('\x1b')) {
+        const clean = data.replace(/[\r\n]+/g, ' ');
+        this.buffer = this.buffer.slice(0, this.cursorPos) + clean + this.buffer.slice(this.cursorPos);
+        this.cursorPos += clean.length;
+        this._redrawLine();
+      }
+    });
+  }
+
+  async _persist() {
+    try { await this.persistence.set('session', this.shell.toState()); }
+    catch (e) { console.warn('persist failed', e); }
+  }
+}
+
+/* ------------------------------------ Boot -----------------------------------*/
+(async function boot() {
+  const persistence = new Persistence();
+  const commands = buildCommandRegistry();
+  let shell;
+  try {
+    const saved = await persistence.get('session');
+    shell = Shell.fromState(saved, commands);
+  } catch (e) {
+    console.warn('Could not load saved session, starting fresh', e);
+    shell = Shell.fromState(null, commands);
+  }
+
+  const ui = new TerminalUI(document.getElementById('termbox'), shell, persistence);
+
+  document.getElementById('status-user').textContent =
+    `${shell.env.get('USER')}@quantumcore`;
+
+  const clockEl = document.getElementById('footclock');
+  setInterval(() => { clockEl.textContent = new Date().toLocaleTimeString(); }, 1000);
+})();
+</script>
+</body>
+</html>
