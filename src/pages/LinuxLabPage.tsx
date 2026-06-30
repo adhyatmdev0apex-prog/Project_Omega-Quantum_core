@@ -99,9 +99,13 @@ export function LinuxLabPage() {
     term.loadAddon(fit);
     term.loadAddon(new WebLinksAddon());
     term.open(termRef.current);
-    fit.fit();
     termInstance.current = term;
     fitAddon.current = fit;
+
+    // Defer fit so the container has concrete dimensions after layout
+    requestAnimationFrame(() => {
+      try { fit.fit(); } catch { /* ignore */ }
+    });
 
     const eng = new LinuxEngine();
     eng.attach(StubBackend);
@@ -287,7 +291,7 @@ export function LinuxLabPage() {
         )}
 
         {/* Terminal area */}
-        <div className={cn('flex flex-col', fullscreen ? 'flex-1' : '')}>
+        <div className={cn('relative flex flex-col', fullscreen ? 'flex-1' : '')}>
           {/* Terminal toolbar */}
           <div className="flex items-center justify-between border-b border-white/5 bg-ink-900/60 px-4 py-2.5 backdrop-blur-xl">
             <div className="flex items-center gap-2">
@@ -309,10 +313,13 @@ export function LinuxLabPage() {
           <div
             ref={termRef}
             className={cn(
-              'terminal scanlines w-full overflow-hidden bg-ink-950',
+              'relative w-full overflow-hidden bg-ink-950',
               fullscreen ? 'h-full' : 'h-[60vh] md:h-[65vh]',
             )}
+            style={{ minHeight: fullscreen ? '100%' : '400px' }}
           />
+          {/* Scanline overlay — sibling, not on the xterm container */}
+          <div className="scanlines pointer-events-none absolute inset-0 z-10" />
 
           {/* Status bar */}
           <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/5 bg-ink-900/60 px-4 py-2 font-mono text-[11px] text-slate-500 backdrop-blur-xl">

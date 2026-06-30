@@ -74,8 +74,6 @@ function renderPage(segments: string[]) {
     case 'labs':
       if (sub === 'linux') return <LinuxLabPage />;
       return sub ? <LabPage slug={sub} /> : <LabsPage />;
-    case 'linux-lab':
-      return <LinuxLabPage />;
     case 'missions':
       return sub ? <MissionPage slug={sub} /> : <MissionsPage />;
     case 'achievements':
