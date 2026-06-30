@@ -8,6 +8,7 @@
 // working directory, and a save/restore contract. The UI layer
 // (LinuxLabPage) subscribes to changes and renders xterm.js.
 // ===========================================================
+import { VirtualLinuxBackend } from "./linux/backend";
 
 export interface SessionState {
   cwd: string;
@@ -156,50 +157,12 @@ export class LinuxEngine {
   }
 }
 
-// ===========================================================
-// StubBackend — a minimal placeholder backend so the terminal
-// is interactive before a real Linux engine is connected.
-// It handles session-control commands (clear, reset, history)
-// and politely reports that the full engine is pending for
-// everything else. Replace via engine.attach(realBackend).
-// ===========================================================
+const backend = new VirtualLinuxBackend();
 
 export const StubBackend: LinuxBackend = {
-  name: 'stub',
-  async execute(command: string, state: SessionState): Promise<CommandResult> {
-    if (!command) return { output: '' };
-    const [cmd, ...args] = command.split(/\s+/);
+  name: "virtual-linux",
 
-    switch (cmd) {
-      case 'clear':
-        return { output: '', clear: true, exitCode: 0 };
-      case 'pwd':
-        return { output: state.cwd, exitCode: 0 };
-      case 'whoami':
-        return { output: state.user, exitCode: 0 };
-      case 'hostname':
-        return { output: state.host, exitCode: 0 };
-      case 'history':
-        return { output: state.history.map((h, i) => `  ${i + 1}  ${h}`).join('\n') || '', exitCode: 0 };
-      case 'echo':
-        return { output: args.join(' '), exitCode: 0 };
-      case 'reset':
-        return { output: '[session reset]', exitCode: 0 };
-      case 'help':
-        return {
-          output: [
-            'Quantum Core Linux Lab — stub backend',
-            'A full browser-based Linux engine will be connected here.',
-            'Session control commands are available: clear, pwd, whoami,',
-            'hostname, history, echo, reset, help.',
-          ].join('\n'),
-          exitCode: 0,
-        };
-      default:
-        return {
-          output: `bash: ${cmd}: command not available in stub backend\nType 'help' for available commands.`,
-          exitCode: 127,
-        };
-    }
+  execute(command: string, state: SessionState): CommandResult {
+    return backend.execute(command, state);
   },
 };
