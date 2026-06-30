@@ -4,7 +4,7 @@ import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { useRouter } from '../state/router';
 import { useProgress } from '../state/progress';
-import { LinuxEngine, StubBackend, type SessionState } from '../lib/linuxEngine';
+import { LinuxEngine, StubBackend, defaultSession, type SessionState } from '../lib/linuxEngine';
 import { GlassPanel, NeonButton, Chip, ProgressBar } from '../components/ui';
 import { Icon } from '../components/Icon';
 import { NotesBlock } from './TextbookPage';
@@ -48,7 +48,7 @@ export function LinuxLabPage() {
   const { navigate } = useRouter();
   const { state: profile, completeLab, setStatus, startStudySession, endStudySession } = useProgress();
 
-  const [session, setSession] = useState<SessionState | null>(null);
+  const [session, setSession] = useState<SessionState>(() => defaultSession());
   const [showInstructions, setShowInstructions] = useState(true);
   const [showProgress, setShowProgress] = useState(true);
   const [fullscreen, setFullscreen] = useState(false);
@@ -299,7 +299,7 @@ export function LinuxLabPage() {
               <span className="h-2.5 w-2.5 rounded-full bg-warn-500/70" />
               <span className="h-2.5 w-2.5 rounded-full bg-neon-400/70" />
               <span className="ml-2 font-mono text-[11px] text-slate-500">
-                {session ? `${session.user}@${session.host}` : 'operator@quantum-core'}
+                {`${session.user}@${session.host}`}
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -325,19 +325,19 @@ export function LinuxLabPage() {
           <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/5 bg-ink-900/60 px-4 py-2 font-mono text-[11px] text-slate-500 backdrop-blur-xl">
             <div className="flex items-center gap-3">
               <span className="flex items-center gap-1.5 text-cyan-400">
-                <Icon name="FolderTree" size={11} /> {session?.cwd ?? '/home/operator'}
+                <Icon name="FolderTree" size={11} /> {session.cwd}
               </span>
               <span className="hidden text-slate-700 sm:inline">|</span>
               <span className="hidden items-center gap-1.5 sm:flex">
-                <Icon name="Clock" size={11} /> {session ? uptime(session.startedAt) : '0m'}
+                <Icon name="Clock" size={11} /> {uptime(session.startedAt)}
               </span>
               <span className="hidden text-slate-700 md:inline">|</span>
               <span className="hidden items-center gap-1.5 md:flex">
-                <Icon name="ListChecks" size={11} /> {session?.history.length ?? 0} cmds
+                <Icon name="ListChecks" size={11} /> {session.history.length} cmds
               </span>
             </div>
             <div className="flex items-center gap-3">
-              {session?.exitCode !== null && session?.exitCode !== 0 && (
+              {session.exitCode !== null && session.exitCode !== 0 && (
                 <span className="flex items-center gap-1 text-err-400">
                   <Icon name="X" size={11} /> exit {session.exitCode}
                 </span>
