@@ -191,6 +191,7 @@ export const SIDEBAR_NAV = [
   { id: 'dashboard', label: 'Dashboard', icon: 'LayoutDashboard', group: 'core' },
   { id: 'library', label: 'Library', icon: 'Library', group: 'core' },
   { id: 'labs', label: 'Labs', icon: 'FlaskConical', group: 'core' },
+  { id: 'linux-lab', label: 'Linux Lab', icon: 'TerminalSquare', group: 'core' },
   { id: 'missions', label: 'Missions', icon: 'Crosshair', group: 'core' },
   { id: 'downloads', label: 'Downloads', icon: 'Download', group: 'core' },
   { id: 'achievements', label: 'Achievements', icon: 'Trophy', group: 'progress' },

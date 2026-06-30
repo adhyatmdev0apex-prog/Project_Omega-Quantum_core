@@ -19,6 +19,7 @@ import { DownloadsPage } from './pages/DownloadsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { AboutPage } from './pages/AboutPage';
 import { TerminalPage } from './pages/TerminalPage';
+import { LinuxLabPage } from './pages/LinuxLabPage';
 
 // ===========================================================
 // App — providers + router. Home is a full-screen boot; every
@@ -71,7 +72,10 @@ function renderPage(segments: string[]) {
     case 'library':
       return sub ? <TextbookPage slug={sub} /> : <LibraryPage />;
     case 'labs':
+      if (sub === 'linux') return <LinuxLabPage />;
       return sub ? <LabPage slug={sub} /> : <LabsPage />;
+    case 'linux-lab':
+      return <LinuxLabPage />;
     case 'missions':
       return sub ? <MissionPage slug={sub} /> : <MissionsPage />;
     case 'achievements':
