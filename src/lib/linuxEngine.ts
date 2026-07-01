@@ -8,6 +8,13 @@
 // working directory, and a save/restore contract. The UI layer
 // (LinuxLabPage) subscribes to changes and renders xterm.js.
 // ===========================================================
+<<<<<<< HEAD
+=======
+import { VirtualLinuxBackend } from "./linux/backend";
+import { createShell } from "./createShell";
+
+const shell = createShell();
+>>>>>>> 1d7fd9e (Integrate Claude virtual filesystem and shell)
 
 export interface SessionState {
   cwd: string;
