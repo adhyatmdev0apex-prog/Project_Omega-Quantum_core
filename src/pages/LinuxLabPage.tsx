@@ -4,7 +4,8 @@ import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { useRouter } from '../state/router';
 import { useProgress } from '../state/progress';
-import { LinuxEngine, StubBackend, defaultSession, type SessionState } from '../lib/linuxEngine';
+import { LinuxEngine, defaultSession, type SessionState } from '../lib/linuxEngine';
+import { backendManager } from '../linux/backend/BackendManager';
 import { GlassPanel, NeonButton, Chip, ProgressBar } from '../components/ui';
 import { Icon } from '../components/Icon';
 import { NotesBlock } from './TextbookPage';
@@ -108,7 +109,10 @@ export function LinuxLabPage() {
     });
 
     const eng = new LinuxEngine();
-    eng.attach(StubBackend);
+    // BackendManager selects which backend to attach.
+    // Change 'virtual' to 'ubuntu' (or any other BackendType) here —
+    // LinuxLabPage never needs to know which backend is running.
+    eng.attach(backendManager.get('virtual'));
     engine.current = eng;
 
     const unsub = eng.subscribe((s) => setSession(s));
@@ -343,7 +347,7 @@ export function LinuxLabPage() {
                 </span>
               )}
               <span className="flex items-center gap-1.5 text-neon-400">
-                <Icon name="Cpu" size={11} /> {engine.current ? 'stub' : '—'}
+                <Icon name="Cpu" size={11} /> {backendManager.getActiveType() ?? '—'}
               </span>
             </div>
           </div>
