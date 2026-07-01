@@ -110,17 +110,17 @@ export function LinuxLabPage() {
     });
 
     const eng = new LinuxEngine();
-<<<<<<< HEAD
+    
     // BackendManager selects which backend to attach.
     // Change 'virtual' to 'ubuntu' (or any other BackendType) here —
     // LinuxLabPage never needs to know which backend is running.
     eng.attach(backendManager.get('virtual'));
-=======
+
     engine.current = eng;
 
     // keep StubBackend for now
     eng.attach(ClaudeBackend);
->>>>>>> 1d7fd9e (Integrate Claude virtual filesystem and shell)
+
     engine.current = eng;
 
     const unsub = eng.subscribe((s) => setSession(s));
