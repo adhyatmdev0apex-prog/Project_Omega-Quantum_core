@@ -110,7 +110,7 @@ export function LinuxLabPage() {
     });
 
     const eng = new LinuxEngine();
-    
+
     // BackendManager selects which backend to attach.
     // Change 'virtual' to 'ubuntu' (or any other BackendType) here —
     // LinuxLabPage never needs to know which backend is running.

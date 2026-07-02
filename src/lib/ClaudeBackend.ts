@@ -11,6 +11,7 @@ export const ClaudeBackend: LinuxBackend = {
 
     return {
       output: result.stdout + result.stderr,
+      cwd: shell.getCwd(),          // ⭐ ADD THIS
       exitCode: result.exitCode,
     };
   },

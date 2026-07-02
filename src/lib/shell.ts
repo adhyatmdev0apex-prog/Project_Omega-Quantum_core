@@ -111,6 +111,10 @@ export class Shell {
 
   constructor(public fs: VirtualFileSystem, public registry: CommandRegistry, public env: ShellEnv = {}) {}
 
+  public getCwd(): string {
+    return this.fs.getCwd();
+  }
+
   /** Executes a raw command line, handling pipes and redirection, returning the final result. */
   public run(line: string): CommandResult {
     const trimmed = line.trim();
@@ -121,7 +125,7 @@ export class Shell {
 
     const tokens = tokenize(trimmed);
     const pipelineStages = splitPipeline(tokens);
-
+    
     let stdin: string | undefined = undefined;
     let lastResult: CommandResult = { stdout: "", stderr: "", exitCode: 0 };
 

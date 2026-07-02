@@ -38,6 +38,7 @@ import { whichCommand } from "./which";
 import { manCommand } from "./man";
 import { historyCommand } from "./history";
 import { clearCommand } from "./clear";
+import { helpCommand } from "./help";
 
 export const allCommands: Command[] = [
   pwdCommand,
@@ -76,6 +77,7 @@ export const allCommands: Command[] = [
   manCommand,
   historyCommand,
   clearCommand,
+  helpCommand,
 ];
 
 export * from "./types";
