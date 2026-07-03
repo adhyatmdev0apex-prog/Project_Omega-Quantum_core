@@ -1,248 +1,2554 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Networking Simulator — Beta</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Core - Networking Lab</title>
+    <style>
+        :root {
+            --bg-primary: #0a0e17;
+            --bg-secondary: #0d1320;
+            --bg-tertiary: #111827;
+            --glass-bg: rgba(13, 19, 32, 0.85);
+            --glass-border: rgba(0, 212, 255, 0.15);
+            --glass-highlight: rgba(0, 212, 255, 0.05);
+            --neon-blue: #00d4ff;
+            --neon-cyan: #00ffd5;
+            --neon-purple: #7b2cbf;
+            --text-primary: #e0f2fe;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --packet-arp: #f59e0b;
+            --packet-icmp: #10b981;
+            --packet-dns: #8b5cf6;
+            --packet-tcp: #00d4ff;
+            --packet-udp: #06b6d4;
+            --packet-http: #f43f5e;
+            --packet-https: #22c55e;
+            --packet-ftp: #ec4899;
+            --packet-ssh: #6366f1;
+            --panel-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            --glow-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+        }
 
-    :root {
-      --bg: #04060a;
-      --bg-secondary: #0a0d12;
-      --text: #e8ffe2;
-      --text-muted: #6b7280;
-      --neon: #39ff14;
-      --cyan: #00f0ff;
-      --warn: #fbbf24;
-      --err: #ef4444;
-    }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    body {
-      font-family: 'JetBrains Mono', 'Fira Code', monospace;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 2rem;
-    }
+        body {
+            font-family: 'Segoe UI', 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow: hidden;
+        }
 
-    .container {
-      max-width: 800px;
-      text-align: center;
-    }
+        .app-container {
+            display: grid;
+            grid-template-rows: 60px 1fr 150px;
+            grid-template-columns: 380px 1fr 320px;
+            height: 100vh;
+            gap: 1px;
+            background: rgba(0, 212, 255, 0.05);
+        }
 
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.5rem 1rem;
-      border-radius: 9999px;
-      border: 1px solid rgba(251, 191, 36, 0.4);
-      background: rgba(251, 191, 36, 0.1);
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: var(--warn);
-      margin-bottom: 2rem;
-    }
+        /* Header Styles */
+        .header {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            background: var(--glass-bg);
+            border-bottom: 1px solid var(--glass-border);
+            backdrop-filter: blur(20px);
+        }
 
-    h1 {
-      font-family: system-ui, -apple-system, sans-serif;
-      font-size: 2.5rem;
-      font-weight: 700;
-      margin-bottom: 0.5rem;
-      background: linear-gradient(135deg, var(--neon), var(--cyan));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+        }
 
-    .version {
-      font-size: 0.875rem;
-      color: var(--text-muted);
-      margin-bottom: 2rem;
-    }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
 
-    .panel {
-      background: rgba(255, 255, 255, 0.02);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 1rem;
-      padding: 2rem;
-      margin-bottom: 2rem;
-      text-align: left;
-    }
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--neon-blue), var(--neon-cyan));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 18px;
+            color: var(--bg-primary);
+            box-shadow: var(--glow-shadow);
+        }
 
-    .panel h2 {
-      font-size: 1rem;
-      font-weight: 600;
-      color: var(--cyan);
-      margin-bottom: 1rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
+        .logo-text h1 {
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            background: linear-gradient(90deg, var(--neon-blue), var(--neon-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
 
-    .panel p {
-      color: var(--text-muted);
-      line-height: 1.6;
-      margin-bottom: 1rem;
-    }
+        .logo-text span {
+            font-size: 11px;
+            color: var(--text-muted);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
 
-    .panel ul {
-      list-style: none;
-      color: var(--text-muted);
-    }
+        .header-stat {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
 
-    .panel li {
-      padding: 0.5rem 0;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
+        .header-stat-label {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
 
-    .panel li:last-child {
-      border-bottom: none;
-    }
+        .header-stat-value {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--neon-cyan);
+        }
 
-    .status {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.75rem;
-    }
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
 
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--neon);
-      animation: pulse 2s infinite;
-    }
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 20px;
+        }
 
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.4; }
-    }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
 
-    .progress-bar {
-      height: 4px;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 2px;
-      overflow: hidden;
-      margin-top: 1rem;
-    }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 8px var(--success); }
+            50% { opacity: 0.6; box-shadow: 0 0 4px var(--success); }
+        }
 
-    .progress-fill {
-      height: 100%;
-      width: 40%;
-      background: linear-gradient(90deg, var(--neon), var(--cyan));
-      border-radius: 2px;
-    }
+        .clock {
+            font-family: 'SF Mono', 'Consolas', monospace;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
 
-    .hint {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      margin-top: 2rem;
-    }
+        /* Panel Base Styles */
+        .panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
 
-    /* Scanlines overlay */
-    .scanlines {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      background: repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 2px,
-        rgba(0, 0, 0, 0.1) 2px,
-        rgba(0, 0, 0, 0.1) 4px
-      );
-      opacity: 0.3;
-    }
-  </style>
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--glass-border);
+            background: rgba(0, 212, 255, 0.03);
+        }
+
+        .panel-title {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--neon-blue);
+        }
+
+        .panel-content {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Terminal Panel */
+        .terminal-panel {
+            grid-row: 2 / 3;
+        }
+
+        .terminal-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .terminal-scroll::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .terminal-scroll::-webkit-scrollbar-thumb {
+            background: var(--neon-blue);
+            border-radius: 3px;
+        }
+
+        .terminal-line {
+            margin-bottom: 4px;
+            line-height: 1.6;
+        }
+
+        .terminal-prompt {
+            color: var(--neon-cyan);
+            font-weight: 600;
+        }
+
+        .terminal-command {
+            color: var(--text-primary);
+        }
+
+        .terminal-output {
+            color: var(--text-secondary);
+            white-space: pre-wrap;
+        }
+
+        .terminal-error {
+            color: var(--error);
+        }
+
+        .terminal-success {
+            color: var(--success);
+        }
+
+        .terminal-warning {
+            color: var(--warning);
+        }
+
+        .terminal-input-line {
+            display: flex;
+            align-items: center;
+            position: sticky;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 8px 12px;
+            margin-top: auto;
+            border-top: 1px solid rgba(0, 212, 255, 0.2);
+        }
+
+        #terminal-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            outline: none;
+            caret-color: var(--neon-cyan);
+            min-width: 100px;
+        }
+
+        #terminal-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .terminal-wrapper {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .terminal-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+            font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            background: linear-gradient(180deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.5) 100%);
+        }
+
+        /* Network Canvas Panel */
+        .canvas-panel {
+            grid-column: 2 / 3;
+            grid-row: 2 / 3;
+            position: relative;
+        }
+
+        .network-canvas {
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, rgba(0, 212, 255, 0.03) 0%, transparent 70%),
+                        linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+        }
+
+        /* Device Styles */
+        .device-group {
+            cursor: pointer;
+            transition: filter 0.3s ease;
+        }
+
+        .device-group:hover {
+            filter: brightness(1.2);
+        }
+
+        .device-body {
+            transition: all 0.3s ease;
+        }
+
+        .device-group:hover .device-body {
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
+        }
+
+        .device-label {
+            font-size: 11px;
+            fill: var(--text-secondary);
+            text-anchor: middle;
+            font-weight: 500;
+        }
+
+        .device-ip {
+            font-size: 9px;
+            fill: var(--text-muted);
+            text-anchor: middle;
+            font-family: 'SF Mono', monospace;
+        }
+
+        /* Network Cables */
+        .network-cable {
+            stroke: rgba(0, 212, 255, 0.4);
+            stroke-width: 2;
+            fill: none;
+            transition: all 0.3s ease;
+        }
+
+        .network-cable.active {
+            stroke: var(--neon-cyan);
+            stroke-width: 3;
+            filter: drop-shadow(0 0 8px var(--neon-cyan));
+        }
+
+        /* Packets */
+        .packet {
+            filter: drop-shadow(0 0 6px currentColor);
+        }
+
+        /* Inspector Panel */
+        .inspector-panel {
+            grid-row: 2 / 3;
+            display: none;
+        }
+
+        .inspector-panel.active {
+            display: flex;
+        }
+
+        .inspector-content {
+            padding: 16px;
+            overflow-y: auto;
+        }
+
+        .inspector-section {
+            margin-bottom: 20px;
+        }
+
+        .inspector-section-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--neon-blue);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .inspector-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .inspector-label {
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .inspector-value {
+            color: var(--text-primary);
+            font-size: 12px;
+            font-family: 'SF Mono', monospace;
+        }
+
+        .inspector-value.success {
+            color: var(--success);
+        }
+
+        .inspector-value.warning {
+            color: var(--warning);
+        }
+
+        .inspector-value.error {
+            color: var(--error);
+        }
+
+        .port-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .port-badge {
+            padding: 4px 8px;
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 4px;
+            font-size: 10px;
+            font-family: 'SF Mono', monospace;
+            color: var(--neon-cyan);
+        }
+
+        .port-badge.open {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: rgba(16, 185, 129, 0.3);
+            color: var(--success);
+        }
+
+        .port-badge.closed {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.3);
+            color: var(--error);
+        }
+
+        .close-inspector {
+            width: 28px;
+            height: 28px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 6px;
+            color: var(--error);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .close-inspector:hover {
+            background: rgba(239, 68, 68, 0.2);
+        }
+
+        /* Timeline Panel */
+        .timeline-panel {
+            grid-column: 1 / -1;
+        }
+
+        .timeline-content {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .timeline-events {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 16px;
+        }
+
+        .timeline-events::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .timeline-events::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .timeline-events::-webkit-scrollbar-thumb {
+            background: var(--neon-blue);
+            border-radius: 2px;
+        }
+
+        .timeline-event {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .event-time {
+            font-family: 'SF Mono', monospace;
+            font-size: 11px;
+            color: var(--text-muted);
+            min-width: 70px;
+        }
+
+        .event-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .event-icon.arp { background: rgba(245, 158, 11, 0.2); color: var(--packet-arp); }
+        .event-icon.icmp { background: rgba(16, 185, 129, 0.2); color: var(--packet-icmp); }
+        .event-icon.dns { background: rgba(139, 92, 246, 0.2); color: var(--packet-dns); }
+        .event-icon.tcp { background: rgba(0, 212, 255, 0.2); color: var(--packet-tcp); }
+        .event-icon.udp { background: rgba(6, 182, 212, 0.2); color: var(--packet-udp); }
+        .event-icon.http { background: rgba(244, 63, 95, 0.2); color: var(--packet-http); }
+        .event-icon.https { background: rgba(34, 197, 94, 0.2); color: var(--packet-https); }
+        .event-icon.firewall { background: rgba(239, 68, 68, 0.2); color: var(--error); }
+        .event-icon.success { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+
+        .event-text {
+            font-size: 12px;
+            color: var(--text-secondary);
+            flex: 1;
+        }
+
+        .event-source {
+            font-size: 10px;
+            color: var(--text-muted);
+            font-family: 'SF Mono', monospace;
+        }
+
+        /* Statistics Bar */
+        .stats-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 16px;
+            background: rgba(0, 0, 0, 0.3);
+            border-top: 1px solid var(--glass-border);
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            font-size: 14px;
+            font-weight: 600;
+            font-family: 'SF Mono', monospace;
+        }
+
+        .stat-value.sent { color: var(--neon-blue); }
+        .stat-value.received { color: var(--success); }
+        .stat-value.latency { color: var(--warning); }
+        .stat-value.dropped { color: var(--error); }
+
+        /* Mission Panel */
+        .mission-panel {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 280px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--panel-shadow);
+            z-index: 100;
+        }
+
+        .mission-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: rgba(0, 212, 255, 0.05);
+            border-bottom: 1px solid var(--glass-border);
+            cursor: pointer;
+        }
+
+        .mission-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--neon-blue);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .mission-toggle {
+            color: var(--text-muted);
+            transition: transform 0.3s ease;
+        }
+
+        .mission-panel.collapsed .mission-toggle {
+            transform: rotate(180deg);
+        }
+
+        .mission-body {
+            padding: 16px;
+            max-height: 400px;
+            overflow-y: auto;
+            transition: max-height 0.3s ease;
+        }
+
+        .mission-panel.collapsed .mission-body {
+            max-height: 0;
+            padding: 0 16px;
+            overflow: hidden;
+        }
+
+        .xp-display {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            padding: 12px;
+            background: rgba(0, 212, 255, 0.05);
+            border-radius: 8px;
+        }
+
+        .xp-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .xp-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--neon-cyan);
+            font-family: 'SF Mono', monospace;
+        }
+
+        .current-mission {
+            padding: 12px;
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+
+        .mission-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .mission-desc {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .mission-progress {
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .mission-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--neon-blue), var(--neon-cyan));
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+
+        .mission-reward {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 8px;
+            font-size: 11px;
+            color: var(--warning);
+        }
+
+        .mission-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .mission-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .mission-item:hover {
+            background: rgba(0, 212, 255, 0.05);
+            border-color: rgba(0, 212, 255, 0.3);
+        }
+
+        .mission-item.active {
+            border-color: var(--neon-blue);
+            background: rgba(0, 212, 255, 0.1);
+        }
+
+        .mission-item.completed {
+            opacity: 0.6;
+        }
+
+        .mission-check {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--glass-border);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+        }
+
+        .mission-item.completed .mission-check {
+            background: var(--success);
+            border-color: var(--success);
+            color: white;
+        }
+
+        .mission-item-name {
+            font-size: 12px;
+            color: var(--text-primary);
+        }
+
+        .mission-item-xp {
+            font-size: 10px;
+            color: var(--warning);
+            margin-left: auto;
+        }
+
+        /* Legend Panel */
+        .legend-panel {
+            position: absolute;
+            bottom: 16px;
+            left: 16px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 12px;
+            z-index: 100;
+        }
+
+        .legend-title {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .legend-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .legend-dot.arp { background: var(--packet-arp); }
+        .legend-dot.icmp { background: var(--packet-icmp); }
+        .legend-dot.dns { background: var(--packet-dns); }
+        .legend-dot.tcp { background: var(--packet-tcp); }
+        .legend-dot.udp { background: var(--packet-udp); }
+        .legend-dot.http { background: var(--packet-http); }
+        .legend-dot.https { background: var(--packet-https); }
+
+        .legend-text {
+            font-size: 10px;
+            color: var(--text-secondary);
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            top: 80px;
+            right: 24px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 16px 24px;
+            box-shadow: var(--panel-shadow);
+            z-index: 1000;
+            transform: translateX(400px);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .toast.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        .toast-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .toast-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--neon-blue), var(--neon-cyan));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .toast-message h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .toast-message p {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .toast-xp {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--warning);
+            font-family: 'SF Mono', monospace;
+        }
+
+        /* Packet Capture Window */
+        .capture-window {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 500px;
+            max-height: 400px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            box-shadow: var(--panel-shadow);
+            z-index: 200;
+            display: none;
+        }
+
+        .capture-window.active {
+            display: block;
+        }
+
+        .capture-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: rgba(0, 0, 0, 0.3);
+            border-bottom: 1px solid var(--glass-border);
+            border-radius: 12px 12px 0 0;
+        }
+
+        .capture-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--neon-cyan);
+            font-family: 'SF Mono', monospace;
+        }
+
+        .capture-close {
+            width: 24px;
+            height: 24px;
+            background: rgba(239, 68, 68, 0.1);
+            border: none;
+            border-radius: 4px;
+            color: var(--error);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .capture-content {
+            max-height: 320px;
+            overflow-y: auto;
+            font-family: 'SF Mono', monospace;
+            font-size: 11px;
+        }
+
+        .capture-line {
+            padding: 6px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            display: flex;
+            gap: 12px;
+        }
+
+        .capture-line:nth-child(even) {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .capture-time {
+            color: var(--text-muted);
+            min-width: 80px;
+        }
+
+        .capture-proto {
+            min-width: 40px;
+            padding: 2px 6px;
+            border-radius: 3px;
+            text-align: center;
+            font-size: 10px;
+        }
+
+        .capture-proto.icmp { background: rgba(16, 185, 129, 0.2); color: var(--packet-icmp); }
+        .capture-proto.tcp { background: rgba(0, 212, 255, 0.2); color: var(--packet-tcp); }
+        .capture-proto.udp { background: rgba(6, 182, 212, 0.2); color: var(--packet-udp); }
+        .capture-proto.dns { background: rgba(139, 92, 246, 0.2); color: var(--packet-dns); }
+        .capture-proto.arp { background: rgba(245, 158, 11, 0.2); color: var(--packet-arp); }
+
+        .capture-info {
+            color: var(--text-secondary);
+            flex: 1;
+        }
+
+        /* Responsive */
+        @media (max-width: 1600px) {
+            .app-container {
+                grid-template-columns: 340px 1fr 280px;
+            }
+        }
+
+        @media (max-width: 1366px) {
+            .app-container {
+                grid-template-columns: 300px 1fr;
+            }
+            .inspector-panel {
+                position: absolute;
+                right: 0;
+                top: 60px;
+                width: 320px;
+                height: calc(100vh - 210px);
+                z-index: 50;
+            }
+            .mission-panel {
+                width: 240px;
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .app-container {
+                grid-template-columns: 280px 1fr;
+            }
+            .header-stat {
+                display: none;
+            }
+            .header-stat:nth-child(-n+3) {
+                display: flex;
+            }
+        }
+    </style>
 </head>
 <body>
-  <div class="scanlines"></div>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <div class="logo">
+                    <div class="logo-icon">Q</div>
+                    <div class="logo-text">
+                        <h1>Quantum Core</h1>
+                        <span>Networking Lab</span>
+                    </div>
+                </div>
+                <div class="header-stat">
+                    <span class="header-stat-label">Mission</span>
+                    <span class="header-stat-value" id="header-mission">Network Discovery</span>
+                </div>
+                <div class="header-stat">
+                    <span class="header-stat-label">Protocol</span>
+                    <span class="header-stat-value" id="header-protocol">--</span>
+                </div>
+                <div class="header-stat">
+                    <span class="header-stat-label">XP</span>
+                    <span class="header-stat-value" id="header-xp">0</span>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="header-stat">
+                    <span class="header-stat-label">Packets</span>
+                    <span class="header-stat-value" id="header-packets">0</span>
+                </div>
+                <div class="connection-status">
+                    <div class="status-dot"></div>
+                    <span>Connected</span>
+                </div>
+                <div class="clock" id="clock">00:00:00</div>
+            </div>
+        </header>
 
-  <div class="container">
-    <div class="badge">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-        <line x1="12" y1="9" x2="12" y2="13"></line>
-        <line x1="12" y1="17" x2="12.01" y2="17"></line>
-      </svg>
-      Under Development
+        <!-- Terminal Panel -->
+        <div class="panel terminal-panel">
+            <div class="panel-header">
+                <span class="panel-title">Terminal</span>
+                <button class="close-inspector" onclick="App.terminal.clear()" title="Clear Terminal">C</button>
+            </div>
+            <div class="panel-content">
+                <div class="terminal-wrapper">
+                    <div class="terminal-scroll" id="terminal">
+                        <div class="terminal-line">
+                            <span class="terminal-output">Quantum Core Networking Lab v2.0</span>
+                        </div>
+                        <div class="terminal-line">
+                            <span class="terminal-output">Type 'help' for available commands</span>
+                        </div>
+                    </div>
+                    <div class="terminal-input-line">
+                        <span class="terminal-prompt">operator@quantum-core:~$ </span>
+                        <input type="text" id="terminal-input" autofocus autocomplete="off" spellcheck="false" placeholder="type a command...">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Network Canvas -->
+        <div class="panel canvas-panel">
+            <div class="panel-content">
+                <svg class="network-canvas" id="network-canvas" viewBox="0 0 900 600">
+                    <defs>
+                        <linearGradient id="cableGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" style="stop-color:rgba(0,212,255,0.6)"/>
+                            <stop offset="50%" style="stop-color:rgba(0,255,213,0.8)"/>
+                            <stop offset="100%" style="stop-color:rgba(0,212,255,0.6)"/>
+                        </linearGradient>
+                        <filter id="glow">
+                            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                            <feMerge>
+                                <feMergeNode in="coloredBlur"/>
+                                <feMergeNode in="SourceGraphic"/>
+                            </feMerge>
+                        </filter>
+                        <filter id="strongGlow">
+                            <feGaussianBlur stdDeviation="5" result="coloredBlur"/>
+                            <feMerge>
+                                <feMergeNode in="coloredBlur"/>
+                                <feMergeNode in="SourceGraphic"/>
+                            </feMerge>
+                        </filter>
+                    </defs>
+
+                    <!-- Network Cables -->
+                    <g id="cables-layer">
+                        <path id="cable-0" class="network-cable" d="M 100,80 L 100,140"/>
+                        <path id="cable-1" class="network-cable" d="M 100,180 L 100,230"/>
+                        <path id="cable-2" class="network-cable" d="M 100,270 L 100,320"/>
+                        <path id="cable-3" class="network-cable" d="M 100,360 L 100,410"/>
+                        <path id="cable-4" class="network-cable" d="M 140,450 L 200,450"/>
+                        <path id="cable-5" class="network-cable" d="M 300,450 L 350,450"/>
+                        <path id="cable-6" class="network-cable" d="M 450,450 L 500,450"/>
+                        <path id="cable-7" class="network-cable" d="M 600,450 L 650,450"/>
+                        <path id="cable-8" class="network-cable" d="M 750,450 L 800,450"/>
+                        <path id="cable-9" class="network-cable" d="M 800,400 L 800,350"/>
+                    </g>
+
+                    <!-- Packets Layer -->
+                    <g id="packets-layer"></g>
+
+                    <!-- Devices Layer -->
+                    <g id="devices-layer">
+                        <!-- Operator PC -->
+                        <g class="device-group" data-device="operator-pc" transform="translate(100, 50)">
+                            <rect class="device-body" x="-40" y="-15" width="80" height="50" rx="8" fill="rgba(0,212,255,0.1)" stroke="rgba(0,212,255,0.6)" stroke-width="2"/>
+                            <text x="0" y="-25" class="device-label">Operator PC</text>
+                            <text x="0" y="55" class="device-ip">192.168.1.10</text>
+                            <rect x="-25" y="-5" width="50" height="30" rx="3" fill="rgba(0,0,0,0.5)" stroke="rgba(0,212,255,0.4)"/>
+                            <line x1="-20" y1="8" x2="20" y2="8" stroke="rgba(0,212,255,0.3)"/>
+                            <rect x="-20" y="15" width="5" height="5" fill="rgba(16,185,129,0.8)"/>
+                        </g>
+
+                        <!-- Switch -->
+                        <g class="device-group" data-device="switch" transform="translate(100, 160)">
+                            <rect class="device-body" x="-45" y="-15" width="90" height="40" rx="6" fill="rgba(0,255,213,0.1)" stroke="rgba(0,255,213,0.6)" stroke-width="2"/>
+                            <text x="0" y="-25" class="device-label">Switch</text>
+                            <text x="0" y="45" class="device-ip">Layer 2</text>
+                            <rect x="-35" y="-5" width="70" height="20" rx="2" fill="rgba(0,0,0,0.5)"/>
+                            <circle cx="-25" cy="5" r="3" fill="rgba(16,185,129,0.8)"/>
+                            <circle cx="-10" cy="5" r="3" fill="rgba(16,185,129,0.8)"/>
+                            <circle cx="5" cy="5" r="3" fill="rgba(16,185,129,0.8)"/>
+                            <circle cx="20" cy="5" r="3" fill="rgba(245,158,11,0.8)"/>
+                        </g>
+
+                        <!-- Router -->
+                        <g class="device-group" data-device="router" transform="translate(100, 250)">
+                            <rect class="device-body" x="-40" y="-20" width="80" height="50" rx="8" fill="rgba(139,92,246,0.1)" stroke="rgba(139,92,246,0.6)" stroke-width="2"/>
+                            <text x="0" y="-30" class="device-label">Router</text>
+                            <text x="0" y="55" class="device-ip">192.168.1.1</text>
+                            <path d="M-20,0 L20,0 L10,-15 L-10,-15 Z" fill="rgba(139,92,246,0.3)" stroke="rgba(139,92,246,0.8)" stroke-width="2"/>
+                            <circle cx="0" cy="-5" r="2" fill="rgba(16,185,129,0.8)"/>
+                            <line x1="-15" y1="8" x2="15" y2="8" stroke="rgba(139,92,246,0.5)" stroke-width="2"/>
+                        </g>
+
+                        <!-- Firewall -->
+                        <g class="device-group" data-device="firewall" transform="translate(100, 340)">
+                            <rect class="device-body" x="-40" y="-20" width="80" height="50" rx="8" fill="rgba(239,68,68,0.1)" stroke="rgba(239,68,68,0.6)" stroke-width="2"/>
+                            <text x="0" y="-30" class="device-label">Firewall</text>
+                            <text x="0" y="55" class="device-ip">10.0.0.1</text>
+                            <path d="M-15,-10 L-15,10 L15,10 L15,-10 Z" fill="rgba(239,68,68,0.2)" stroke="rgba(239,68,68,0.8)" stroke-width="2"/>
+                            <line x1="-5" y1="0" x2="5" y2="-8" stroke="rgba(239,68,68,0.8)" stroke-width="2"/>
+                            <line x1="-5" y1="0" x2="5" y2="8" stroke="rgba(239,68,68,0.8)" stroke-width="2"/>
+                        </g>
+
+                        <!-- Internet Cloud -->
+                        <g class="device-group" data-device="internet" transform="translate(250, 450)">
+                            <ellipse class="device-body" cx="0" cy="0" rx="50" ry="30" fill="rgba(0,212,255,0.1)" stroke="rgba(0,212,255,0.6)" stroke-width="2"/>
+                            <text x="0" y="-40" class="device-label">Internet</text>
+                            <text x="0" y="50" class="device-ip">WAN</text>
+                            <text x="0" y="5" fill="rgba(0,212,255,0.8)" font-size="12" text-anchor="middle">☁</text>
+                        </g>
+
+                        <!-- DNS Server -->
+                        <g class="device-group" data-device="dns" transform="translate(400, 450)">
+                            <rect class="device-body" x="-40" y="-25" width="80" height="55" rx="8" fill="rgba(139,92,246,0.1)" stroke="rgba(139,92,246,0.6)" stroke-width="2"/>
+                            <text x="0" y="-35" class="device-label">DNS Server</text>
+                            <text x="0" y="55" class="device-ip">8.8.8.8</text>
+                            <rect x="-25" y="-15" width="50" height="35" rx="3" fill="rgba(0,0,0,0.5)"/>
+                            <line x1="-20" y1="-8" x2="20" y2="-8" stroke="rgba(139,92,246,0.4)"/>
+                            <line x1="-20" y1="0" x2="15" y2="0" stroke="rgba(139,92,246,0.4)"/>
+                            <line x1="-20" y1="8" x2="10" y2="8" stroke="rgba(139,92,246,0.4)"/>
+                        </g>
+
+                        <!-- Web Server -->
+                        <g class="device-group" data-device="webserver" transform="translate(550, 450)">
+                            <rect class="device-body" x="-40" y="-25" width="80" height="55" rx="8" fill="rgba(34,197,94,0.1)" stroke="rgba(34,197,94,0.6)" stroke-width="2"/>
+                            <text x="0" y="-35" class="device-label">Web Server</text>
+                            <text x="0" y="55" class="device-ip">93.184.216.34</text>
+                            <rect x="-25" y="-15" width="50" height="35" rx="3" fill="rgba(0,0,0,0.5)"/>
+                            <text x="0" y="5" fill="rgba(34,197,94,0.8)" font-size="16" text-anchor="middle">⬡</text>
+                        </g>
+
+                        <!-- Database Server -->
+                        <g class="device-group" data-device="database" transform="translate(700, 450)">
+                            <rect class="device-body" x="-40" y="-25" width="80" height="55" rx="8" fill="rgba(245,158,11,0.1)" stroke="rgba(245,158,11,0.6)" stroke-width="2"/>
+                            <text x="0" y="-35" class="device-label">Database</text>
+                            <text x="0" y="55" class="device-ip">10.10.10.50</text>
+                            <ellipse cx="0" cy="-10" rx="25" ry="10" fill="rgba(245,158,11,0.3)" stroke="rgba(245,158,11,0.8)"/>
+                            <path d="M-25,-10 L-25,10 A25,10 0 0,0 25,10 L25,-10" fill="rgba(0,0,0,0.5)" stroke="rgba(245,158,11,0.6)"/>
+                            <ellipse cx="0" cy="10" rx="25" ry="10" fill="rgba(245,158,11,0.2)" stroke="rgba(245,158,11,0.6)"/>
+                        </g>
+
+                        <!-- Email Server -->
+                        <g class="device-group" data-device="email" transform="translate(800, 450)">
+                            <rect class="device-body" x="-40" y="-25" width="80" height="55" rx="8" fill="rgba(236,72,153,0.1)" stroke="rgba(236,72,153,0.6)" stroke-width="2"/>
+                            <text x="0" y="-35" class="device-label">Email Server</text>
+                            <text x="0" y="55" class="device-ip">10.10.10.60</text>
+                            <rect x="-25" y="-15" width="50" height="35" rx="3" fill="rgba(0,0,0,0.5)"/>
+                            <path d="M-18,-8 L0,5 L18,-8" fill="none" stroke="rgba(236,72,153,0.8)" stroke-width="2"/>
+                            <rect x="-18" y="-8" width="36" height="20" fill="none" stroke="rgba(236,72,153,0.6)" stroke-width="2"/>
+                        </g>
+
+                        <!-- File Server -->
+                        <g class="device-group" data-device="fileserver" transform="translate(800, 320)">
+                            <rect class="device-body" x="-40" y="-25" width="80" height="55" rx="8" fill="rgba(6,182,212,0.1)" stroke="rgba(6,182,212,0.6)" stroke-width="2"/>
+                            <text x="0" y="-35" class="device-label">File Server</text>
+                            <text x="0" y="55" class="device-ip">10.10.10.70</text>
+                            <rect x="-25" y="-18" width="50" height="12" rx="2" fill="rgba(0,0,0,0.5)" stroke="rgba(6,182,212,0.5)"/>
+                            <rect x="-25" y="-4" width="50" height="12" rx="2" fill="rgba(0,0,0,0.5)" stroke="rgba(6,182,212,0.5)"/>
+                            <rect x="-25" y="10" width="50" height="12" rx="2" fill="rgba(0,0,0,0.5)" stroke="rgba(6,182,212,0.5)"/>
+                        </g>
+
+                        <!-- Victim Machine -->
+                        <g class="device-group" data-device="victim" transform="translate(800, 200)">
+                            <rect class="device-body" x="-40" y="-25" width="80" height="55" rx="8" fill="rgba(244,63,95,0.1)" stroke="rgba(244,63,95,0.6)" stroke-width="2"/>
+                            <text x="0" y="-35" class="device-label">Target Server</text>
+                            <text x="0" y="55" class="device-ip">10.10.10.100</text>
+                            <rect x="-25" y="-15" width="50" height="35" rx="3" fill="rgba(0,0,0,0.5)" stroke="rgba(244,63,95,0.4)"/>
+                            <text x="0" y="5" fill="rgba(244,63,95,0.8)" font-size="14" text-anchor="middle">◎</text>
+                        </g>
+                    </g>
+                </svg>
+
+                <!-- Mission Panel -->
+                <div class="mission-panel" id="mission-panel">
+                    <div class="mission-header" onclick="App.missions.toggle()">
+                        <span class="mission-title">Mission Control</span>
+                        <span class="mission-toggle">▼</span>
+                    </div>
+                    <div class="mission-body">
+                        <div class="xp-display">
+                            <span class="xp-label">Total XP</span>
+                            <span class="xp-value" id="total-xp">0</span>
+                        </div>
+                        <div class="current-mission">
+                            <div class="mission-name" id="current-mission-name">Network Discovery</div>
+                            <div class="mission-desc" id="current-mission-desc">Explore the network and identify all devices</div>
+                            <div class="mission-progress">
+                                <div class="mission-progress-bar" id="mission-progress" style="width: 0%"></div>
+                            </div>
+                            <div class="mission-reward">
+                                <span>+<span id="mission-xp">50</span> XP</span>
+                            </div>
+                        </div>
+                        <div class="mission-list" id="mission-list"></div>
+                    </div>
+                </div>
+
+                <!-- Legend -->
+                <div class="legend-panel">
+                    <div class="legend-title">Protocol Colors</div>
+                    <div class="legend-items">
+                        <div class="legend-item"><div class="legend-dot arp"></div><span class="legend-text">ARP</span></div>
+                        <div class="legend-item"><div class="legend-dot icmp"></div><span class="legend-text">ICMP</span></div>
+                        <div class="legend-item"><div class="legend-dot dns"></div><span class="legend-text">DNS</span></div>
+                        <div class="legend-item"><div class="legend-dot tcp"></div><span class="legend-text">TCP</span></div>
+                        <div class="legend-item"><div class="legend-dot udp"></div><span class="legend-text">UDP</span></div>
+                        <div class="legend-item"><div class="legend-dot http"></div><span class="legend-text">HTTP</span></div>
+                        <div class="legend-item"><div class="legend-dot https"></div><span class="legend-text">HTTPS</span></div>
+                    </div>
+                </div>
+
+                <!-- Packet Capture Window -->
+                <div class="capture-window" id="capture-window">
+                    <div class="capture-header">
+                        <span class="capture-title">tcpdump -i eth0</span>
+                        <button class="capture-close" onclick="App.capture.stop()">✕</button>
+                    </div>
+                    <div class="capture-content" id="capture-content"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inspector Panel -->
+        <div class="panel inspector-panel" id="inspector-panel">
+            <div class="panel-header">
+                <span class="panel-title" id="inspector-title">Device Inspector</span>
+                <button class="close-inspector" onclick="App.inspector.close()">✕</button>
+            </div>
+            <div class="inspector-content" id="inspector-content"></div>
+        </div>
+
+        <!-- Timeline Panel -->
+        <div class="panel timeline-panel">
+            <div class="panel-header">
+                <span class="panel-title">Live Timeline</span>
+            </div>
+            <div class="timeline-content">
+                <div class="timeline-events" id="timeline-events"></div>
+                <div class="stats-bar">
+                    <div class="stat-item">
+                        <span class="stat-label">Sent:</span>
+                        <span class="stat-value sent" id="stat-sent">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Received:</span>
+                        <span class="stat-value received" id="stat-received">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Latency:</span>
+                        <span class="stat-value latency" id="stat-latency">0ms</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Dropped:</span>
+                        <span class="stat-value dropped" id="stat-dropped">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <h1>Networking Simulator</h1>
-    <p class="version">v0.1 Alpha — Experimental Build</p>
-
-    <div class="panel">
-      <h2>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10"></circle>
-          <line x1="12" y1="16" x2="12" y2="12"></line>
-          <line x1="12" y1="8" x2="12.01" y2="8"></line>
-        </svg>
-        About This Simulator
-      </h2>
-      <p>
-        This is a placeholder for the Networking Simulator. The actual simulator will be a fully interactive
-        packet visualization and network topology environment. Replace this file with your custom simulator.
-      </p>
-      <ul>
-        <li>
-          <span style="color: var(--neon);">&#9632;</span>
-          Interactive packet visualization
-        </li>
-        <li>
-          <span style="color: var(--cyan);">&#9632;</span>
-          Network topology builder
-        </li>
-        <li>
-          <span style="color: var(--neon);">&#9632;</span>
-          Routing protocol simulation
-        </li>
-        <li>
-          <span style="color: var(--cyan);">&#9632;</span>
-          Packet capture and analysis
-        </li>
-      </ul>
-      <div class="progress-bar">
-        <div class="progress-fill"></div>
-      </div>
-      <p style="font-size: 0.75rem; margin-top: 0.5rem; margin-bottom: 0;">
-        Development progress: 40%
-      </p>
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <div class="toast-content">
+            <div class="toast-icon">✓</div>
+            <div class="toast-message">
+                <h4 id="toast-title">Mission Complete!</h4>
+                <p id="toast-desc">Keep exploring the network</p>
+            </div>
+            <span class="toast-xp" id="toast-xp">+50 XP</span>
+        </div>
     </div>
 
-    <div class="panel">
-      <h2>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-        </svg>
-        Developer Note
-      </h2>
-      <p>
-        To add your own simulator, replace this <code style="color: var(--cyan);">index.html</code> file
-        with your custom implementation. The Quantum Core shell provides the feedback panel — your simulator
-        runs in a full-screen iframe with no external scrollbars.
-      </p>
-    </div>
+    <script>
+        const App = {
+            // =================== DEVICE DATA ===================
+            devices: {
+                'operator-pc': {
+                    name: 'Operator PC',
+                    type: 'workstation',
+                    hostname: 'quantum-core',
+                    ip: '192.168.1.10',
+                    mac: '00:1A:2B:3C:4D:5E',
+                    gateway: '192.168.1.1',
+                    dns: '8.8.8.8',
+                    os: 'Ubuntu 22.04 LTS',
+                    interfaces: ['eth0', 'lo'],
+                    ports: [22, 80, 443],
+                    position: { x: 100, y: 50 }
+                },
+                'switch': {
+                    name: 'Core Switch',
+                    type: 'switch',
+                    model: 'Cisco Catalyst 2960',
+                    macTable: {
+                        '00:1A:2B:3C:4D:5E': 'Port 1',
+                        '00:2B:3C:4D:5E:6F': 'Port 2',
+                        '00:3C:4D:5E:6F:7A': 'Port 3'
+                    },
+                    ports: 24,
+                    connectedDevices: 3,
+                    vlan: [1, 10, 20],
+                    position: { x: 100, y: 160 }
+                },
+                'router': {
+                    name: 'Edge Router',
+                    type: 'router',
+                    ip: '192.168.1.1',
+                    interfaces: ['eth0: 192.168.1.1/24', 'eth1: 10.0.0.1/30', 'lo: 127.0.0.1'],
+                    routingTable: [
+                        { dest: '192.168.1.0/24', iface: 'eth0', metric: 0 },
+                        { dest: '10.0.0.0/30', iface: 'eth1', metric: 0 },
+                        { dest: '0.0.0.0/0', gateway: '10.0.0.2', iface: 'eth1', metric: 100 }
+                    ],
+                    gateway: '10.0.0.2',
+                    nat: 'Enabled',
+                    firewallStatus: 'Active',
+                    arpTable: [
+                        { ip: '192.168.1.10', mac: '00:1A:2B:3C:4D:5E' },
+                        { ip: '10.0.0.2', mac: '00:4D:5E:6F:7A:8B' }
+                    ],
+                    position: { x: 100, y: 250 }
+                },
+                'firewall': {
+                    name: 'Network Firewall',
+                    type: 'firewall',
+                    ip: '10.0.0.1',
+                    allowedRules: [
+                        { port: 80, proto: 'TCP', desc: 'HTTP' },
+                        { port: 443, proto: 'TCP', desc: 'HTTPS' },
+                        { port: 53, proto: 'UDP', desc: 'DNS' },
+                        { port: 22, proto: 'TCP', desc: 'SSH' }
+                    ],
+                    blockedRules: [
+                        { port: 23, proto: 'TCP', desc: 'Telnet' },
+                        { port: 445, proto: 'TCP', desc: 'SMB' }
+                    ],
+                    packetsDropped: 127,
+                    packetsPassed: 5432,
+                    position: { x: 100, y: 340 }
+                },
+                'internet': {
+                    name: 'Internet WAN',
+                    type: 'cloud',
+                    status: 'Connected',
+                    bandwidth: '1 Gbps',
+                    position: { x: 250, y: 450 }
+                },
+                'dns': {
+                    name: 'DNS Server',
+                    type: 'server',
+                    ip: '8.8.8.8',
+                    resolver: 'Google Public DNS',
+                    cache: ['example.com: 93.184.216.34', 'google.com: 142.250.80.46'],
+                    recentQueries: ['quantum-core.local', 'api.github.com'],
+                    services: ['DNS', 'DNS-over-HTTPS'],
+                    cpu: '12%',
+                    ram: '45%',
+                    disk: '23%',
+                    status: 'Running',
+                    position: { x: 400, y: 450 }
+                },
+                'webserver': {
+                    name: 'Web Server',
+                    type: 'server',
+                    ip: '93.184.216.34',
+                    services: ['HTTP', 'HTTPS'],
+                    cpu: '34%',
+                    ram: '62%',
+                    disk: '55%',
+                    ports: [80, 443, 8080],
+                    status: 'Running',
+                    position: { x: 550, y: 450 }
+                },
+                'database': {
+                    name: 'Database Server',
+                    type: 'server',
+                    ip: '10.10.10.50',
+                    engine: 'PostgreSQL 15',
+                    connections: 42,
+                    tables: 156,
+                    queries: 1247,
+                    cpu: '67%',
+                    ram: '78%',
+                    disk: '82%',
+                    ports: [5432],
+                    status: 'Running',
+                    position: { x: 700, y: 450 }
+                },
+                'email': {
+                    name: 'Email Server',
+                    type: 'server',
+                    ip: '10.10.10.60',
+                    smtp: 'Active :25',
+                    imap: 'Active :143',
+                    pop3: 'Active :110',
+                    cpu: '28%',
+                    ram: '41%',
+                    disk: '72%',
+                    ports: [25, 110, 143, 993, 995],
+                    status: 'Running',
+                    position: { x: 800, y: 450 }
+                },
+                'fileserver': {
+                    name: 'File Server',
+                    type: 'server',
+                    ip: '10.10.10.70',
+                    smb: 'Active :445',
+                    nfs: 'Active :2049',
+                    ftp: 'Inactive :21',
+                    cpu: '15%',
+                    ram: '38%',
+                    disk: '91%',
+                    ports: [21, 445, 2049],
+                    status: 'Running',
+                    position: { x: 800, y: 320 }
+                },
+                'victim': {
+                    name: 'Target Server',
+                    type: 'server',
+                    hostname: 'target-server',
+                    ip: '10.10.10.100',
+                    os: 'CentOS 8',
+                    ports: [22, 80, 443, 3306],
+                    status: 'Vulnerable',
+                    services: ['SSH', 'HTTP', 'MySQL'],
+                    position: { x: 800, y: 200 }
+                }
+            },
 
-    <div class="status">
-      <span class="status-dot"></span>
-      Waiting for simulator implementation
-    </div>
+            // =================== NETWORK PATHS ===================
+            paths: {
+                'operator-pc': ['operator-pc', 'switch', 'router', 'firewall', 'internet', 'dns'],
+                'web': ['operator-pc', 'switch', 'router', 'firewall', 'internet', 'webserver'],
+                'database': ['operator-pc', 'switch', 'router', 'firewall', 'internet', 'database'],
+                'email': ['operator-pc', 'switch', 'router', 'firewall', 'internet', 'email'],
+                'fileserver': ['operator-pc', 'switch', 'router', 'firewall', 'internet', 'fileserver'],
+                'victim': ['operator-pc', 'switch', 'router', 'firewall', 'internet', 'fileserver', 'victim']
+            },
 
-    <p class="hint">
-      Use the feedback panel on the right to submit bug reports, feature requests, and rate your experience.
-    </p>
-  </div>
+            // =================== PROTOCOL COLORS ===================
+            protocolColors: {
+                ARP: '#f59e0b',
+                ICMP: '#10b981',
+                DNS: '#8b5cf6',
+                TCP: '#00d4ff',
+                UDP: '#06b6d4',
+                HTTP: '#f43f5e',
+                HTTPS: '#22c55e',
+                FTP: '#ec4899',
+                SSH: '#6366f1'
+            },
+
+            // =================== STATE ===================
+            state: {
+                xp: 0,
+                packetsSent: 0,
+                packetsReceived: 0,
+                packetsDropped: 0,
+                activePackets: [],
+                currentMission: 0,
+                completedMissions: [],
+                history: [],
+                historyIndex: -1,
+                captureActive: false,
+                capturePackets: []
+            },
+
+            // =================== MISSIONS ===================
+            missions: {
+                list: [
+                    { id: 0, name: 'Network Discovery', desc: 'Explore the network and identify all devices', xp: 50, progress: 0, target: 1 },
+                    { id: 1, name: 'Verify Connectivity', desc: 'Ping the web server to verify connectivity', xp: 75, progress: 0, target: 1 },
+                    { id: 2, name: 'DNS Resolution', desc: 'Perform a DNS lookup for example.com', xp: 60, progress: 0, target: 1 },
+                    { id: 3, name: 'Trace Route', desc: 'Run traceroute to the database server', xp: 80, progress: 0, target: 1 },
+                    { id: 4, name: 'Router Inspection', desc: 'Inspect the router and view routing table', xp: 70, progress: 0, target: 1 },
+                    { id: 5, name: 'Packet Capture', desc: 'Capture network traffic with tcpdump', xp: 90, progress: 0, target: 1 },
+                    { id: 6, name: 'Port Scan', desc: 'Scan the target server for open ports', xp: 100, progress: 0, target: 1 },
+                    { id: 7, name: 'HTTP Request', desc: 'Perform a curl request to the web server', xp: 85, progress: 0, target: 1 }
+                ],
+
+                init() {
+                    this.render();
+                },
+
+                render() {
+                    const list = document.getElementById('mission-list');
+                    list.innerHTML = this.list.map(m => `
+                        <div class="mission-item ${m.id === App.state.currentMission ? 'active' : ''} ${App.state.completedMissions.includes(m.id) ? 'completed' : ''}" onclick="App.missions.select(${m.id})">
+                            <div class="mission-check">${App.state.completedMissions.includes(m.id) ? '✓' : ''}</div>
+                            <span class="mission-item-name">${m.name}</span>
+                            <span class="mission-item-xp">+${m.xp} XP</span>
+                        </div>
+                    `).join('');
+                },
+
+                toggle() {
+                    document.getElementById('mission-panel').classList.toggle('collapsed');
+                },
+
+                select(id) {
+                    App.state.currentMission = id;
+                    const mission = this.list[id];
+                    document.getElementById('current-mission-name').textContent = mission.name;
+                    document.getElementById('current-mission-desc').textContent = mission.desc;
+                    document.getElementById('mission-xp').textContent = mission.xp;
+                    document.getElementById('header-mission').textContent = mission.name;
+                    this.updateProgress(0);
+                    this.render();
+                },
+
+                updateProgress(progress) {
+                    const mission = this.list[App.state.currentMission];
+                    mission.progress = Math.min(progress, mission.target);
+                    const percent = (mission.progress / mission.target) * 100;
+                    document.getElementById('mission-progress').style.width = percent + '%';
+                },
+
+                complete() {
+                    const mission = this.list[App.state.currentMission];
+                    if (!App.state.completedMissions.includes(mission.id)) {
+                        App.state.completedMissions.push(mission.id);
+                        App.state.xp += mission.xp;
+                        App.ui.updateXP();
+                        App.ui.showToast('Mission Complete!', mission.name, mission.xp);
+                        this.render();
+                        if (App.state.currentMission < this.list.length - 1) {
+                            this.select(App.state.currentMission + 1);
+                        }
+                    }
+                }
+            },
+
+            // =================== TERMINAL ===================
+            terminal: {
+                input: null,
+                output: null,
+
+                init() {
+                    this.input = document.getElementById('terminal-input');
+                    this.output = document.getElementById('terminal');
+                    this.input.addEventListener('keydown', (e) => this.handleKey(e));
+                    // Focus input on page load
+                    setTimeout(() => this.input.focus(), 100);
+                },
+
+                handleKey(e) {
+                    if (e.key === 'Enter') {
+                        const cmd = this.input.value.trim();
+                        if (cmd) {
+                            this.execute(cmd);
+                            App.state.history.push(cmd);
+                            App.state.historyIndex = App.state.history.length;
+                        }
+                        this.input.value = '';
+                    } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        if (App.state.historyIndex > 0) {
+                            App.state.historyIndex--;
+                            this.input.value = App.state.history[App.state.historyIndex];
+                        }
+                    } else if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        if (App.state.historyIndex < App.state.history.length - 1) {
+                            App.state.historyIndex++;
+                            this.input.value = App.state.history[App.state.historyIndex];
+                        } else {
+                            App.state.historyIndex = App.state.history.length;
+                            this.input.value = '';
+                        }
+                    }
+                },
+
+                print(prompt, text, className = '') {
+                    const line = document.createElement('div');
+                    line.className = 'terminal-line';
+                    if (prompt) {
+                        line.innerHTML = `<span class="terminal-prompt">${prompt}</span><span class="terminal-command ${className}">${text}</span>`;
+                    } else {
+                        line.innerHTML = `<span class="terminal-output ${className}">${text}</span>`;
+                    }
+                    this.output.appendChild(line);
+                    this.output.scrollTop = this.output.scrollHeight;
+                },
+
+                printOutput(text, className = 'terminal-output') {
+                    const lines = text.split('\n');
+                    lines.forEach(line => {
+                        const el = document.createElement('div');
+                        el.className = 'terminal-line';
+                        el.innerHTML = `<span class="${className}">${line}</span>`;
+                        this.output.appendChild(el);
+                    });
+                    this.output.scrollTop = this.output.scrollHeight;
+                },
+
+                clear() {
+                    const lines = this.output.querySelectorAll('.terminal-line');
+                    lines.forEach(l => l.remove());
+                },
+
+                execute(cmd) {
+                    this.print('operator@quantum-core:~$ ', cmd);
+                    const parts = cmd.split(' ');
+                    const command = parts[0].toLowerCase();
+                    const args = parts.slice(1);
+
+                    switch (command) {
+                        case 'help': this.cmdHelp(); break;
+                        case 'clear': this.clear(); break;
+                        case 'history': this.cmdHistory(); break;
+                        case 'pwd': this.printOutput('/home/operator'); break;
+                        case 'ls': this.cmdLs(args); break;
+                        case 'cd': this.printOutput('Directory changed'); break;
+                        case 'tree': this.cmdTree(); break;
+                        case 'cat': this.cmdCat(args); break;
+                        case 'hostname': this.printOutput('quantum-core'); break;
+                        case 'whoami': this.printOutput('operator'); break;
+                        case 'echo': this.printOutput(args.join(' ')); break;
+                        case 'ping': this.cmdPing(args); break;
+                        case 'traceroute': this.cmdTraceroute(args); break;
+                        case 'arp': this.cmdArp(); break;
+                        case 'ip': this.cmdIp(args); break;
+                        case 'ifconfig': this.cmdIfconfig(); break;
+                        case 'route': this.cmdRoute(); break;
+                        case 'netstat': this.cmdNetstat(); break;
+                        case 'ss': this.cmdSs(); break;
+                        case 'nslookup': this.cmdNslookup(args); break;
+                        case 'dig': this.cmdDig(args); break;
+                        case 'host': this.cmdHost(args); break;
+                        case 'curl': this.cmdCurl(args); break;
+                        case 'wget': this.cmdWget(args); break;
+                        case 'tcpdump': this.cmdTcpdump(args); break;
+                        case 'nmap': this.cmdNmap(args); break;
+                        default: this.printOutput(`Command not found: ${command}`, 'terminal-error');
+                    }
+                },
+
+                cmdHelp() {
+                    const help = `Available Commands:
+
+  File Operations:
+    pwd, ls, cd, tree, cat, echo
+
+  System:
+    hostname, whoami, history, clear
+
+  Network Diagnostics:
+    ping <host>        - Send ICMP echo requests
+    traceroute <host>  - Trace packet route
+    arp               - Display ARP table
+    ip addr           - Show IP addresses
+    ifconfig          - Interface configuration
+    route             - Display routing table
+    netstat           - Network statistics
+    ss                - Socket statistics
+
+  DNS:
+    nslookup <domain> - Query DNS
+    dig <domain>      - DNS lookup utility
+    host <domain>     - DNS lookup
+
+  Data Transfer:
+    curl <url>        - Transfer data
+    wget <url>        - Download files
+
+  Security:
+    tcpdump           - Packet capture
+    nmap <host>       - Port scanner`;
+                    this.printOutput(help);
+                },
+
+                cmdHistory() {
+                    App.state.history.forEach((cmd, i) => {
+                        this.printOutput(`  ${i + 1}  ${cmd}`);
+                    });
+                },
+
+                cmdLs(args) {
+                    if (args.includes('-la') || args.includes('-l')) {
+                        const output = `total 24
+drwxr-xr-x  4 operator operator 4096 Jan 15 10:23 .
+drwxr-xr-x  3 root     root     4096 Jan 15 09:00 ..
+-rw-------  1 operator operator  220 Jan 15 09:00 .bash_history
+-rw-r--r--  1 operator operator   45 Jan 15 10:23 .bashrc
+drwxr-xr-x  2 operator operator 4096 Jan 15 10:30 Documents
+drwxr-xr-x  2 operator operator 4096 Jan 15 10:30 Projects`;
+                        this.printOutput(output);
+                    } else {
+                        this.printOutput('Documents  Projects  .bashrc  .bash_history');
+                    }
+                },
+
+                cmdTree() {
+                    const tree = `.
+├── Documents
+│   ├── notes.txt
+│   └── reports/
+└── Projects
+    ├── network-lab/
+    └── security-tools/`;
+                    this.printOutput(tree);
+                },
+
+                cmdCat(args) {
+                    if (args.length === 0) {
+                        this.printOutput('Usage: cat <file>', 'terminal-error');
+                        return;
+                    }
+                    const files = {
+                        '.bashrc': '# ~/.bashrc\nexport PATH=$PATH:/usr/local/bin\nalias ll="ls -la"',
+                        'notes.txt': 'Quantum Core Networking Lab\n- Learn OSI model\n- Practice subnetting\n- Master routing protocols'
+                    };
+                    const content = files[args[0]] || `cat: ${args[0]}: No such file or directory`;
+                    this.printOutput(content, files[args[0]] ? '' : 'terminal-error');
+                },
+
+                cmdPing(args) {
+                    if (args.length === 0) {
+                        this.printOutput('Usage: ping <host>', 'terminal-error');
+                        return;
+                    }
+                    const host = args[0];
+                    App.ui.setProtocol('ICMP');
+
+                    let targetDevice = Object.values(App.devices).find(d => d.ip === host || d.name.toLowerCase().includes(host.toLowerCase()));
+                    if (!targetDevice) {
+                        targetDevice = App.devices.webserver;
+                    }
+
+                    App.animator.sendPacket('operator-pc', targetDevice.type === 'firewall' ? 'firewall' : 'webserver', 'ICMP', 4, () => {
+                        App.terminal.printOutput(`PING ${host} (${targetDevice.ip}) 56(84) bytes of data.`);
+                        let seq = 1;
+                        const sendPing = () => {
+                            if (seq <= 4) {
+                                const latency = Math.floor(Math.random() * 50) + 10;
+                                App.terminal.printOutput(`64 bytes from ${targetDevice.ip}: icmp_seq=${seq} ttl=64 time=${latency}.0 ms`, 'terminal-success');
+                                App.timeline.add('ICMP', `Echo reply from ${targetDevice.ip}`, `latency=${latency}ms`);
+                                App.state.packetsSent++;
+                                App.state.packetsReceived++;
+                                App.ui.updateStats();
+                                seq++;
+                                setTimeout(sendPing, 500);
+                            } else {
+                                App.terminal.printOutput(`\n--- ${host} ping statistics ---`);
+                                App.terminal.printOutput('4 packets transmitted, 4 received, 0% packet loss');
+                                App.missions.updateProgress(1);
+                                if (App.state.currentMission === 1) App.missions.complete();
+                            }
+                        };
+                        setTimeout(sendPing, 300);
+                    });
+                },
+
+                cmdTraceroute(args) {
+                    if (args.length === 0) {
+                        this.printOutput('Usage: traceroute <host>', 'terminal-error');
+                        return;
+                    }
+                    const host = args[0];
+                    App.ui.setProtocol('ICMP');
+                    this.printOutput(`traceroute to ${host}, 30 hops max, 60 byte packets`);
+
+                    const hops = ['192.168.1.1', '10.0.0.1', 'isp-gateway.net', 'core-router.net', host];
+                    let hopNum = 1;
+
+                    App.animator.sendPacket('operator-pc', 'webserver', 'ICMP', 1);
+
+                    const showHop = () => {
+                        if (hopNum <= hops.length) {
+                            const latency = Math.floor(Math.random() * 30) + hopNum * 10;
+                            this.printOutput(` ${hopNum}  ${hops[hopNum - 1]}  ${latency}.0 ms`);
+                            App.timeline.add('ICMP', `Hop ${hopNum}: ${hops[hopNum - 1]}`, `${latency}ms`);
+                            hopNum++;
+                            setTimeout(showHop, 400);
+                        } else {
+                            App.missions.updateProgress(1);
+                            if (App.state.currentMission === 2) App.missions.complete();
+                        }
+                    };
+                    setTimeout(showHop, 500);
+                },
+
+                cmdArp() {
+                    App.animator.sendPacket('operator-pc', 'switch', 'ARP', 1);
+                    setTimeout(() => {
+                        const arp = `Address                  HWtype  HWaddress           Flags Mask            Iface
+192.168.1.1              ether   00:2b:3c:4d:5e:6f   C                     eth0
+10.0.0.2                  ether   00:4d:5e:6f:7a:8b   C                     eth1`;
+                        this.printOutput(arp);
+                        App.timeline.add('ARP', 'ARP table displayed', 'operator-pc');
+                    }, 500);
+                },
+
+                cmdIp(args) {
+                    if (args[0] === 'addr' || args[0] === 'a') {
+                        const output = `1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq state UP qlen 1000
+    link/ether 00:1a:2b:3c:4d:5e brd ff:ff:ff:ff:ff:ff
+    inet 192.168.1.10/24 brd 192.168.1.255 scope global eth0
+       valid_lft forever preferred_lft forever`;
+                        this.printOutput(output);
+                        App.timeline.add('TCP', 'Interface query', 'eth0');
+                    } else if (args[0] === 'route') {
+                        this.cmdRoute();
+                    } else {
+                        this.printOutput('Usage: ip [addr|route]', 'terminal-warning');
+                    }
+                },
+
+                cmdIfconfig() {
+                    const output = `eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 192.168.1.10  netmask 255.255.255.0  broadcast 192.168.1.255
+        inet6 fe80::21a:2bff:fe3c:4d5e  prefixlen 64  scopeid 0x20<link>
+        ether 00:1a:2b:3c:4d:5e  txqueuelen 1000  (Ethernet)
+        RX packets 45234  bytes 42345678 (40.4 MiB)
+        TX packets 12345  bytes 1234567 (1.1 MiB)
+
+lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
+        inet 127.0.0.1  netmask 255.0.0.0
+        loop  txqueuelen 1000  (Local Loopback)`;
+                    this.printOutput(output);
+                },
+
+                cmdRoute() {
+                    const output = `Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+default         192.168.1.1     0.0.0.0         UG    100    0        0 eth0
+10.0.0.0        *               255.255.255.252 U     0      0        0 eth1
+192.168.1.0     *               255.255.255.0   U     0      0        0 eth0`;
+                    this.printOutput(output);
+                },
+
+                cmdNetstat() {
+                    const output = `Active Internet connections
+Proto Recv-Q Send-Q Local Address           Foreign Address         State
+tcp        0      0 192.168.1.10:22        192.168.1.5:54321      ESTABLISHED
+tcp        0      0 192.168.1.10:443       93.184.216.34:80       TIME_WAIT
+udp        0      0 192.168.1.10:53        0.0.0.0:*               LISTEN`;
+                    this.printOutput(output);
+                    App.timeline.add('TCP', 'Connection table displayed', 'netstat');
+                },
+
+                cmdSs() {
+                    const output = `Netid State  Recv-Q  Send-Q  Local Address:Port    Peer Address:Port
+tcp   ESTAB  0       0       192.168.1.10:22      192.168.1.5:54321
+tcp   TIME-WAIT 0    0       192.168.1.10:443     93.184.216.34:80
+udp   UNCONN 0      0       192.168.1.10:53      0.0.0.0:*`;
+                    this.printOutput(output);
+                },
+
+                cmdNslookup(args) {
+                    const domain = args[0] || 'example.com';
+                    App.ui.setProtocol('DNS');
+
+                    App.animator.sendPacket('operator-pc', 'dns', 'DNS', 1, () => {
+                        const outputs = {
+                            'example.com': { ip: '93.184.216.34', server: '8.8.8.8' },
+                            'google.com': { ip: '142.250.80.46', server: '8.8.8.8' },
+                            'github.com': { ip: '140.82.121.4', server: '8.8.8.8' }
+                        };
+                        const result = outputs[domain] || { ip: '203.0.113.50', server: '8.8.8.8' };
+
+                        this.printOutput(`Server:     ${result.server}`);
+                        this.printOutput(`Address:    ${result.server}#53\n`);
+                        this.printOutput(`Name:    ${domain}`);
+                        this.printOutput(`Address:  ${result.ip}`);
+                        App.timeline.add('DNS', `Resolved ${domain} -> ${result.ip}`, '8.8.8.8');
+                        App.missions.updateProgress(1);
+                        if (App.state.currentMission === 2) App.missions.complete();
+                    });
+                },
+
+                cmdDig(args) {
+                    const domain = args[0] || 'example.com';
+                    App.ui.setProtocol('DNS');
+
+                    App.animator.sendPacket('operator-pc', 'dns', 'DNS', 1, () => {
+                        const output = `; <<>> DiG 9.16.1 <<>> ${domain}
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 12345
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+
+;; QUESTION SECTION:
+;${domain}.            IN  A
+
+;; ANSWER SECTION:
+${domain}.     300 IN  A   93.184.216.34
+
+;; Query time: 12 msec
+;; SERVER: 8.8.8.8#53(8.8.8.8)
+;; WHEN: ${new Date().toUTCString()}
+;; MSG SIZE  rcvd: 56`;
+                        this.printOutput(output);
+                    });
+                },
+
+                cmdHost(args) {
+                    const domain = args[0] || 'example.com';
+                    App.ui.setProtocol('DNS');
+
+                    App.animator.sendPacket('operator-pc', 'dns', 'DNS', 1, () => {
+                        this.printOutput(`${domain} has address 93.184.216.34`, 'terminal-success');
+                        this.printOutput(`${domain} mail is handled by 10 mail.${domain}.`);
+                    });
+                },
+
+                cmdCurl(args) {
+                    const url = args[0] || 'http://example.com';
+                    App.ui.setProtocol('HTTP');
+
+                    this.printOutput(`Trying 93.184.216.34:80...`);
+                    this.printOutput(`Connected to ${url.replace('http://', '')} (93.184.216.34) port 80`);
+
+                    App.animator.sendPacket('operator-pc', 'webserver', 'HTTP', 2, () => {
+                        const response = `HTTP/1.1 200 OK
+Date: ${new Date().toUTCString()}
+Content-Type: text/html; charset=UTF-8
+Transfer-Encoding: chunked
+Connection: keep-alive
+Server: nginx/1.18.0
+
+<!DOCTYPE html>
+<html>
+<head><title>Example Domain</title></head>
+<body>
+<h1>Example Domain</h1>
+<p>This domain is for use in illustrative examples.</p>
+</body>
+</html>`;
+                        this.printOutput(response);
+                        App.timeline.add('HTTP', 'Response received from web server', '200 OK');
+                        App.missions.updateProgress(1);
+                        if (App.state.currentMission === 7) App.missions.complete();
+                    });
+                },
+
+                cmdWget(args) {
+                    const url = args[0] || 'http://example.com/index.html';
+                    App.ui.setProtocol('HTTP');
+
+                    this.printOutput(`--2026-01-15 10:30:00--  ${url}`);
+                    this.printOutput(`Resolving ${url.split('/')[2]}... 93.184.216.34`);
+                    this.printOutput(`Connecting to ${url.split('/')[2]}|93.184.216.34|:80... connected.`);
+
+                    App.animator.sendPacket('operator-pc', 'webserver', 'HTTP', 1, () => {
+                        this.printOutput(`HTTP request sent, awaiting response... 200 OK`);
+                        this.printOutput(`Length: 1270 (1.2K) [text/html]`);
+                        this.printOutput(`Saving to: 'index.html'`, 'terminal-success');
+                        this.printOutput(`\n2026-01-15 10:30:01 (1.2 MB/s) - 'index.html' saved [1270/1270]`);
+                    });
+                },
+
+                cmdTcpdump(args) {
+                    App.capture.start();
+                },
+
+                cmdNmap(args) {
+                    const target = args[0] || '10.10.10.100';
+                    App.ui.setProtocol('TCP');
+
+                    this.printOutput(`Starting Nmap 7.94 ( https://nmap.org )`);
+
+                    const targetDevice = App.devices.victim;
+                    App.animator.animatePortScan('operator-pc', 'victim', () => {
+                        const output = `Nmap scan report for ${target}
+Host is up (0.0045s latency).
+Not shown: 996 closed ports
+PORT     STATE SERVICE
+22/tcp   open  ssh
+80/tcp   open  http
+443/tcp  open  https
+3306/tcp open  mysql
+
+Nmap done: 1 IP address (1 host up) scanned in 4.52 seconds`;
+                        this.printOutput(output);
+                        App.timeline.add('TCP', 'Port scan completed', `${target}: 4 ports open`);
+                        App.missions.updateProgress(1);
+                        if (App.state.currentMission === 6) App.missions.complete();
+                    });
+                }
+            },
+
+            // =================== PACKET ANIMATOR ===================
+            animator: {
+                svg: null,
+                packetsLayer: null,
+                cablesLayer: null,
+                animationId: null,
+
+                init() {
+                    this.svg = document.getElementById('network-canvas');
+                    this.packetsLayer = document.getElementById('packets-layer');
+                    this.cablesLayer = document.getElementById('cables-layer');
+                },
+
+                getDevicePosition(deviceId) {
+                    const device = App.devices[deviceId];
+                    if (device && device.position) {
+                        return device.position;
+                    }
+                    const element = document.querySelector(`[data-device="${deviceId}"]`);
+                    if (element) {
+                        const transform = element.getAttribute('transform');
+                        const match = transform.match(/translate\(([^,]+),\s*([^)]+)\)/);
+                        if (match) {
+                            return { x: parseFloat(match[1]), y: parseFloat(match[2]) };
+                        }
+                    }
+                    return { x: 100, y: 100 };
+                },
+
+                getPath(fromId, toId) {
+                    const positions = [];
+                    const from = App.devices[fromId];
+                    const to = App.devices[toId];
+
+                    if (!from || !to) return positions;
+
+                    if (fromId === 'operator-pc') {
+                        if (toId === 'dns' || toId === 'webserver' || toId === 'database' || toId === 'email') {
+                            positions.push(
+                                this.getDevicePosition('operator-pc'),
+                                this.getDevicePosition('switch'),
+                                this.getDevicePosition('router'),
+                                this.getDevicePosition('firewall'),
+                                this.getDevicePosition('internet'),
+                                this.getDevicePosition(toId)
+                            );
+                        } else {
+                            positions.push(
+                                this.getDevicePosition('operator-pc'),
+                                this.getDevicePosition(toId)
+                            );
+                        }
+                    } else {
+                        positions.push(this.getDevicePosition(fromId), this.getDevicePosition(toId));
+                    }
+
+                    return positions;
+                },
+
+                sendPacket(fromId, toId, protocol, count = 1, callback) {
+                    const path = this.getPath(fromId, toId);
+                    if (path.length === 0) return;
+
+                    const color = App.protocolColors[protocol] || '#00d4ff';
+                    let sent = 0;
+
+                    const animatePacket = () => {
+                        if (sent >= count) {
+                            if (callback) callback();
+                            return;
+                        }
+
+                        const packet = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                        packet.setAttribute('r', '8');
+                        packet.setAttribute('fill', color);
+                        packet.setAttribute('class', 'packet');
+                        packet.style.filter = `drop-shadow(0 0 8px ${color})`;
+                        this.packetsLayer.appendChild(packet);
+
+                        let pathIndex = 0;
+                        let progress = 0;
+                        const speed = 0.03;
+
+                        const animate = () => {
+                            if (pathIndex >= path.length - 1) {
+                                packet.remove();
+                                sent++;
+                                App.state.packetsReceived++;
+                                App.ui.updateStats();
+                                if (sent < count) {
+                                    setTimeout(animatePacket, 200);
+                                } else if (callback) {
+                                    callback();
+                                }
+                                return;
+                            }
+
+                            const current = path[pathIndex];
+                            const next = path[pathIndex + 1];
+
+                            progress += speed;
+
+                            if (progress >= 1) {
+                                progress = 0;
+                                pathIndex++;
+                                App.state.packetsSent++;
+                                App.ui.updateStats();
+                                App.timeline.add(protocol, `Packet forwarded to ${pathIndex < path.length ? 'next hop' : 'destination'}`, protocol);
+
+                                const cableId = Math.min(pathIndex, 9);
+                                this.flashCable(cableId);
+                                this.flashDevice(pathIndex < path.length ? path[pathIndex] : path[path.length - 1]);
+                            }
+
+                            const x = current.x + (next.x - current.x) * progress;
+                            const y = current.y + (next.y - current.y) * progress;
+                            packet.setAttribute('cx', x);
+                            packet.setAttribute('cy', y);
+
+                            requestAnimationFrame(animate);
+                        };
+
+                        animate();
+                    };
+
+                    App.state.packetsSent++;
+                    animatePacket();
+                },
+
+                animatePortScan(fromId, toId, callback) {
+                    const from = this.getDevicePosition(fromId);
+                    const to = this.getDevicePosition(toId);
+                    const ports = [22, 80, 443, 3306];
+                    let scansComplete = 0;
+
+                    ports.forEach((port, index) => {
+                        setTimeout(() => {
+                            App.capture.add('tcp', `${from.ip}:${Math.floor(Math.random() * 65535)} -> ${to.ip || toId}:${port} [SYN]`);
+
+                            const packet = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                            packet.setAttribute('r', '6');
+                            packet.setAttribute('fill', App.protocolColors.TCP);
+                            packet.style.filter = `drop-shadow(0 0 6px ${App.protocolColors.TCP})`;
+                            this.packetsLayer.appendChild(packet);
+
+                            let progress = 0;
+                            const animate = () => {
+                                progress += 0.02;
+                                const x = from.x + (to.x - from.x) * progress;
+                                const y = from.y + (to.y - from.y) * progress;
+                                packet.setAttribute('cx', x);
+                                packet.setAttribute('cy', y);
+
+                                if (progress >= 1) {
+                                    packet.remove();
+                                    App.capture.add('tcp', `${to.ip || toId}:${port} -> ${from.ip}:${Math.floor(Math.random() * 65535)} [SYN, ACK] Port Open`);
+                                    scansComplete++;
+                                    if (scansComplete === ports.length && callback) {
+                                        callback();
+                                    }
+                                } else {
+                                    requestAnimationFrame(animate);
+                                }
+                            };
+                            animate();
+                        }, index * 500);
+                    });
+                },
+
+                flashCable(index) {
+                    const cable = document.getElementById(`cable-${index}`);
+                    if (cable) {
+                        cable.classList.add('active');
+                        setTimeout(() => cable.classList.remove('active'), 300);
+                    }
+                },
+
+                flashDevice(position) {
+                    const devices = document.querySelectorAll('.device-group');
+                    devices.forEach(d => {
+                        const transform = d.getAttribute('transform');
+                        const match = transform.match(/translate\(([^,]+),\s*([^)]+)\)/);
+                        if (match) {
+                            const dx = parseFloat(match[1]);
+                            const dy = parseFloat(match[2]);
+                            if (Math.abs(dx - position.x) < 5 && Math.abs(dy - position.y) < 5) {
+                                const body = d.querySelector('.device-body');
+                                if (body) {
+                                    body.style.filter = 'drop-shadow(0 0 15px var(--neon-cyan))';
+                                    setTimeout(() => {
+                                        body.style.filter = '';
+                                    }, 200);
+                                }
+                            }
+                        }
+                    });
+                }
+            },
+
+            // =================== PACKET CAPTURE ===================
+            capture: {
+                window: null,
+                content: null,
+                active: false,
+                packets: [],
+
+                init() {
+                    this.window = document.getElementById('capture-window');
+                    this.content = document.getElementById('capture-content');
+                },
+
+                start() {
+                    this.active = true;
+                    this.window.classList.add('active');
+                    this.content.innerHTML = '';
+                    this.packets = [];
+                    App.state.captureActive = true;
+                    App.timeline.add('TCP', 'Packet capture started', 'eth0');
+                    App.missions.updateProgress(1);
+                    if (App.state.currentMission === 5) App.missions.complete();
+
+                    let count = 0;
+                    const interval = setInterval(() => {
+                        if (!this.active || count >= 20) {
+                            clearInterval(interval);
+                            return;
+                        }
+                        const protos = ['tcp', 'udp', 'icmp', 'dns', 'arp'];
+                        const proto = protos[Math.floor(Math.random() * protos.length)];
+                        const sources = ['192.168.1.10', '192.168.1.1', '8.8.8.8', '10.0.0.1'];
+                        const dests = ['8.8.8.8', '93.184.216.34', '10.10.10.50', '10.10.10.100'];
+                        const src = sources[Math.floor(Math.random() * sources.length)];
+                        const dst = dests[Math.floor(Math.random() * dests.length)];
+                        const sport = Math.floor(Math.random() * 65535);
+                        const dport = Math.floor(Math.random() * 65535);
+
+                        this.add(proto, `${src}:${sport} -> ${dst}:${dport} [${proto === 'tcp' ? 'SYN' : Math.random() > 0.5 ? 'REQ' : 'RES'}]`);
+                        count++;
+                    }, 200);
+                },
+
+                stop() {
+                    this.active = false;
+                    this.window.classList.remove('active');
+                    App.state.captureActive = false;
+                    App.timeline.add('TCP', 'Packet capture stopped', `${this.packets.length} packets`);
+                },
+
+                add(proto, info) {
+                    const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+                    const line = document.createElement('div');
+                    line.className = 'capture-line';
+                    line.innerHTML = `
+                        <span class="capture-time">${time}</span>
+                        <span class="capture-proto ${proto}">${proto.toUpperCase()}</span>
+                        <span class="capture-info">${info}</span>
+                    `;
+                    this.content.appendChild(line);
+                    this.content.scrollTop = this.content.scrollHeight;
+                    this.packets.push({ proto, info, time });
+                }
+            },
+
+            // =================== INSPECTOR ===================
+            inspector: {
+                panel: null,
+                title: null,
+                content: null,
+
+                init() {
+                    this.panel = document.getElementById('inspector-panel');
+                    this.title = document.getElementById('inspector-title');
+                    this.content = document.getElementById('inspector-content');
+                },
+
+                open(deviceId) {
+                    const device = App.devices[deviceId];
+                    if (!device) return;
+
+                    this.title.textContent = device.name;
+                    let html = '';
+
+                    switch (device.type) {
+                        case 'workstation':
+                            html = `
+                                <div class="inspector-section">
+                                    <div class="inspector-section-title">System Information</div>
+                                    <div class="inspector-row"><span class="inspector-label">Hostname</span><span class="inspector-value">${device.hostname}</span></div>
+                                    <div class="inspector-row"><span class="inspector-label">IP Address</span><span class="inspector-value">${device.ip}</span></div>
+                                    <div class="inspector-row"><span class="inspector-label">MAC Address</span><span class="inspector-value">${device.mac}</span></div>
+                                    <div class="inspector-row"><span class="inspector-label">Gateway</span><span class="inspector-value">${device.gateway}</span></div>
+                                    <div class="inspector-row"><span class="inspector-label">DNS Server</span><span class="inspector-value">${device.dns}</span></div>
+                                    <div class="inspector-row"><span class="inspector-label">OS</span><span class="inspector-value">${device.os}</span></div>
+                                </div>
+                                <div class="inspector-section">
+                                    <div class="inspector-section-title">Interfaces</div>
+                                    <div class="port-list">${device.interfaces.map(i => `<span class="port-badge">${i}</span>`).join('')}</div>
+                                </div>
+                                <div class="inspector-section">
+                                    <div class="inspector-section-title">Open Ports</div>
+                                    <div class="port-list">${device.ports.map(p => `<span class="port-badge open">${p}</span>`).join('')}</div>
+                                </div>
+                            `;
+                            break;
+
+                        case 'switch':
+                            html = `
+                                <div class="inspector-section">
+                                    <div class="inspector-section-title">Device Information</div>
+                                    <div class="inspector-row"><span class="inspector-label">Model</span><span class="inspector-value">${device.model}</span></div>
+                                    <div class="inspector-row"><span class="inspector-label">Total Ports</span><span class="inspector-value">${device.ports}</span></div>
+                                    <div class="inspector-row"><span class="inspector-label">Connected</span><span class="inspector-value">${device.connectedDevices}</span></div>
+                                </div>
+                                <div class="inspector-section">
+                                    <div class="inspector-section-title">MAC Address Table</div>
+                                    ${Object.entries(device.macTable).map(([mac, port]) => `<div class="inspector-row"><span class="inspector-label">${mac}</span><span class="inspector-value">${port}</span></div>`).join('')}
+                                </div>
+                                <div class="inspector-section">
+                                    <div class="inspector-section-title">VLANs</div>
+                                    <div class="port-list">${device.vlan.map(v => `<span class="port-badge">VLAN ${v}</span>`).join('')}</div>
+                                </div>
+                            `;
+                            break;
+
+                        case 'router':
+                            html = `
+                                <div class="inspector-section">
+                                    <div class="inspector-section-title">Router Information</div>
+                                    <div class="inspector-row"><span class="inspector-label">IP Address</span><span class="inspector-value">${device.ip}</span></div>
+                                    <div class="inspector-row"><span class="inspector-label">NAT</span><span class="inspector-value success">${device.nat}</span></div>
+                                    <div class="inspector-row"><span class="inspector-label">Firewall</span><span class="inspector-value success">${device.firewallStatus}</span></div>
+                                </div>
+                                <div class="inspector-section">
+                                    <div class="inspector-section-title">Interfaces</div>
+                                    ${device.interfaces.map(i => `<div class="inspector-row"><span class="inspector-label">Interface</span><span class="inspector-value">${i}</span></div>`).join('')}
+                                </div>
+                                <div class="inspector-section">
+                                    <div class="inspector-section-title">Routing Table</div>
+                                    ${device.routingTable.map(r => `<div class="inspector-row"><span class="inspector-label">${r.dest}</span><span class="inspector-value">${r.gateway || r.iface}</span></div>`).join('')}
+                                </div>
+                                <div class="inspector-section">
+                                    <div class="inspector-section-title">ARP Cache</div>
+                                    ${device.arpTable.map(a => `<div class="inspector-row"><span class="inspector-label">${a.ip}</span><span class="inspector-value">${a.mac}</span></div>`).join('')}
+                                </div>
+                            `;
+                            if (App.state.currentMission === 4) App.missions.complete();
+                            break;
+
+                        case 'firewall':
+                            html = `
+                                <div class="inspector-section">
+                                    <div class="inspector-section-title">Firewall Status</div>
+                                    <div class="inspector-row"><span class="inspector-label">IP Address</span><span class="inspector-value">${device.ip}</span></div>
+                                    <div class="inspector-row"><span class="inspector-label">Packets Passed</span><span class="inspector-value success">${device.packetsPassed}</span></div>
+                                    <div class="inspector-row"><span class="inspector-label">Packets Dropped</span><span class="inspector-value error">${device.packetsDropped}</span></div>
+                                </div>
+                                <div class="inspector-section">
+                                    <div class="inspector-section-title">Allowed Rules</div>
+                                    ${device.allowedRules.map(r => `<div class="inspector-row"><span class="inspector-label">${r.proto}/${r.port}</span><span class="inspector-value success">${r.desc}</span></div>`).join('')}
+                                </div>
+                                <div class="inspector-section">
+                                    <div class="inspector-section-title">Blocked Rules</div>
+                                    ${device.blockedRules.map(r => `<div class="inspector-row"><span class="inspector-label">${r.proto}/${r.port}</span><span class="inspector-value error">${r.desc}</span></div>`).join('')}
+                                </div>
+                            `;
+                            break;
+
+                        case 'cloud':
+                            html = `
+                                <div class="inspector-section">
+                                    <div class="inspector-section-title">WAN Connection</div>
+                                    <div class="inspector-row"><span class="inspector-label">Status</span><span class="inspector-value success">${device.status}</span></div>
+                                    <div class="inspector-row"><span class="inspector-label">Bandwidth</span><span class="inspector-value">${device.bandwidth}</span></div>
+                                </div>
+                            `;
+                            break;
+
+                        case 'server':
+                            html = `
+                                <div class="inspector-section">
+                                    <div class="inspector-section-title">Server Information</div>
+                                    <div class="inspector-row"><span class="inspector-label">IP Address</span><span class="inspector-value">${device.ip}</span></div>
+                                    <div class="inspector-row"><span class="inspector-label">Status</span><span class="inspector-value ${device.status === 'Running' ? 'success' : 'warning'}">${device.status}</span></div>
+                                </div>
+                                <div class="inspector-section">
+                                    <div class="inspector-section-title">Resources</div>
+                                    <div class="inspector-row"><span class="inspector-label">CPU</span><span class="inspector-value ${parseInt(device.cpu) > 70 ? 'warning' : ''}">${device.cpu}</span></div>
+                                    <div class="inspector-row"><span class="inspector-label">Memory</span><span class="inspector-value ${parseInt(device.ram) > 70 ? 'warning' : ''}">${device.ram}</span></div>
+                                    <div class="inspector-row"><span class="inspector-label">Disk</span><span class="inspector-value ${parseInt(device.disk) > 80 ? 'warning' : ''}">${device.disk}</span></div>
+                                </div>
+                                <div class="inspector-section">
+                                    <div class="inspector-section-title">Services</div>
+                                    <div class="port-list">${(device.services || device.ports || []).map(s => `<span class="port-badge open">${typeof s === 'string' ? s : s}</span>`).join('')}</div>
+                                </div>
+                            `;
+                            if (deviceId === 'dns') {
+                                html += `
+                                    <div class="inspector-section">
+                                        <div class="inspector-section-title">DNS Cache</div>
+                                        ${device.cache.map(c => `<div class="inspector-row"><span class="inspector-label">${c.split(':')[0]}</span><span class="inspector-value">${c.split(':')[1]}</span></div>`).join('')}
+                                    </div>
+                                `;
+                            }
+                            break;
+                    }
+
+                    this.content.innerHTML = html;
+                    this.panel.classList.add('active');
+                    App.timeline.add('TCP', `Device inspected: ${device.name}`, device.ip || 'N/A');
+                    App.missions.updateProgress(1);
+                    if (App.state.currentMission === 0) App.missions.complete();
+                },
+
+                close() {
+                    this.panel.classList.remove('active');
+                }
+            },
+
+            // =================== TIMELINE ===================
+            timeline: {
+                container: null,
+
+                init() {
+                    this.container = document.getElementById('timeline-events');
+                },
+
+                add(protocol, text, source) {
+                    const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+                    const protoLower = protocol.toLowerCase();
+
+                    const event = document.createElement('div');
+                    event.className = 'timeline-event';
+                    event.innerHTML = `
+                        <span class="event-time">${time}</span>
+                        <div class="event-icon ${protoLower}">${protocol.charAt(0)}</div>
+                        <span class="event-text">${text}</span>
+                        <span class="event-source">${source}</span>
+                    `;
+
+                    this.container.insertBefore(event, this.container.firstChild);
+
+                    if (this.container.children.length > 50) {
+                        this.container.removeChild(this.container.lastChild);
+                    }
+                }
+            },
+
+            // =================== UI UPDATES ===================
+            ui: {
+                init() {
+                    this.updateClock();
+                    setInterval(() => this.updateClock(), 1000);
+                },
+
+                updateClock() {
+                    const now = new Date();
+                    document.getElementById('clock').textContent = now.toLocaleTimeString('en-US', { hour12: false });
+                },
+
+                updateXP() {
+                    document.getElementById('total-xp').textContent = App.state.xp;
+                    document.getElementById('header-xp').textContent = App.state.xp;
+                },
+
+                updateStats() {
+                    document.getElementById('stat-sent').textContent = App.state.packetsSent;
+                    document.getElementById('stat-received').textContent = App.state.packetsReceived;
+                    document.getElementById('stat-dropped').textContent = App.state.packetsDropped;
+                    document.getElementById('header-packets').textContent = App.state.packetsSent + App.state.packetsReceived;
+                    document.getElementById('stat-latency').textContent = Math.floor(Math.random() * 20 + 10) + 'ms';
+                },
+
+                setProtocol(proto) {
+                    document.getElementById('header-protocol').textContent = proto;
+                },
+
+                showToast(title, desc, xp) {
+                    const toast = document.getElementById('toast');
+                    document.getElementById('toast-title').textContent = title;
+                    document.getElementById('toast-desc').textContent = desc;
+                    document.getElementById('toast-xp').textContent = '+' + xp + ' XP';
+                    toast.classList.add('show');
+                    setTimeout(() => toast.classList.remove('show'), 4000);
+                }
+            },
+
+            // =================== INITIALIZATION ===================
+            init() {
+                this.terminal.init();
+                this.animator.init();
+                this.inspector.init();
+                this.timeline.init();
+                this.capture.init();
+                this.missions.init();
+                this.ui.init();
+
+                // Device click handlers
+                document.querySelectorAll('.device-group').forEach(device => {
+                    device.addEventListener('click', () => {
+                        const deviceId = device.getAttribute('data-device');
+                        this.inspector.open(deviceId);
+                    });
+                });
+
+                // Initial timeline events
+                this.timeline.add('TCP', 'System initialized', 'quantum-core');
+                this.timeline.add('ICMP', 'Network scan started', 'auto-discovery');
+
+                this.terminal.printOutput('\nWelcome to Quantum Core Networking Lab');
+                this.terminal.printOutput('Type "help" to see available commands\n');
+            }
+        };
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', () => App.init());
+    </script>
 </body>
 </html>
