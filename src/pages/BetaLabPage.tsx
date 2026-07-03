@@ -1,7 +1,7 @@
 // ===========================================================
-// BetaLabPage — individual experimental lab with iframe loader.
-// Loads standalone HTML simulator from /public/beta/<slug>/index.html
-// Feedback panel on the right side.
+// BetaLabPage — generic iframe viewer for any beta project.
+// Loads /beta-projects/<slug>/index.html. Metadata is fetched
+// from the auto-generated manifest — no hardcoding.
 // ===========================================================
 
 import { useState, useEffect } from 'react';
@@ -10,44 +10,50 @@ import { GlassPanel, NeonButton, Chip } from '../components/ui';
 import { FeedbackPanel } from '../components/FeedbackPanel';
 import { Icon } from '../components/Icon';
 import { cn } from '../lib/cn';
-import { getBetaLab, type BetaLab } from '../data/betaLabs';
+import { betaProjectUrl, type BetaProject } from '../data/betaLabs';
 
 interface BetaLabPageProps {
   slug: string;
 }
 
+const DEFAULT_PROJECT = (slug: string): BetaProject => ({
+  slug,
+  title: slug.replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+  description: '',
+  version: 'v0.1 Alpha',
+  status: 'experimental',
+  progress: 0,
+  icon: 'FlaskConical',
+  tags: [],
+});
+
 export function BetaLabPage({ slug }: BetaLabPageProps) {
   const { navigate } = useRouter();
-  const [lab, setLab] = useState<BetaLab | null>(null);
+  const [project, setProject] = useState<BetaProject>(DEFAULT_PROJECT(slug));
   const [iframeLoaded, setIframeLoaded] = useState(false);
   const [iframeError, setIframeError] = useState(false);
   const [showFeedback, setShowFeedback] = useState(true);
 
+  // Fetch project metadata from the shared manifest
   useEffect(() => {
-    const found = getBetaLab(slug);
-    setLab(found ?? null);
     setIframeLoaded(false);
     setIframeError(false);
+    setProject(DEFAULT_PROJECT(slug));
+
+    fetch('/beta-projects/manifest.json')
+      .then((r) => r.ok ? r.json() : [])
+      .then((list: BetaProject[]) => {
+        const found = list.find((p) => p.slug === slug);
+        if (found) setProject(found);
+      })
+      .catch(() => { /* keep defaults */ });
   }, [slug]);
 
-  if (!lab) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <Icon name="AlertTriangle" size={40} className="text-warn-400" />
-        <h2 className="mt-4 font-display text-xl text-white">Beta Lab Not Found</h2>
-        <p className="mt-2 text-sm text-slate-400">The experimental lab "{slug}" does not exist.</p>
-        <NeonButton variant="ghost" onClick={() => navigate('/beta')} className="mt-6">
-          <Icon name="ArrowLeft" size={14} /> Back to Beta Labs
-        </NeonButton>
-      </div>
-    );
-  }
-
-  const simulatorSrc = `/beta/${slug}/index.html`;
+  const simulatorSrc = betaProjectUrl(slug);
 
   return (
     <div className="flex h-full flex-col">
-      {/* Top navigation bar */}
+      {/* Navigation bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/5 bg-ink-900/40 px-4 py-3 backdrop-blur-xl">
         <div className="flex items-center gap-3">
           <button
@@ -57,33 +63,37 @@ export function BetaLabPage({ slug }: BetaLabPageProps) {
             <Icon name="ChevronRight" size={12} className="rotate-180" /> Beta Labs
           </button>
           <span className="hidden text-slate-700 sm:inline">/</span>
-          <span className="hidden font-mono text-[11px] uppercase tracking-wider text-cyan-400 sm:inline">{lab.title}</span>
+          <span className="hidden font-mono text-[11px] uppercase tracking-wider text-cyan-400 sm:inline">
+            {project.title}
+          </span>
         </div>
+
         <div className="flex items-center gap-2">
           <Chip variant="warn">
             <Icon name="AlertTriangle" size={10} /> Experimental
           </Chip>
-          <span className="font-mono text-[10px] text-slate-600">{lab.version}</span>
+          <span className="font-mono text-[10px] text-slate-600">{project.version}</span>
           <button
             onClick={() => setShowFeedback((s) => !s)}
             className={cn(
               'qc-focus flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 font-mono text-[11px] transition-colors',
               showFeedback
                 ? 'border-cyan-400/40 bg-cyan-400/10 text-cyan-300'
-                : 'border-white/10 text-slate-400 hover:text-cyan-300'
+                : 'border-white/10 text-slate-400 hover:text-cyan-300',
             )}
             title="Toggle feedback panel"
           >
-            <Icon name="PanelRight" size={13} /> <span className="hidden sm:inline">Feedback</span>
+            <Icon name="PanelRight" size={13} />
+            <span className="hidden sm:inline">Feedback</span>
           </button>
         </div>
       </div>
 
-      {/* Main content area */}
+      {/* Content area */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Simulator iframe container */}
+        {/* Simulator iframe */}
         <div className="relative flex-1 overflow-hidden bg-ink-950">
-          {/* Loading state */}
+          {/* Loading */}
           {!iframeLoaded && !iframeError && (
             <div className="absolute inset-0 flex items-center justify-center bg-ink-950">
               <div className="flex flex-col items-center">
@@ -95,33 +105,36 @@ export function BetaLabPage({ slug }: BetaLabPageProps) {
             </div>
           )}
 
-          {/* Error state */}
+          {/* Error */}
           {iframeError && (
             <div className="absolute inset-0 flex items-center justify-center bg-ink-950">
               <GlassPanel className="max-w-md p-8 text-center">
                 <Icon name="AlertCircle" size={40} className="text-err-400" />
                 <h3 className="mt-4 font-display text-lg text-white">Simulator Not Found</h3>
                 <p className="mt-2 text-sm text-slate-400">
-                  The simulator file could not be loaded. Make sure <code className="text-cyan-400">{simulatorSrc}</code> exists.
+                  Drop your simulator at{' '}
+                  <code className="text-cyan-400">{simulatorSrc}</code> and it will load automatically.
                 </p>
-                <NeonButton variant="ghost" onClick={() => {
-                  setIframeError(false);
-                  setIframeLoaded(false);
-                }} className="mt-6">
-                  <Icon name="RefreshCw" size={14} /> Retry
-                </NeonButton>
+                <div className="mt-6 flex justify-center gap-3">
+                  <NeonButton variant="ghost" onClick={() => navigate('/beta')}>
+                    <Icon name="ArrowLeft" size={14} /> Back
+                  </NeonButton>
+                  <NeonButton variant="ghost" onClick={() => {
+                    setIframeError(false);
+                    setIframeLoaded(false);
+                  }}>
+                    <Icon name="RefreshCw" size={14} /> Retry
+                  </NeonButton>
+                </div>
               </GlassPanel>
             </div>
           )}
 
-          {/* Iframe */}
           <iframe
+            key={slug}
             src={simulatorSrc}
-            title={`${lab.title} Simulator`}
-            className={cn(
-              'h-full w-full border-0 bg-ink-950',
-              !iframeLoaded && 'invisible'
-            )}
+            title={`${project.title} — Beta`}
+            className={cn('h-full w-full border-0 bg-ink-950', !iframeLoaded && 'invisible')}
             onLoad={() => setIframeLoaded(true)}
             onError={() => setIframeError(true)}
             allow="clipboard-write; clipboard-read"
@@ -132,7 +145,7 @@ export function BetaLabPage({ slug }: BetaLabPageProps) {
         {showFeedback && (
           <div className="w-full shrink-0 overflow-y-auto border-l border-white/5 bg-ink-900/60 backdrop-blur-xl lg:w-[380px]">
             <div className="p-5">
-              <FeedbackPanel lab={lab} />
+              <FeedbackPanel project={project} />
             </div>
           </div>
         )}

@@ -1,15 +1,15 @@
 // ===========================================================
-// FeedbackPanel — comprehensive feedback collection for beta labs.
-// Stores submissions in localStorage. Shows recent feedback below.
+// FeedbackPanel — comprehensive feedback for any beta project.
+// Submissions stored in localStorage, shown as collapsible cards.
 // ===========================================================
 
 import { useState, useEffect } from 'react';
 import { Icon } from './Icon';
 import { GlassPanel, NeonButton } from './ui';
 import { cn } from '../lib/cn';
-import type { BetaLab } from '../data/betaLabs';
+import type { BetaProject } from '../data/betaLabs';
 
-// ── Types ───────────────────────────────────────────────────
+// ── Types ────────────────────────────────────────────────────
 
 interface CategoryRatings {
   ui: number;
@@ -20,11 +20,11 @@ interface CategoryRatings {
   fun: number;
 }
 
-interface FeedbackSubmission {
+export interface FeedbackSubmission {
   id: string;
   timestamp: string;
-  labId: string;
-  labTitle: string;
+  projectSlug: string;
+  projectTitle: string;
   version: string;
   overallRating: number;
   ratingReason: string;
@@ -35,15 +35,10 @@ interface FeedbackSubmission {
   featureRequests: string;
 }
 
-const STORAGE_KEY = 'quantum-core.beta-feedback';
+const STORAGE_KEY = 'quantum-core.beta-feedback-v2';
 
 const DEFAULT_CATEGORIES: CategoryRatings = {
-  ui: 0,
-  learning: 0,
-  realism: 0,
-  easeOfUse: 0,
-  performance: 0,
-  fun: 0,
+  ui: 0, learning: 0, realism: 0, easeOfUse: 0, performance: 0, fun: 0,
 };
 
 const CATEGORY_LABELS: Record<keyof CategoryRatings, string> = {
@@ -55,51 +50,47 @@ const CATEGORY_LABELS: Record<keyof CategoryRatings, string> = {
   fun: 'Fun',
 };
 
-// ── Component ───────────────────────────────────────────────
+// ── Component ────────────────────────────────────────────────
 
 interface FeedbackPanelProps {
-  lab: BetaLab;
+  project: BetaProject;
   className?: string;
 }
 
-export function FeedbackPanel({ lab, className }: FeedbackPanelProps) {
-  const [overallRating, setOverallRating] = useState(0);
-  const [ratingReason, setRatingReason] = useState('');
-  const [categoryRatings, setCategoryRatings] = useState<CategoryRatings>({ ...DEFAULT_CATEGORIES });
-  const [likedMost, setLikedMost] = useState('');
-  const [improvements, setImprovements] = useState('');
-  const [bugReport, setBugReport] = useState('');
-  const [featureRequests, setFeatureRequests] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [recentFeedback, setRecentFeedback] = useState<FeedbackSubmission[]>([]);
+export function FeedbackPanel({ project, className }: FeedbackPanelProps) {
+  const [overallRating, setOverallRating]         = useState(0);
+  const [ratingReason, setRatingReason]           = useState('');
+  const [categoryRatings, setCategoryRatings]     = useState<CategoryRatings>({ ...DEFAULT_CATEGORIES });
+  const [likedMost, setLikedMost]                 = useState('');
+  const [improvements, setImprovements]           = useState('');
+  const [bugReport, setBugReport]                 = useState('');
+  const [featureRequests, setFeatureRequests]     = useState('');
+  const [submitting, setSubmitting]               = useState(false);
+  const [submitted, setSubmitted]                 = useState(false);
+  const [recentFeedback, setRecentFeedback]       = useState<FeedbackSubmission[]>([]);
 
-  // Load recent feedback on mount
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       try {
         const all: FeedbackSubmission[] = JSON.parse(stored);
-        setRecentFeedback(all.filter((f) => f.labId === lab.id).slice(0, 5));
+        setRecentFeedback(all.filter((f) => f.projectSlug === project.slug).slice(0, 5));
       } catch { /* ignore */ }
     }
-  }, [lab.id]);
+  }, [project.slug]);
 
-  const canSubmit =
-    overallRating > 0 &&
-    ratingReason.trim().length >= 20;
+  const canSubmit = overallRating > 0 && ratingReason.trim().length >= 20;
 
   const handleSubmit = () => {
     if (!canSubmit) return;
-
     setSubmitting(true);
 
     const submission: FeedbackSubmission = {
       id: `fb-${Date.now()}`,
       timestamp: new Date().toISOString(),
-      labId: lab.id,
-      labTitle: lab.title,
-      version: lab.version,
+      projectSlug: project.slug,
+      projectTitle: project.title,
+      version: project.version,
       overallRating,
       ratingReason: ratingReason.trim(),
       categoryRatings,
@@ -109,13 +100,10 @@ export function FeedbackPanel({ lab, className }: FeedbackPanelProps) {
       featureRequests: featureRequests.trim(),
     };
 
-    // Save to localStorage
     const stored = localStorage.getItem(STORAGE_KEY);
     const existing: FeedbackSubmission[] = stored ? JSON.parse(stored) : [];
-    const updated = [submission, ...existing].slice(0, 50);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify([submission, ...existing].slice(0, 50)));
 
-    // Reset form
     setOverallRating(0);
     setRatingReason('');
     setCategoryRatings({ ...DEFAULT_CATEGORIES });
@@ -125,15 +113,12 @@ export function FeedbackPanel({ lab, className }: FeedbackPanelProps) {
     setFeatureRequests('');
     setSubmitting(false);
     setSubmitted(true);
-    setRecentFeedback([submission, ...recentFeedback].slice(0, 5));
-
-    // Reset submitted state after 3s
+    setRecentFeedback((prev) => [submission, ...prev].slice(0, 5));
     setTimeout(() => setSubmitted(false), 3000);
   };
 
-  const updateCategory = (key: keyof CategoryRatings, value: number) => {
+  const updateCategory = (key: keyof CategoryRatings, value: number) =>
     setCategoryRatings((prev) => ({ ...prev, [key]: value }));
-  };
 
   return (
     <div className={cn('space-y-6', className)}>
@@ -147,171 +132,79 @@ export function FeedbackPanel({ lab, className }: FeedbackPanelProps) {
       </div>
 
       {/* Overall Rating */}
-      <div className="space-y-2">
-        <label className="block font-mono text-[11px] uppercase tracking-wider text-slate-300">
-          Overall Rating <span className="text-warn-400">*</span>
-        </label>
+      <FormBlock label="Overall Rating" required>
         <StarRating value={overallRating} onChange={setOverallRating} size="lg" />
         {overallRating === 0 && (
-          <p className="text-xs text-warn-400">Rating is required before submission.</p>
+          <p className="mt-1 text-xs text-warn-400">Rating is required before submission.</p>
         )}
-      </div>
+      </FormBlock>
 
       {/* Rating Reason */}
-      <div className="space-y-2">
-        <label className="block font-mono text-[11px] uppercase tracking-wider text-slate-300">
-          Why did you give this rating? <span className="text-warn-400">*</span>
-        </label>
-        <textarea
+      <FormBlock label="Why did you give this rating?" required>
+        <Textarea
           value={ratingReason}
-          onChange={(e) => setRatingReason(e.target.value)}
-          placeholder="Explain why you chose this rating.
-
-Examples:
-• The animations are smooth but confusing.
-• The terminal feels realistic.
-• Packet movement is too fast.
-• I couldn't understand what the router was doing."
-          className={cn(
-            'w-full resize-none rounded-lg border border-white/10 bg-white/[0.02] p-3',
-            'text-sm text-slate-200 placeholder-slate-600',
-            'transition-colors',
-            'focus:border-neon-400/50 focus:outline-none focus:ring-1 focus:ring-neon-400/30'
-          )}
+          onChange={setRatingReason}
           rows={5}
+          placeholder={`Explain why you chose this rating.\n\nExamples:\n• The animations are smooth but confusing.\n• The terminal feels realistic.\n• Packet movement is too fast.\n• I couldn't understand what the router was doing.`}
         />
-        <div className="flex justify-between text-xs">
+        <div className="mt-1 flex justify-between text-xs">
           <span className={ratingReason.trim().length >= 20 ? 'text-neon-400' : 'text-slate-500'}>
             {ratingReason.trim().length} / 20 min
           </span>
-          {ratingReason.trim().length < 20 && ratingReason.length > 0 && (
+          {ratingReason.trim().length > 0 && ratingReason.trim().length < 20 && (
             <span className="text-warn-400">At least 20 characters required.</span>
           )}
         </div>
-      </div>
+      </FormBlock>
 
       {/* Category Ratings */}
-      <div className="space-y-3">
-        <label className="block font-mono text-[11px] uppercase tracking-wider text-slate-300">
-          Category Ratings
-        </label>
-        {(Object.keys(categoryRatings) as (keyof CategoryRatings)[]).map((key) => (
-          <div key={key} className="flex items-center justify-between">
-            <span className="text-sm text-slate-400">{CATEGORY_LABELS[key]}</span>
-            <StarRating value={categoryRatings[key]} onChange={(v) => updateCategory(key, v)} />
-          </div>
-        ))}
-      </div>
+      <FormBlock label="Category Ratings">
+        <div className="space-y-3">
+          {(Object.keys(categoryRatings) as (keyof CategoryRatings)[]).map((key) => (
+            <div key={key} className="flex items-center justify-between">
+              <span className="text-sm text-slate-400">{CATEGORY_LABELS[key]}</span>
+              <StarRating value={categoryRatings[key]} onChange={(v) => updateCategory(key, v)} />
+            </div>
+          ))}
+        </div>
+      </FormBlock>
 
-      {/* Liked Most */}
-      <div className="space-y-2">
-        <label className="block font-mono text-[11px] uppercase tracking-wider text-slate-300">
-          What did you like most?
-        </label>
-        <textarea
-          value={likedMost}
-          onChange={(e) => setLikedMost(e.target.value)}
-          placeholder="Which feature impressed you the most?"
-          className={cn(
-            'w-full resize-none rounded-lg border border-white/10 bg-white/[0.02] p-3',
-            'text-sm text-slate-200 placeholder-slate-600',
-            'transition-colors',
-            'focus:border-neon-400/50 focus:outline-none focus:ring-1 focus:ring-neon-400/30'
-          )}
-          rows={3}
-        />
-      </div>
+      {/* Optional fields */}
+      <FormBlock label="What did you like most?">
+        <Textarea value={likedMost} onChange={setLikedMost} rows={3}
+          placeholder="Which feature impressed you the most?" />
+      </FormBlock>
 
-      {/* Improvements */}
-      <div className="space-y-2">
-        <label className="block font-mono text-[11px] uppercase tracking-wider text-slate-300">
-          What should be improved?
-        </label>
-        <textarea
-          value={improvements}
-          onChange={(e) => setImprovements(e.target.value)}
-          placeholder="If you were the developer, what would you improve first?"
-          className={cn(
-            'w-full resize-none rounded-lg border border-white/10 bg-white/[0.02] p-3',
-            'text-sm text-slate-200 placeholder-slate-600',
-            'transition-colors',
-            'focus:border-neon-400/50 focus:outline-none focus:ring-1 focus:ring-neon-400/30'
-          )}
-          rows={3}
-        />
-      </div>
+      <FormBlock label="What should be improved?">
+        <Textarea value={improvements} onChange={setImprovements} rows={3}
+          placeholder="If you were the developer, what would you improve first?" />
+      </FormBlock>
 
-      {/* Bug Report */}
-      <div className="space-y-2">
-        <label className="block font-mono text-[11px] uppercase tracking-wider text-slate-300">
-          Bug Report
-        </label>
-        <textarea
-          value={bugReport}
-          onChange={(e) => setBugReport(e.target.value)}
-          placeholder="Did anything break? Did a command not work? Did animations freeze?"
-          className={cn(
-            'w-full resize-none rounded-lg border border-white/10 bg-white/[0.02] p-3',
-            'text-sm text-slate-200 placeholder-slate-600',
-            'transition-colors',
-            'focus:border-neon-400/50 focus:outline-none focus:ring-1 focus:ring-neon-400/30'
-          )}
-          rows={3}
-        />
-      </div>
+      <FormBlock label="Bug Report">
+        <Textarea value={bugReport} onChange={setBugReport} rows={3}
+          placeholder={"Did anything break? Did a command not work? Did animations freeze?"} />
+      </FormBlock>
 
-      {/* Feature Requests */}
-      <div className="space-y-2">
-        <label className="block font-mono text-[11px] uppercase tracking-wider text-slate-300">
-          Feature Requests
-        </label>
-        <textarea
-          value={featureRequests}
-          onChange={(e) => setFeatureRequests(e.target.value)}
-          placeholder="What would you love to see added?
-
-Examples:
-• More commands
-• Better packet animations
-• Wireshark mode
-• Darker theme"
-          className={cn(
-            'w-full resize-none rounded-lg border border-white/10 bg-white/[0.02] p-3',
-            'text-sm text-slate-200 placeholder-slate-600',
-            'transition-colors',
-            'focus:border-neon-400/50 focus:outline-none focus:ring-1 focus:ring-neon-400/30'
-          )}
-          rows={3}
-        />
-      </div>
+      <FormBlock label="Feature Requests">
+        <Textarea value={featureRequests} onChange={setFeatureRequests} rows={3}
+          placeholder={"What would you love to see added?\n\nExamples:\n• More commands\n• Better packet animations\n• Wireshark mode\n• Darker theme"} />
+      </FormBlock>
 
       {/* Submit */}
-      <NeonButton
-        onClick={handleSubmit}
-        disabled={!canSubmit || submitting}
-        className="w-full justify-center"
-      >
+      <NeonButton onClick={handleSubmit} disabled={!canSubmit || submitting} className="w-full justify-center">
         {submitting ? (
-          <span className="flex items-center gap-2">
-            <Icon name="Loader2" size={14} className="animate-spin" /> Submitting...
-          </span>
+          <span className="flex items-center gap-2"><Icon name="Loader2" size={14} className="animate-spin" /> Submitting...</span>
         ) : submitted ? (
-          <span className="flex items-center gap-2">
-            <Icon name="Check" size={14} /> Submitted!
-          </span>
+          <span className="flex items-center gap-2"><Icon name="Check" size={14} /> Submitted!</span>
         ) : (
-          <span className="flex items-center gap-2">
-            <Icon name="Send" size={14} /> Submit Feedback
-          </span>
+          <span className="flex items-center gap-2"><Icon name="Send" size={14} /> Submit Feedback</span>
         )}
       </NeonButton>
 
       {/* Recent Feedback */}
       {recentFeedback.length > 0 && (
         <div className="space-y-4 pt-4">
-          <h4 className="font-mono text-[11px] uppercase tracking-wider text-slate-500">
-            Recent Feedback
-          </h4>
+          <h4 className="font-mono text-[11px] uppercase tracking-wider text-slate-500">Recent Feedback</h4>
           {recentFeedback.map((fb) => (
             <FeedbackCard key={fb.id} feedback={fb} />
           ))}
@@ -321,22 +214,43 @@ Examples:
   );
 }
 
-// ── Star Rating Component ───────────────────────────────────
+// ── Primitives ────────────────────────────────────────────────
 
-interface StarRatingProps {
-  value: number;
-  onChange: (value: number) => void;
-  size?: 'sm' | 'lg';
+function FormBlock({
+  label, required, children,
+}: { label: string; required?: boolean; children: React.ReactNode }) {
+  return (
+    <div className="space-y-2">
+      <label className="block font-mono text-[11px] uppercase tracking-wider text-slate-300">
+        {label} {required && <span className="text-warn-400">*</span>}
+      </label>
+      {children}
+    </div>
+  );
 }
 
-function StarRating({ value, onChange, size = 'sm' }: StarRatingProps) {
-  const [hovered, setHovered] = useState(0);
-
+function Textarea({
+  value, onChange, rows, placeholder,
+}: { value: string; onChange: (v: string) => void; rows: number; placeholder: string }) {
   return (
-    <div
-      className="flex gap-0.5"
-      onMouseLeave={() => setHovered(0)}
-    >
+    <textarea
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      rows={rows}
+      className={cn(
+        'w-full resize-none rounded-lg border border-white/10 bg-white/[0.02] p-3',
+        'text-sm text-slate-200 placeholder-slate-600',
+        'focus:border-neon-400/50 focus:outline-none focus:ring-1 focus:ring-neon-400/30',
+      )}
+    />
+  );
+}
+
+function StarRating({ value, onChange, size = 'sm' }: { value: number; onChange: (v: number) => void; size?: 'sm' | 'lg' }) {
+  const [hovered, setHovered] = useState(0);
+  return (
+    <div className="flex gap-0.5" onMouseLeave={() => setHovered(0)}>
       {[1, 2, 3, 4, 5].map((star) => {
         const filled = star <= (hovered || value);
         return (
@@ -345,19 +259,12 @@ function StarRating({ value, onChange, size = 'sm' }: StarRatingProps) {
             type="button"
             onClick={() => onChange(star)}
             onMouseEnter={() => setHovered(star)}
-            className={cn(
-              'transition-transform duration-150',
-              size === 'lg' ? 'p-0.5' : 'p-0',
-              'hover:scale-110'
-            )}
+            className={cn('transition-transform hover:scale-110', size === 'lg' ? 'p-0.5' : 'p-0')}
           >
             <Icon
               name="Star"
               size={size === 'lg' ? 22 : 16}
-              className={cn(
-                filled ? 'text-warn-400 fill-warn-400' : 'text-slate-600',
-                'transition-colors'
-              )}
+              className={cn(filled ? 'fill-warn-400 text-warn-400' : 'text-slate-600', 'transition-colors')}
             />
           </button>
         );
@@ -366,104 +273,70 @@ function StarRating({ value, onChange, size = 'sm' }: StarRatingProps) {
   );
 }
 
-// ── Feedback Card Component ────────────────────────────────
-
 function FeedbackCard({ feedback }: { feedback: FeedbackSubmission }) {
-    const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
-  const timeAgo = (iso: string): string => {
-    const diff = Date.now() - new Date(iso).getTime();
-    const mins = Math.floor(diff / 60000);
+  const timeAgo = (iso: string) => {
+    const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
     if (mins < 1) return 'Just now';
     if (mins < 60) return `${mins}m ago`;
     const hrs = Math.floor(mins / 60);
     if (hrs < 24) return `${hrs}h ago`;
-    const days = Math.floor(hrs / 24);
-    return `${days}d ago`;
+    return `${Math.floor(hrs / 24)}d ago`;
   };
 
   return (
     <GlassPanel className="p-4">
-      {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2">
           <div className="flex">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <Icon
-                key={star}
-                name="Star"
-                size={12}
-                className={star <= feedback.overallRating ? 'text-warn-400 fill-warn-400' : 'text-slate-700'}
-              />
+            {[1, 2, 3, 4, 5].map((s) => (
+              <Icon key={s} name="Star" size={12}
+                className={s <= feedback.overallRating ? 'fill-warn-400 text-warn-400' : 'text-slate-700'} />
             ))}
           </div>
-          <span className="font-mono text-[10px] text-slate-500">
-            {timeAgo(feedback.timestamp)}
-          </span>
+          <span className="font-mono text-[10px] text-slate-500">{timeAgo(feedback.timestamp)}</span>
         </div>
         <span className="font-mono text-[10px] text-slate-600">{feedback.version}</span>
       </div>
 
-      {/* Rating Reason */}
-      <p className="mt-2 text-sm text-slate-300 line-clamp-2">{feedback.ratingReason}</p>
+      <p className="mt-2 line-clamp-2 text-sm text-slate-300">{feedback.ratingReason}</p>
 
-      {/* Expand toggle */}
-      <button
-        onClick={() => setExpanded((e) => !e)}
-        className="mt-2 font-mono text-[10px] text-cyan-400 hover:text-cyan-300"
-      >
+      <button onClick={() => setExpanded((e) => !e)}
+        className="mt-2 font-mono text-[10px] text-cyan-400 hover:text-cyan-300">
         {expanded ? 'Show less' : 'Show more'}
       </button>
 
-      {/* Expanded content */}
       {expanded && (
         <div className="mt-3 space-y-3 border-t border-white/5 pt-3">
-          {/* Category Ratings */}
           <div className="grid grid-cols-2 gap-2">
             {(Object.keys(feedback.categoryRatings) as (keyof CategoryRatings)[]).map((key) => (
               <div key={key} className="flex items-center justify-between">
                 <span className="text-xs text-slate-500">{CATEGORY_LABELS[key]}</span>
                 <div className="flex">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Icon
-                      key={star}
-                      name="Star"
-                      size={10}
-                      className={star <= feedback.categoryRatings[key] ? 'text-warn-400 fill-warn-400' : 'text-slate-700'}
-                    />
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <Icon key={s} name="Star" size={10}
+                      className={s <= feedback.categoryRatings[key] ? 'fill-warn-400 text-warn-400' : 'text-slate-700'} />
                   ))}
                 </div>
               </div>
             ))}
           </div>
-
-          {/* Optional fields */}
-          {feedback.likedMost && (
-            <div>
-              <span className="font-mono text-[10px] uppercase tracking-wider text-slate-500">Liked Most</span>
-              <p className="mt-1 text-sm text-slate-400">{feedback.likedMost}</p>
-            </div>
-          )}
-          {feedback.improvements && (
-            <div>
-              <span className="font-mono text-[10px] uppercase tracking-wider text-slate-500">Improvements</span>
-              <p className="mt-1 text-sm text-slate-400">{feedback.improvements}</p>
-            </div>
-          )}
-          {feedback.bugReport && (
-            <div>
-              <span className="font-mono text-[10px] uppercase tracking-wider text-err-400">Bug Report</span>
-              <p className="mt-1 text-sm text-slate-400">{feedback.bugReport}</p>
-            </div>
-          )}
-          {feedback.featureRequests && (
-            <div>
-              <span className="font-mono text-[10px] uppercase tracking-wider text-cyan-400">Feature Requests</span>
-              <p className="mt-1 text-sm text-slate-400">{feedback.featureRequests}</p>
-            </div>
-          )}
+          {feedback.likedMost && <ExpandedField label="Liked Most" value={feedback.likedMost} />}
+          {feedback.improvements && <ExpandedField label="Improvements" value={feedback.improvements} />}
+          {feedback.bugReport && <ExpandedField label="Bug Report" value={feedback.bugReport} accent="text-err-400" />}
+          {feedback.featureRequests && <ExpandedField label="Feature Requests" value={feedback.featureRequests} accent="text-cyan-400" />}
         </div>
       )}
     </GlassPanel>
+  );
+}
+
+function ExpandedField({ label, value, accent = 'text-slate-500' }: { label: string; value: string; accent?: string }) {
+  return (
+    <div>
+      <span className={cn('font-mono text-[10px] uppercase tracking-wider', accent)}>{label}</span>
+      <p className="mt-1 text-sm text-slate-400">{value}</p>
+    </div>
   );
 }

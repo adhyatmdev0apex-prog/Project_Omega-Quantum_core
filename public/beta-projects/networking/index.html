@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Networking Simulator — Beta</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #04060a;
+      --bg-secondary: #0a0d12;
+      --text: #e8ffe2;
+      --text-muted: #6b7280;
+      --neon: #39ff14;
+      --cyan: #00f0ff;
+      --warn: #fbbf24;
+      --err: #ef4444;
+    }
+
+    body {
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    .container {
+      max-width: 800px;
+      text-align: center;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      border-radius: 9999px;
+      border: 1px solid rgba(251, 191, 36, 0.4);
+      background: rgba(251, 191, 36, 0.1);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--warn);
+      margin-bottom: 2rem;
+    }
+
+    h1 {
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(135deg, var(--neon), var(--cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .version {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      margin-bottom: 2rem;
+    }
+
+    .panel {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 1rem;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      text-align: left;
+    }
+
+    .panel h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--cyan);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .panel p {
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 1rem;
+    }
+
+    .panel ul {
+      list-style: none;
+      color: var(--text-muted);
+    }
+
+    .panel li {
+      padding: 0.5rem 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .panel li:last-child {
+      border-bottom: none;
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--neon);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .progress-bar {
+      height: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 1rem;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 40%;
+      background: linear-gradient(90deg, var(--neon), var(--cyan));
+      border-radius: 2px;
+    }
+
+    .hint {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 2rem;
+    }
+
+    /* Scanlines overlay */
+    .scanlines {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 0, 0, 0.1) 2px,
+        rgba(0, 0, 0, 0.1) 4px
+      );
+      opacity: 0.3;
+    }
+  </style>
+</head>
+<body>
+  <div class="scanlines"></div>
+
+  <div class="container">
+    <div class="badge">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+        <line x1="12" y1="9" x2="12" y2="13"></line>
+        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+      </svg>
+      Under Development
+    </div>
+
+    <h1>Networking Simulator</h1>
+    <p class="version">v0.1 Alpha — Experimental Build</p>
+
+    <div class="panel">
+      <h2>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="16" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>
+        About This Simulator
+      </h2>
+      <p>
+        This is a placeholder for the Networking Simulator. The actual simulator will be a fully interactive
+        packet visualization and network topology environment. Replace this file with your custom simulator.
+      </p>
+      <ul>
+        <li>
+          <span style="color: var(--neon);">&#9632;</span>
+          Interactive packet visualization
+        </li>
+        <li>
+          <span style="color: var(--cyan);">&#9632;</span>
+          Network topology builder
+        </li>
+        <li>
+          <span style="color: var(--neon);">&#9632;</span>
+          Routing protocol simulation
+        </li>
+        <li>
+          <span style="color: var(--cyan);">&#9632;</span>
+          Packet capture and analysis
+        </li>
+      </ul>
+      <div class="progress-bar">
+        <div class="progress-fill"></div>
+      </div>
+      <p style="font-size: 0.75rem; margin-top: 0.5rem; margin-bottom: 0;">
+        Development progress: 40%
+      </p>
+    </div>
+
+    <div class="panel">
+      <h2>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        </svg>
+        Developer Note
+      </h2>
+      <p>
+        To add your own simulator, replace this <code style="color: var(--cyan);">index.html</code> file
+        with your custom implementation. The Quantum Core shell provides the feedback panel — your simulator
+        runs in a full-screen iframe with no external scrollbars.
+      </p>
+    </div>
+
+    <div class="status">
+      <span class="status-dot"></span>
+      Waiting for simulator implementation
+    </div>
+
+    <p class="hint">
+      Use the feedback panel on the right to submit bug reports, feature requests, and rate your experience.
+    </p>
+  </div>
+</body>
+</html>
