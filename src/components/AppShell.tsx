@@ -86,8 +86,8 @@ function Sidebar({
   onClose?: () => void;
   className?: string;
 }) {
-  const groups = ['core', 'progress', 'tools'] as const;
-  const groupLabel: Record<string, string> = { core: 'Core', progress: 'Progress', tools: 'Tools' };
+  const groups = ['core', 'progress', 'experimental', 'tools'] as const;
+  const groupLabel: Record<string, string> = { core: 'Core', progress: 'Progress', experimental: 'Experimental', tools: 'Tools' };
 
   return (
     <aside

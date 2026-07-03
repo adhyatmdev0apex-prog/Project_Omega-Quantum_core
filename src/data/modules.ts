@@ -195,6 +195,7 @@ export const SIDEBAR_NAV = [
   { id: 'downloads', label: 'Downloads', icon: 'Download', group: 'core' },
   { id: 'achievements', label: 'Achievements', icon: 'Trophy', group: 'progress' },
   { id: 'notes', label: 'Notes', icon: 'StickyNote', group: 'progress' },
+  { id: 'beta', label: 'Beta Labs', icon: 'AlertTriangle', group: 'experimental' },
   { id: 'search', label: 'Search', icon: 'Search', group: 'tools' },
   { id: 'settings', label: 'Settings', icon: 'Settings', group: 'tools' },
   { id: 'about', label: 'About', icon: 'Info', group: 'tools' },
