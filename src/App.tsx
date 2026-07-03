@@ -20,6 +20,8 @@ import { SettingsPage } from './pages/SettingsPage';
 import { AboutPage } from './pages/AboutPage';
 import { TerminalPage } from './pages/TerminalPage';
 import { LinuxLabPage } from './pages/LinuxLabPage';
+import { BetaLabsPage } from './pages/BetaLabsPage';
+import { BetaLabPage } from './pages/BetaLabPage';
 
 // ===========================================================
 // App — providers + router. Home is a full-screen boot; every
@@ -65,7 +67,7 @@ function Routed() {
 }
 
 function renderPage(segments: string[]) {
-  const [root, sub] = segments;
+  const [root, sub, extra] = segments;
   switch (root) {
     case 'dashboard':
       return <DashboardPage />;
@@ -76,6 +78,9 @@ function renderPage(segments: string[]) {
       return sub ? <LabPage slug={sub} /> : <LabsPage />;
     case 'missions':
       return sub ? <MissionPage slug={sub} /> : <MissionsPage />;
+    case 'beta':
+      // /beta → listing, /beta/<slug> → individual lab
+      return sub ? <BetaLabPage slug={sub} /> : <BetaLabsPage />;
     case 'achievements':
       return <AchievementsPage />;
     case 'notes':
