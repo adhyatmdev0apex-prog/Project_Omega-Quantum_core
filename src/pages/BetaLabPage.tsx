@@ -131,23 +131,21 @@ export function BetaLabPage({ slug }: BetaLabPageProps) {
           )}
       
 
-          <div className="flex h-full justify-center overflow-auto bg-ink-950 p-8">
-    <div className="w-full max-w-[1400px] rounded-xl overflow-hidden shadow-2xl border border-white/10">
-        <iframe
-            key={slug}
-            src={simulatorSrc}
-            title={`${project.title} — Beta`}
-            className={cn(
-                "w-full h-[900px] border-0 bg-ink-950",
-                !iframeLoaded && "invisible"
-            )}
-            onLoad={() => setIframeLoaded(true)}
-            onError={() => setIframeError(true)}
-            allow="clipboard-write; clipboard-read"
-        />
-      </div>
-    </div>
+         <div className="h-full w-full">
+  <iframe
+    key={slug}
+    src={simulatorSrc}
+    title={`${project.title} — Beta`}
+    className={cn(
+      "w-full h-full border-0 bg-ink-950",
+      !iframeLoaded && "invisible"
+    )}
+    onLoad={() => setIframeLoaded(true)}
+    onError={() => setIframeError(true)}
+    allow="clipboard-write; clipboard-read"
+  />
 </div>
+    </div>
 
         {/* Feedback sidebar */}
         {showFeedback && (
