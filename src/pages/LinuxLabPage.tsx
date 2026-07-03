@@ -11,7 +11,6 @@ import { Icon } from '../components/Icon';
 import { NotesBlock } from './TextbookPage';
 import { cn } from '../lib/cn';
 import '@xterm/xterm/css/xterm.css';
-import { ClaudeBackend } from '../lib/ClaudeBackend';
 
 // ===========================================================
 // LinuxLabPage — a professional Linux workstation inside Quantum Core.
@@ -110,17 +109,10 @@ export function LinuxLabPage() {
     });
 
     const eng = new LinuxEngine();
-
     // BackendManager selects which backend to attach.
     // Change 'virtual' to 'ubuntu' (or any other BackendType) here —
     // LinuxLabPage never needs to know which backend is running.
     eng.attach(backendManager.get('virtual'));
-
-    engine.current = eng;
-
-    // keep StubBackend for now
-    eng.attach(ClaudeBackend);
-
     engine.current = eng;
 
     const unsub = eng.subscribe((s) => setSession(s));

@@ -9,11 +9,6 @@
 // (LinuxLabPage) subscribes to changes and renders xterm.js.
 // ===========================================================
 
-import { VirtualLinuxBackend } from "./linux/backend";
-import { createShell } from "./createShell";
-
-const shell = createShell();
-
 export interface SessionState {
   cwd: string;
   user: string;
