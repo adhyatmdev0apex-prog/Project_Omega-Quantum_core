@@ -86,8 +86,8 @@ function Sidebar({
   onClose?: () => void;
   className?: string;
 }) {
-  const groups = ['core', 'progress', 'experimental', 'tools'] as const;
-  const groupLabel: Record<string, string> = { core: 'Core', progress: 'Progress', experimental: 'Experimental', tools: 'Tools' };
+  const groups = ['core', 'progress', 'tools'] as const;
+  const groupLabel: Record<string, string> = { core: 'Core', progress: 'Progress', tools: 'Tools' };
 
   return (
     <aside
@@ -125,20 +125,39 @@ function Sidebar({
                       className={cn(
                         'group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all qc-focus',
                         collapsed && 'justify-center',
-                        isActive
+                        isActive && item.id === 'beta'
+                          ? 'bg-warn-400/10 text-warn-200'
+                          : isActive
                           ? 'bg-neon-400/10 text-neon-200'
                           : 'text-slate-400 hover:bg-white/5 hover:text-white',
                       )}
                     >
                       {isActive && (
-                        <span className="absolute left-0 top-1/2 h-6 w-0.5 -translate-y-1/2 rounded-full bg-neon-400 shadow-glow" />
+                        <span className={cn(
+                          'absolute left-0 top-1/2 h-6 w-0.5 -translate-y-1/2 rounded-full',
+                          item.id === 'beta' ? 'bg-warn-400' : 'bg-neon-400 shadow-glow',
+                        )} />
                       )}
                       <Icon
                         name={item.icon}
                         size={18}
-                        className={cn('shrink-0 transition-colors', isActive ? 'text-neon-400' : 'text-slate-500 group-hover:text-neon-300')}
+                        className={cn(
+                          'shrink-0 transition-colors',
+                          isActive
+                            ? item.id === 'beta' ? 'text-warn-400' : 'text-neon-400'
+                            : item.id === 'beta' ? 'text-warn-500 group-hover:text-warn-400' : 'text-slate-500 group-hover:text-neon-300',
+                        )}
                       />
-                      {!collapsed && <span className="font-medium">{item.label}</span>}
+                      {!collapsed && (
+                        <span className="flex flex-1 items-center justify-between font-medium">
+                          {item.label}
+                          {item.id === 'beta' && (
+                            <span className="rounded-full border border-warn-400/30 bg-warn-400/10 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-warn-400">
+                              beta
+                            </span>
+                          )}
+                        </span>
+                      )}
                     </button>
                   </li>
                 );
