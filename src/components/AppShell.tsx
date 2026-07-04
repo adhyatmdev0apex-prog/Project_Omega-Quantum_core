@@ -9,9 +9,13 @@ import { StatusBar } from './StatusBar';
 // ===========================================================
 // AppShell — the 4-region dashboard scaffold shared by every
 // authenticated page: sidebar (L), content (C), monitor (R), status (B).
+//
+// workspace={true}: removes all max-w / padding constraints so
+// iframe-based labs can fill 100% of the available viewport.
+// The left sidebar still collapses, naturally expanding the workspace.
 // ===========================================================
 
-export function AppShell({ children }: { children: ReactNode }) {
+export function AppShell({ children, workspace = false }: { children: ReactNode; workspace?: boolean }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const { path, navigate } = useRouter();
@@ -55,14 +59,27 @@ export function AppShell({ children }: { children: ReactNode }) {
         )}
 
         {/* Center content */}
-        <main id="qc-main" className="flex-1 overflow-y-auto px-4 py-6 md:px-8 md:py-8">
-          <div className="mx-auto max-w-5xl">{children}</div>
+        <main
+          id="qc-main"
+          className={cn(
+            'flex-1',
+            workspace
+              ? 'overflow-hidden flex flex-col'
+              : 'overflow-y-auto px-4 py-6 md:px-8 md:py-8',
+          )}
+        >
+          {workspace
+            ? children
+            : <div className="mx-auto max-w-5xl">{children}</div>
+          }
         </main>
 
-        {/* Right — system monitor (desktop) */}
-        <aside className="hidden w-80 shrink-0 overflow-y-auto border-l border-white/5 bg-ink-900/40 p-4 backdrop-blur-xl xl:block">
-          <SystemMonitor />
-        </aside>
+        {/* Right — system monitor (desktop, hidden in workspace mode) */}
+        {!workspace && (
+          <aside className="hidden w-80 shrink-0 overflow-y-auto border-l border-white/5 bg-ink-900/40 p-4 backdrop-blur-xl xl:block">
+            <SystemMonitor />
+          </aside>
+        )}
       </div>
 
       {/* Bottom — status bar */}

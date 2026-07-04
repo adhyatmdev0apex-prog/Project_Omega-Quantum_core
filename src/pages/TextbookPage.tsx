@@ -4,6 +4,7 @@ import { useProgress } from '../state/progress';
 import { VOLUMES } from '../data/modules';
 import { volumeCompletion } from '../state/progressEngine';
 import { GlassPanel, NeonButton, Chip, EmptyState, ProgressBar } from '../components/ui';
+import { WorkspaceIframe } from '../components/WorkspaceIframe';
 import { Icon } from '../components/Icon';
 import { cn } from '../lib/cn';
 
@@ -33,7 +34,6 @@ export function TextbookPage({ slug }: { slug: string }) {
   const file = VOLUME_FILES[slug];
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const [loading, setLoading] = useState(true);
   const [fullscreen, setFullscreen] = useState(false);
   const [scrollPct, setScrollPct] = useState(0);
 
@@ -52,26 +52,8 @@ export function TextbookPage({ slug }: { slug: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
 
-  // Restore last scroll position on mount
-  useEffect(() => {
-    if (!volume || !file) return;
-    if (state.lastVolume === slug && state.lastScroll > 0) {
-      const id = window.setTimeout(() => {
-        try {
-          const f = iframeRef.current;
-          if (f && f.contentWindow) {
-            f.contentWindow.scrollTo(0, state.lastScroll);
-          }
-        } catch { /* cross-origin — best effort */ }
-      }, 800);
-      return () => window.clearTimeout(id);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading]);
-
   // Track scroll position inside iframe (best-effort, same-origin only)
-  const onIframeLoad = useCallback(() => {
-    setLoading(false);
+  const onIframeLoad = useCallback((_e: React.SyntheticEvent<HTMLIFrameElement>) => {
     try {
       const f = iframeRef.current;
       if (!f || !f.contentWindow) return;
@@ -101,7 +83,6 @@ export function TextbookPage({ slug }: { slug: string }) {
   const toggleFullscreen = () => setFullscreen((f) => !f);
 
   const goVolume = (vSlug: string) => {
-    setLoading(true);
     navigate(`/library/${vSlug}`);
   };
 
@@ -254,25 +235,16 @@ export function TextbookPage({ slug }: { slug: string }) {
             </div>
           </div>
 
-          {/* Iframe with loading overlay */}
-          <div className={cn('relative', fullscreen ? 'flex-1' : '')}>
-            {loading && (
-              <div className="absolute inset-0 z-10 flex items-center justify-center bg-ink-900/80 backdrop-blur-sm">
-                <div className="flex flex-col items-center gap-3">
-                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-neon-400/30 border-t-neon-400" />
-                  <span className="font-mono text-[11px] uppercase tracking-wider text-neon-300">Loading volume…</span>
-                </div>
-              </div>
-            )}
-            <iframe
-              ref={iframeRef}
-              src={file}
-              title={`Volume ${volume.roman} — ${volume.title}`}
-              onLoad={onIframeLoad}
-              className={cn('w-full bg-white', fullscreen ? 'h-full' : 'h-[75vh]')}
-              loading="lazy"
-            />
-          </div>
+          {/* Iframe — WorkspaceIframe handles loading/error states */}
+          <WorkspaceIframe
+            ref={iframeRef}
+            src={file}
+            title={`Volume ${volume.roman} — ${volume.title}`}
+            onLoad={onIframeLoad}
+            loading="lazy"
+            loadingLabel="Loading volume…"
+            className={cn(fullscreen ? 'flex-1' : 'h-[75vh]')}
+          />
         </GlassPanel>
       ) : (
         <GlassPanel className="p-8 text-center">
