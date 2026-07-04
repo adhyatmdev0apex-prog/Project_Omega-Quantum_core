@@ -1,16 +1,16 @@
 [
   {
     "slug": "Authentication",
-    "title": "Networking Simulator",
-    "description": "Interactive packet visualization and networking missions. Build, configure, and troubleshoot virtual networks in your browser.",
-    "version": "v0.1 Alpha",
+    "title": "Authentication for Quantum-Core",
+    "description": "Explore the next-generation identity system powering Quantum Core. Preview secure sign-in, Quantum ID, multi-device synchronization, offline-first architecture, cloud backup, and the future foundation for personalized learning across every lab and mission.",
+    "version": "v0.2 Alpha",
     "status": "experimental",
     "progress": 40,
     "icon": "Network",
     "tags": [
-      "networking",
-      "packets",
-      "routing"
+      "authentication",
+      "cloud sync",
+      "multi-device access"
     ]
   },
   {
