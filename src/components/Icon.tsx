@@ -1,4 +1,4 @@
-import { type LucideProps, Terminal, Network, Waves, Radar, Smartphone, Swords, Cpu, Container, Code2, Cloud, Library, FlaskConical, Crosshair, Download, Trophy, StickyNote, Search, Settings, Info, LayoutDashboard, BookOpen, Lock, CheckCircle2, Circle, Play, ChevronRight, ChevronDown, Menu, X, HardDrive, Activity, Wifi, Zap, Gauge, ArrowRight, ArrowLeft, ArrowDown, FileText, FileX, Target, Award, Bell, User, Shield, Sparkles, RotateCcw, Type, Eye, EyeOff, Save, Plus, Filter, Star, Clock, Signal, Server, Database, Globe, Layers, Bookmark, Archive, Image, Volume2, Palette, Maximize2, Minimize2, PanelLeft, PanelRight, TerminalSquare, FolderTree, Power, ChevronLeft, CircleDot, ListChecks, AlertTriangle, Loader2, Send, RefreshCw, AlertCircle, Box, Monitor, Check, Tag, ExternalLink } from 'lucide-react';
+import { type LucideProps, Terminal, Network, Waves, Radar, Smartphone, Swords, Cpu, Container, Code2, Cloud, Library, FlaskConical, Crosshair, Download, Trophy, StickyNote, Search, Settings, Info, LayoutDashboard, BookOpen, Lock, CheckCircle2, Circle, Play, ChevronRight, ChevronDown, Menu, X, HardDrive, Activity, Wifi, Zap, Gauge, ArrowRight, ArrowLeft, ArrowDown, FileText, FileX, Target, Award, Bell, User, Shield, Sparkles, RotateCcw, Type, Eye, EyeOff, Save, Plus, Filter, Star, Clock, Signal, Server, Database, Globe, Layers, Bookmark, Archive, Image, Volume2, Palette, Maximize2, Minimize2, PanelLeft, PanelRight, TerminalSquare, FolderTree, Power, ChevronLeft, CircleDot, ListChecks, AlertTriangle, Loader2, Send, RefreshCw, AlertCircle, Box, Monitor, Check, Tag, ExternalLink, MessageSquare, Calendar, TrendingUp, Inbox, Folder } from 'lucide-react';
 
 // ===========================================================
 // Icon registry — maps string names from the data registry to
@@ -14,7 +14,7 @@ const REGISTRY: Record<string, React.ComponentType<LucideProps>> = {
   Clock, Signal, Server, Database, Globe, Layers, Bookmark, Archive, Image, Volume2, Palette,
   Maximize2, Minimize2, PanelLeft, PanelRight, TerminalSquare, FolderTree, Power, ChevronLeft,
   CircleDot, ListChecks, AlertTriangle, Loader2, Send, RefreshCw, AlertCircle, Box, Monitor, Check, Tag,
-  ArrowDown, FileX, ExternalLink,
+  ArrowDown, FileX, ExternalLink, MessageSquare, Calendar, TrendingUp, Inbox, Folder,
 };
 
 export type IconName = keyof typeof REGISTRY;

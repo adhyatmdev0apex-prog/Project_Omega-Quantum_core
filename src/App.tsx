@@ -22,6 +22,7 @@ import { TerminalPage } from './pages/TerminalPage';
 import { LinuxLabPage } from './pages/LinuxLabPage';
 import { BetaLabsPage } from './pages/BetaLabsPage';
 import { BetaLabPage } from './pages/BetaLabPage';
+import { FeedbackDashboardPage } from './pages/FeedbackDashboardPage';
 
 // ===========================================================
 // App — providers + router. Home is a full-screen boot; every
@@ -100,6 +101,8 @@ function renderPage(segments: string[]) {
       return <SettingsPage />;
     case 'about':
       return <AboutPage />;
+    case 'feedback-dashboard':
+      return <FeedbackDashboardPage />;
     case 'terminal':
       return <TerminalPage />;
     default:

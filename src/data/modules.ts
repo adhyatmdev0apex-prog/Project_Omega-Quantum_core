@@ -199,6 +199,7 @@ export const SIDEBAR_NAV = [
   { id: 'search', label: 'Search', icon: 'Search', group: 'tools' },
   { id: 'settings', label: 'Settings', icon: 'Settings', group: 'tools' },
   { id: 'about', label: 'About', icon: 'Info', group: 'tools' },
+  { id: 'feedback-dashboard', label: 'Feedback Analytics', icon: 'TrendingUp', group: 'dev' },
 ] as const;
 
 export type SidebarItem = (typeof SIDEBAR_NAV)[number];

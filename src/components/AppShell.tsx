@@ -103,8 +103,8 @@ function Sidebar({
   onClose?: () => void;
   className?: string;
 }) {
-  const groups = ['core', 'progress', 'tools'] as const;
-  const groupLabel: Record<string, string> = { core: 'Core', progress: 'Progress', tools: 'Tools' };
+  const groups = ['core', 'progress', 'tools', 'dev'] as const;
+  const groupLabel: Record<string, string> = { core: 'Core', progress: 'Progress', tools: 'Tools', dev: 'Developer' };
 
   return (
     <aside
@@ -127,13 +127,17 @@ function Sidebar({
         {groups.map((g) => (
           <div key={g} className="mb-4">
             {!collapsed && (
-              <div className="px-3 pb-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-slate-600">
+              <div className={cn(
+                'px-3 pb-1.5 font-mono text-[10px] uppercase tracking-[0.2em]',
+                g === 'dev' ? 'text-cyan-600' : 'text-slate-600'
+              )}>
                 {groupLabel[g]}
               </div>
             )}
             <ul className="space-y-0.5">
               {SIDEBAR_NAV.filter((n) => n.group === g).map((item) => {
                 const isActive = active === item.id;
+                const isDevItem = item.group === 'dev';
                 return (
                   <li key={item.id}>
                     <button
@@ -144,15 +148,19 @@ function Sidebar({
                         collapsed && 'justify-center',
                         isActive && item.id === 'beta'
                           ? 'bg-warn-400/10 text-warn-200'
+                          : isActive && isDevItem
+                          ? 'bg-cyan-400/10 text-cyan-200'
                           : isActive
                           ? 'bg-neon-400/10 text-neon-200'
+                          : isDevItem
+                          ? 'text-slate-500 hover:bg-cyan-400/5 hover:text-cyan-300'
                           : 'text-slate-400 hover:bg-white/5 hover:text-white',
                       )}
                     >
                       {isActive && (
                         <span className={cn(
                           'absolute left-0 top-1/2 h-6 w-0.5 -translate-y-1/2 rounded-full',
-                          item.id === 'beta' ? 'bg-warn-400' : 'bg-neon-400 shadow-glow',
+                          item.id === 'beta' ? 'bg-warn-400' : isDevItem ? 'bg-cyan-400' : 'bg-neon-400 shadow-glow',
                         )} />
                       )}
                       <Icon
@@ -161,8 +169,8 @@ function Sidebar({
                         className={cn(
                           'shrink-0 transition-colors',
                           isActive
-                            ? item.id === 'beta' ? 'text-warn-400' : 'text-neon-400'
-                            : item.id === 'beta' ? 'text-warn-500 group-hover:text-warn-400' : 'text-slate-500 group-hover:text-neon-300',
+                            ? item.id === 'beta' ? 'text-warn-400' : isDevItem ? 'text-cyan-400' : 'text-neon-400'
+                            : item.id === 'beta' ? 'text-warn-500 group-hover:text-warn-400' : isDevItem ? 'text-cyan-600 group-hover:text-cyan-400' : 'text-slate-500 group-hover:text-neon-300',
                         )}
                       />
                       {!collapsed && (
@@ -171,6 +179,11 @@ function Sidebar({
                           {item.id === 'beta' && (
                             <span className="rounded-full border border-warn-400/30 bg-warn-400/10 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-warn-400">
                               beta
+                            </span>
+                          )}
+                          {isDevItem && (
+                            <span className="rounded-full border border-cyan-400/30 bg-cyan-400/10 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-cyan-400">
+                              dev
                             </span>
                           )}
                         </span>
