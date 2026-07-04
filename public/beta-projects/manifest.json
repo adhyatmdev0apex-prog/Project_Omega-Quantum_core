@@ -17,7 +17,7 @@
     "slug": "networking",
     "title": "Networking Simulator",
     "description": "Interactive packet visualization and networking missions. Build, configure, and troubleshoot virtual networks in your browser.",
-    "version": "v0.1 Alpha",
+    "version": "v0.6 Beta",
     "status": "experimental",
     "progress": 20,
     "icon": "Network",
