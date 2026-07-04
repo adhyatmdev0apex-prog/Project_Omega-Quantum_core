@@ -28,7 +28,7 @@ export function AppShell({ children, workspace = false }: { children: ReactNode;
   };
 
   return (
-    <div className="relative z-10 flex min-h-screen flex-col">
+    <div className="relative z-10 flex h-screen flex-col overflow-hidden">
       {/* Mobile top bar */}
       <div className="flex items-center justify-between border-b border-white/5 bg-ink-900/80 px-4 py-3 backdrop-blur-xl md:hidden">
         <button onClick={() => setMobileOpen(true)} className="qc-focus rounded-lg p-1.5 text-slate-300 hover:text-white">
@@ -38,7 +38,7 @@ export function AppShell({ children, workspace = false }: { children: ReactNode;
         <div className="w-9" />
       </div>
 
-      <div className="flex flex-1">
+      <div className="flex min-h-0 flex-1 overflow-hidden">
         {/* Sidebar — desktop */}
         <Sidebar
           collapsed={collapsed}
@@ -62,7 +62,7 @@ export function AppShell({ children, workspace = false }: { children: ReactNode;
         <main
           id="qc-main"
           className={cn(
-            'flex-1',
+            'min-w-0 flex-1',
             workspace
               ? 'overflow-hidden flex flex-col'
               : 'overflow-y-auto px-4 py-6 md:px-8 md:py-8',
@@ -109,7 +109,7 @@ function Sidebar({
   return (
     <aside
       className={cn(
-        'flex flex-col border-r border-white/5 bg-ink-900/60 backdrop-blur-xl',
+        'flex shrink-0 flex-col border-r border-white/5 bg-ink-900/60 backdrop-blur-xl',
         collapsed ? 'w-16' : 'w-64',
         className,
       )}

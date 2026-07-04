@@ -62,9 +62,12 @@ function Routed() {
   // Home = full-screen boot, no shell
   if (!root) return <HomePage />;
 
-  // Workspace routes: iframe-based labs that must fill all available space.
+  // Workspace routes: simulator/lab pages that must fill all available space.
   // Workspace mode removes max-w, padding, and the system monitor sidebar.
-  const isWorkspace = root === 'beta' && !!segments[1];
+  // Add any new full-screen lab here; it automatically inherits the layout.
+  const isWorkspace =
+    (root === 'beta' && !!segments[1]) ||     // /beta/<slug>
+    (root === 'labs' && segments[1] === 'linux'); // /labs/linux
 
   const page = renderPage(segments);
   return <AppShell workspace={isWorkspace}>{page}</AppShell>;
