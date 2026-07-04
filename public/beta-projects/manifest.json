@@ -5,7 +5,7 @@
     "description": "Interactive packet visualization and networking missions. Build, configure, and troubleshoot virtual networks in your browser.",
     "version": "v0.1 Alpha",
     "status": "experimental",
-    "progress": 40,
+    "progress": 20,
     "icon": "Network",
     "tags": [
       "networking",
