@@ -30,7 +30,6 @@ export interface QuantumCoreSession {
  */
 const COMMAND_ALIASES: Record<string, string> = {
   dir: "ls",
-  sh: "bash",
 };
 
 /**
