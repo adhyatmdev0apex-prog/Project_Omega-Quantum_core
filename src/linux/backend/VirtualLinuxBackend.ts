@@ -8,13 +8,13 @@
 // ===========================================================
 
 import type { CommandResult, LinuxBackend, SessionState } from '../../lib/linuxEngine';
-import { StubBackend } from '../../lib/linuxEngine';
+import { ClaudeBackend } from '../../lib/ClaudeBackend';
 
 export class VirtualLinuxBackend implements LinuxBackend {
   readonly name = 'virtual';
 
   async execute(command: string, state: SessionState): Promise<CommandResult> {
-    return StubBackend.execute(command, state);
+    return ClaudeBackend.execute(command, state);
   }
 
   init(_state: SessionState): void {
