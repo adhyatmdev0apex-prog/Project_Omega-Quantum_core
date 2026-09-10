@@ -14,7 +14,7 @@ export function Esp32GuidePage({ slug }: { slug: string }) {
   const file = `/library/ESP-32/${slug}.html`;
 
   return (
-    <div className="flex h-full min-h-0 min-w-0 flex-col gap-3">
+    <div className="flex h-full min-h-0 flex-col gap-3">
       {/* Guide navigation */}
       <div className="flex flex-shrink-0 flex-wrap items-center justify-between gap-3">
         <button
