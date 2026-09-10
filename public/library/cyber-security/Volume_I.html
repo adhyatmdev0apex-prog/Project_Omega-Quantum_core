@@ -1,0 +1,1897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QUANTUM CORE v1.0 — The Tech Bible</title>
+<link href="https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&family=Fira+Code:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{--g:#00ff41;--dg:#003a00;--dim:#005500;--bg0:#000000;--bg1:#050505;--amber:#ffa600;--cyan:#00e5ff;--red:#ff4444;--softg:#b3ffcc;}
+body{background:var(--bg0);color:var(--g);font-family:'Fira Code','Share Tech Mono','Courier New',monospace;font-size:14px;line-height:1.85;padding-bottom:60px;}
+body::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.06) 2px,rgba(0,0,0,0.06) 4px);pointer-events:none;z-index:9999;}
+.page{max-width:860px;margin:0 auto;padding:60px 48px;border-bottom:1px solid var(--dg);}
+.page:last-child{border-bottom:none;}
+
+/* COVER */
+.cover{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;position:relative;overflow:hidden;}
+#matrix-canvas{position:absolute;top:0;left:0;z-index:0;opacity:0.15;}
+.cover-content{position:relative;z-index:1;}
+.ascii-logo{font-family:'Fira Code',monospace;font-size:9.5px;color:var(--g);line-height:1.1;white-space:pre;margin-bottom:32px;text-shadow:0 0 10px rgba(0,255,65,0.3);}
+.eyebrow{color:var(--dim);font-size:11px;letter-spacing:8px;margin-bottom:38px;text-transform:uppercase;}
+.main-title{font-family:'VT323',monospace;font-size:84px;color:var(--g);letter-spacing:16px;text-transform:uppercase;animation:glitch 5s infinite;margin-bottom:10px;}
+@keyframes glitch{0%,87%,100%{text-shadow:none;}88%{text-shadow:-3px 0 #f00;}89%{text-shadow:3px 0 #00f;}90%{text-shadow:none;}93%{text-shadow:-2px 0 #0ff;}94%{text-shadow:none;}}
+.cover-sub{font-family:'VT323',monospace;font-size:26px;color:var(--dim);letter-spacing:6px;margin-bottom:52px;}
+.boot-log{text-align:left;font-size:12px;color:var(--dim);border:1px solid var(--dg);padding:22px 28px;width:100%;max-width:560px;background:rgba(0,255,65,0.02);}
+.boot-log .ok{color:var(--g);}.boot-log .warn{color:var(--amber);}.boot-log .ln{margin-bottom:5px;}
+.blink{animation:blink 1s step-end infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+
+/* SECTION HEADERS */
+.sec-header{border-top:2px solid var(--g);border-bottom:1px solid var(--dg);padding:20px 0;margin-bottom:44px;}
+.prompt{color:var(--dim);font-size:12px;margin-bottom:10px;}
+.prompt .path{color:var(--amber);}.prompt .dollar{color:var(--g);}.prompt .cmd{color:#fff;}
+h1.sec-title{font-family:'VT323',monospace;font-size:54px;letter-spacing:8px;text-transform:uppercase;color:var(--g);}
+.sec-sub{color:var(--amber);font-size:11px;letter-spacing:4px;margin-top:4px;}
+h2{font-family:'VT323',monospace;font-size:38px;letter-spacing:4px;text-transform:uppercase;margin:44px 0 14px;}
+h2::before{content:'>> ';color:var(--dim);}
+h3{font-family:'Share Tech Mono',monospace;font-size:14px;text-transform:uppercase;letter-spacing:3px;color:#39ff14;margin:28px 0 10px;}
+h3::before{content:'> ';color:var(--dim);}
+p{color:var(--softg);margin-bottom:14px;font-size:13px;}
+.hl{color:var(--g);font-weight:600;}.amb{color:var(--amber);}.rd{color:var(--red);}.cy{color:var(--cyan);}
+
+/* INDEX TABLE */
+.index-tbl{width:100%;border-collapse:collapse;margin:14px 0;font-size:13px;}
+.index-tbl tr{border-bottom:1px solid rgba(0,255,65,0.08);transition:background .15s;}
+.index-tbl tr:hover{background:rgba(0,255,65,0.035);}
+.index-tbl td{padding:9px 14px;}
+.d-num{color:var(--dim);font-size:11px;width:70px;letter-spacing:1px;}
+.d-title{color:var(--g);font-family:'Share Tech Mono',monospace;letter-spacing:1px;}
+.d-tag{color:var(--amber);font-size:11px;text-align:right;width:120px;letter-spacing:1px;}
+
+/* CALLOUTS */
+.callout{border:1px solid;padding:18px 22px;margin:24px 0;position:relative;}
+.callout::before{position:absolute;top:-10px;left:14px;padding:0 8px;background:var(--bg0);font-size:10px;font-family:'Fira Code',monospace;letter-spacing:2px;text-transform:uppercase;}
+.c-real{border-color:var(--dg);background:rgba(0,255,65,0.02);color:var(--softg);}
+.c-real::before{content:'[ REAL TALK ]';color:var(--g);}
+.c-tldr{border-color:rgba(255,166,0,0.35);background:rgba(255,166,0,0.02);color:#ffd080;}
+.c-tldr::before{content:'[ TL;DR ]';color:var(--amber);}
+.c-warn{border-color:rgba(255,68,68,0.4);background:rgba(255,68,68,0.02);color:#ffaaaa;}
+.c-warn::before{content:'[ WARNING ]';color:var(--red);}
+.c-mission{border-color:rgba(0,229,255,0.3);background:rgba(0,229,255,0.015);color:#aaeeff;}
+.c-mission::before{content:'[ MISSION ]';color:var(--cyan);}
+.c-fact{border-color:rgba(57,255,20,0.2);background:rgba(57,255,20,0.01);color:#c8ffd4;}
+.c-fact::before{content:'[ NO CAP ]';color:#39ff14;}
+
+/* CODE */
+.code{background:var(--bg1);border:1px solid var(--dg);border-left:3px solid var(--g);padding:16px 22px;margin:16px 0;font-family:'Fira Code',monospace;font-size:12.5px;color:var(--g);overflow-x:auto;line-height:1.7;}
+.cc{color:#005500;}.cs{color:var(--amber);}.ck{color:#ff80ab;}.cn{color:var(--cyan);}
+
+/* FLOW */
+.flow{display:flex;flex-direction:column;margin:22px 0;max-width:380px;}
+.flow-item{background:rgba(0,255,65,0.025);border:1px solid var(--dg);border-bottom:none;padding:9px 20px;font-size:12px;letter-spacing:1px;color:var(--softg);}
+.flow-item:last-child{border-bottom:1px solid var(--dg);}
+.flow-item::before{content:'>>> ';color:var(--dim);}
+.flow-arrow{color:var(--dim);font-size:11px;padding:2px 20px;}
+
+/* ANALOGY GRID */
+.analogy{display:grid;grid-template-columns:1fr 38px 1fr;margin:20px 0;font-size:12.5px;}
+.a-left{border:1px solid var(--dg);background:rgba(255,166,0,0.03);padding:12px 16px;border-right:none;color:var(--amber);}
+.a-right{border:1px solid var(--dg);background:rgba(0,255,65,0.02);padding:12px 16px;border-left:none;color:var(--softg);}
+.a-arrow{display:flex;align-items:center;justify-content:center;font-size:16px;background:rgba(0,255,65,0.03);border-top:1px solid var(--dg);border-bottom:1px solid var(--dg);color:var(--dim);}
+.a-lbl{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:6px;}
+
+/* COMPARISON TABLE */
+.cmp-tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:12.5px;}
+.cmp-tbl th{background:rgba(0,255,65,0.07);color:var(--g);padding:10px 14px;text-align:left;border:1px solid var(--dg);font-family:'Share Tech Mono';letter-spacing:2px;font-size:11px;}
+.cmp-tbl td{padding:9px 14px;border:1px solid rgba(0,255,65,0.08);color:var(--softg);}
+.cmp-tbl tr:nth-child(even) td{background:rgba(0,255,65,0.01);}
+
+/* LETTER */
+.letter{border:1px solid rgba(0,255,65,0.18);padding:32px;margin:30px 0;background:rgba(0,255,65,0.01);position:relative;}
+.letter::before{content:'[ INCOMING TRANSMISSION ]';position:absolute;top:-10px;left:20px;background:var(--bg0);padding:0 10px;font-size:11px;color:var(--amber);letter-spacing:3px;}
+.letter-meta{font-size:12px;color:var(--dim);margin-bottom:22px;border-bottom:1px solid var(--dg);padding-bottom:16px;line-height:2.2;}
+.letter-meta span{color:var(--g);}
+.letter-body p{color:#c8ffd4;margin-bottom:16px;}
+
+/* SEPARATOR */
+.sep-txt{display:flex;align-items:center;gap:10px;color:var(--dim);font-size:11px;letter-spacing:3px;margin:28px 0;}
+.sep-txt::before,.sep-txt::after{content:'';flex:1;height:1px;background:var(--dg);}
+
+/* CHAPTER END BADGE */
+.ch-end{display:flex;align-items:center;gap:12px;margin:48px 0 0;color:var(--dim);font-size:11px;letter-spacing:3px;}
+.ch-end::before,.ch-end::after{content:'';flex:1;height:1px;background:var(--dg);}
+
+/* STATUS BAR */
+.statusbar{position:fixed;bottom:0;left:0;right:0;background:rgba(0,0,0,0.96);border-top:1px solid var(--dg);padding:5px 20px;font-size:11px;color:var(--dim);display:flex;justify-content:space-between;z-index:1000;}
+
+/* TAG PILL */
+.tag{display:inline-block;font-size:10px;letter-spacing:2px;padding:2px 10px;border:1px solid var(--dg);color:var(--dim);margin:0 4px 4px 0;}
+.tag.g{border-color:rgba(0,255,65,0.3);color:var(--g);}
+.tag.a{border-color:rgba(255,166,0,0.3);color:var(--amber);}
+.tag.r{border-color:rgba(255,68,68,0.3);color:var(--red);}
+
+/* CHECKLIST */
+.checklist{list-style:none;margin:14px 0;}
+.checklist li{color:var(--softg);font-size:13px;padding:5px 0;}
+.checklist li::before{content:'[✓] ';color:var(--g);}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ COVER ═══════════ -->
+<div class="page cover" id="cover-page">
+<canvas id="matrix-canvas"></canvas>
+<div class="cover-content">
+<div class="ascii-logo"> ██████╗ ██╗   ██╗ █████╗ ███╗   ██╗████████╗██╗   ██╗███╗   ███╗
+██╔═══██╗██║   ██║██╔══██╗████╗  ██║╚══██╔══╝██║   ██║████╗ ████║
+██║   ██║██║   ██║███████║██╔██╗ ██║   ██║   ██║   ██║██╔████╔██║
+██║▄▄ ██║██║   ██║██╔══██║██║╚██╗██║   ██║   ██║   ██║██║╚██╔╝██║
+╚██████╔╝╚██████╔╝██║  ██║██║ ╚████║   ██║   ╚██████╔╝██║ ╚═╝ ██║
+ ╚══▀▀═╝  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═══╝   ╚═╝    ╚═════╝ ╚═╝     ╚═╝</div>
+<div class="eyebrow">◈ &nbsp; CORE FUNDAMENTALS — PART A &nbsp; ◈</div>
+<div class="main-title">QUANTUM CORE</div>
+<div class="cover-sub">THE TECH BIBLE FOR THE NEXT GENERATION</div>
+<div class="boot-log">
+  <div class="ln"><span class="ok">[  OK  ]</span>&nbsp; Loading kernel modules...</div>
+  <div class="ln"><span class="ok">[  OK  ]</span>&nbsp; Mounting curiosity engine...</div>
+  <div class="ln"><span class="ok">[  OK  ]</span>&nbsp; Initializing 16-day roadmap...</div>
+  <div class="ln"><span class="ok">[  OK  ]</span>&nbsp; Calibrating hacker vibes...</div>
+  <div class="ln"><span class="ok">[  OK  ]</span>&nbsp; Side effects: understanding how everything works</div>
+  <div class="ln"><span class="warn">[ WARN ]</span>&nbsp; Warning: you cannot unlearn this</div>
+  <div class="ln"><span class="ok">[  OK  ]</span>&nbsp; <span style="color:#fff">SYSTEM READY — WELCOME, HACKER BRO<span class="blink">_</span></span></div>
+</div>
+</div>
+</div>
+
+<!-- ═══════════ INDEX ═══════════ -->
+<div class="page">
+<div class="sec-header">
+  <div class="prompt"><span class="path">root@breach:~/manifest</span> <span class="dollar">$</span> <span class="cmd">cat table_of_contents.txt</span></div>
+  <h1 class="sec-title">Manifest</h1>
+  <div class="sec-sub">◈ ALL 16 MODULES LOCKED AND LOADED ◈</div>
+</div>
+
+<div class="letter">
+  <div class="letter-meta">
+    FROM:&nbsp;&nbsp;&nbsp;&nbsp; <span>[ your bro who wrote this — classified ]</span><br>
+    TO:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span>my hacker broos</span><br>
+    SUBJECT:&nbsp; <span>READ THIS BEFORE YOU TOUCH ANYTHING. SERIOUSLY.</span><br>
+    PRIORITY:&nbsp; <span>MAXIMUM</span>
+  </div>
+  <div class="letter-body">
+    <p>yo bro — welcome to <span class="hl">QUANTUM CORE</span>.</p>
+    <p>i already know what happened when you saw the cover. your brain immediately went: <span style="color:var(--amber);font-style:italic;">"bro i'm about to hack NASA."</span> i get it. i really do.</p>
+    <p><span class="rd" style="font-size:15px;">stop right there. 🛑</span></p>
+    <p>real hackers — actual security researchers, not movie guys in hoodies — spend <span class="hl">years</span> learning how systems work before they even think about breaking them. you cannot exploit what you don't understand. knowing the weakness means knowing the system better than the person who built it.</p>
+    <p>this book is not a shortcut to Kali Linux. this is <span class="hl">the foundation that makes every shortcut actually make sense</span>. by the time you finish all 16 days, the matrix won't look like random green characters anymore — it'll look like systems you actually understand inside out. <span class="hl">that's the real power move.</span></p>
+    <p>go through every day. in order. don't skip. the person who reads cover to cover will be operating on a completely different level than someone who jumped straight to "hacking tools". trust the process.</p>
+    <p style="margin-top:24px;color:var(--dim);">— your bro, who learned all this the hard way 💀<span class="blink">_</span></p>
+  </div>
+</div>
+
+<div class="sep-txt">INDEX</div>
+
+<table class="index-tbl">
+  <tr><td class="d-num">DAY_01</td><td class="d-title">FIRST CONTACT — Python &amp; How Machines Think</td><td class="d-tag">[FOUNDATION]</td></tr>
+  <tr><td class="d-num">DAY_02</td><td class="d-title">UNDER THE HOOD — Hardware &amp; Operating Systems</td><td class="d-tag">[HARDWARE]</td></tr>
+  <tr><td class="d-num">DAY_03</td><td class="d-title">TALK TO THE MACHINE — Linux &amp; The Terminal</td><td class="d-tag">[LINUX]</td></tr>
+  <tr><td class="d-num">DAY_04</td><td class="d-title">THE GRID — Networking Fundamentals</td><td class="d-tag">[NETWORK]</td></tr>
+  <tr><td class="d-num">STAGE_1</td><td class="d-title">BUILD YOUR LAB — Virtualization &amp; Environments</td><td class="d-tag">[SECURITY]</td></tr>
+  <tr><td class="d-num">DAY_05</td><td class="d-title">CREATE MODE — Development &amp; How Software Is Built</td><td class="d-tag">[DEV]</td></tr>
+  <tr><td class="d-num">DAY_07</td><td class="d-title">THE SKELETON — HTML &amp; Structure Of The Web</td><td class="d-tag">[WEB]</td></tr>
+  <tr><td class="d-num">DAY_08</td><td class="d-title">MAKE IT ALIVE — CSS &amp; Visual Design</td><td class="d-tag">[WEB]</td></tr>
+  <tr><td class="d-num">DAY_09</td><td class="d-title">BRAIN OF THE WEB — Browser, DOM &amp; JavaScript</td><td class="d-tag">[WEB]</td></tr>
+  <tr><td class="d-num">DAY_10</td><td class="d-title">THE MESSENGERS — APIs &amp; Client-Server Communication</td><td class="d-tag">[BACKEND]</td></tr>
+  <tr><td class="d-num">DAY_11</td><td class="d-title">PERMANENT MEMORY — Databases &amp; SQL</td><td class="d-tag">[BACKEND]</td></tr>
+  <tr><td class="d-num">DAY_12</td><td class="d-title">REAL WORLD PROTOCOL — Electronics Fundamentals</td><td class="d-tag">[HARDWARE]</td></tr>
+  <tr><td class="d-num">DAY_13</td><td class="d-title">BRIDGE TO REALITY — ESP32 &amp; Embedded Systems</td><td class="d-tag">[IOT]</td></tr>
+  <tr><td class="d-num">DAY_14</td><td class="d-title">THE LOCKS — Cybersecurity Fundamentals</td><td class="d-tag">[SECURITY]</td></tr>
+  <tr><td class="d-num">DAY_15</td><td class="d-title">THE ORACLE — Artificial Intelligence</td><td class="d-tag">[AI]</td></tr>
+  <tr><td class="d-num">DAY_16</td><td class="d-title">GO MODE — Building Real Projects</td><td class="d-tag">[PROJECTS]</td></tr>
+</table>
+
+<div class="callout c-fact" style="margin-top:32px;">
+  <span class="hl">PART B</span> (advanced — cybersecurity deep dives, penetration testing, exploit research) drops after you finish this book. don't even ask about it until you've gone through all 16 days. no skipping. 🔒
+</div>
+</div>
+
+<!-- ═══════════ DAY 1 ═══════════ -->
+<div class="page">
+<div class="sec-header">
+  <div class="prompt"><span class="path">root@breach:~/day01</span> <span class="dollar">$</span> <span class="cmd">./first_contact.sh --init</span></div>
+  <h1 class="sec-title">DAY_01 — FIRST CONTACT</h1>
+  <div class="sec-sub">PYTHON &amp; HOW MACHINES ACTUALLY THINK</div>
+</div>
+
+<div class="callout c-warn">
+  before you write a single line of code, get this into your head: <span class="hl">a computer is NOT intelligent</span>. no brain. no vibes. no common sense. it only knows two things: <span class="hl">0</span> and <span class="hl">1</span>. everything else — games, YouTube, Instagram, Windows, AI, robots — is just billions of those two digits being processed at insane speed.
+</div>
+
+<h2>What Even Is A Program?</h2>
+<p>imagine you tell someone: <span class="amb">"go bring me water."</span> they know English, they know what to do. easy. a computer? completely lost. it only follows instructions written in a language it understands. that list of instructions is called a <span class="hl">program</span>. programming is writing those instructions. nothing more, nothing less.</p>
+
+<h3>why Python though?</h3>
+<p>could you start with C? yes. Java? also yes. but Python lets you focus on the <span class="hl">thinking</span> instead of fighting weird syntax. it reads almost like plain English, which is why millions of beginners start here — and professionals building AI, backends, and automation still use it daily.</p>
+
+<div class="code"><span class="cc"># your very first line. don't overthink it.</span>
+<span class="ck">print</span>(<span class="cs">"Hello World"</span>)
+
+<span class="cc"># the computer isn't saying hello. it's following your order.
+# you are the commander. it executes. 🫡</span></div>
+
+<h2>Variables — Named Boxes</h2>
+<p>imagine a box. you write your name on it. inside you put your phone. whenever someone says <span class="amb">"bring me that box"</span> — you know exactly which one. a variable is that. a named box for storing data.</p>
+
+<div class="code">name = <span class="cs">"Sarim"</span>    <span class="cc"># text</span>
+age  = 17          <span class="cc"># whole number</span>
+city = <span class="cs">"Delhi"</span>    <span class="cc"># also text</span>
+<span class="cc"># Python remembers what's inside each box</span></div>
+
+<h3>data types — pick the right container</h3>
+<div class="analogy">
+  <div class="a-left"><div class="a-lbl">real world</div>don't store water in a paper bag<br>don't do math on someone's name<br>pick the right container</div>
+  <div class="a-arrow">⇒</div>
+  <div class="a-right"><div class="a-lbl">in Python</div><span class="ck">str</span> &nbsp;→ text &nbsp;&nbsp;&nbsp; <span class="cs">"hello"</span><br><span class="ck">int</span> &nbsp;→ whole numbers &nbsp; <span class="cs">17</span><br><span class="ck">float</span> → decimals &nbsp; <span class="cs">15.7</span><br><span class="ck">bool</span> → True / False</div>
+</div>
+
+<h2>Taking Input</h2>
+<p>programs get interesting when they actually listen to the user.</p>
+<div class="code">name = <span class="ck">input</span>(<span class="cs">"Enter your name: "</span>)
+<span class="ck">print</span>(<span class="cs">"Hello"</span>, name)
+<span class="cc"># program waits → you type → it responds</span></div>
+
+<h2>Making Decisions — IF Statements</h2>
+<p>your mom says: <span class="amb">"if the milk is finished, buy more. otherwise come home."</span> that's an IF statement. computers make decisions the exact same way.</p>
+<div class="code">money = 100
+
+<span class="ck">if</span> money >= 50:
+    <span class="ck">print</span>(<span class="cs">"Buy pizza"</span>)
+<span class="ck">else</span>:
+    <span class="ck">print</span>(<span class="cs">"Go home bro"</span>)
+
+<span class="cc"># computers don't think. they compare conditions
+# and follow whichever path matches. that's it.</span></div>
+
+<h2>Loops — Repeat Without Crying</h2>
+<p>say "hello" five times. you could write print five times... or you could just tell the computer to repeat it.</p>
+<div class="code"><span class="ck">for</span> i <span class="ck">in</span> <span class="ck">range</span>(5):
+    <span class="ck">print</span>(<span class="cs">"Hello"</span>)
+
+<span class="cc"># loops save time. every OS, website, and game
+# uses loops thousands of times every second.</span></div>
+
+<h2>Functions — Reusable Actions</h2>
+<p>every morning you make tea. same steps every time. instead of explaining it every day you just say: <span class="amb">"make tea."</span> functions work like that — the whole process hidden behind one name.</p>
+<div class="code"><span class="ck">def</span> greet():
+    <span class="ck">print</span>(<span class="cs">"Hello Bro"</span>)
+
+greet()  <span class="cc"># calls the function, code runs</span></div>
+
+<h2>Lists &amp; Dictionaries</h2>
+<div class="code"><span class="cc"># list — one collection instead of five variables</span>
+friends = [<span class="cs">"Ali"</span>, <span class="cs">"Sarim"</span>, <span class="cs">"Rahul"</span>, <span class="cs">"Arjun"</span>]
+
+<span class="cc"># dictionary — data with labels (like an ID card)</span>
+student = {
+    <span class="cs">"name"</span>: <span class="cs">"Sarim"</span>,
+    <span class="cs">"age"</span>: 17,
+    <span class="cs">"city"</span>: <span class="cs">"Delhi"</span>
+}</div>
+
+<h2>The Blueprint of ALL Software</h2>
+<p>look carefully — you already understand how most programs work at a structural level. every app, every AI model, every game follows this same flow:</p>
+<div class="flow">
+  <div class="flow-item">INPUT — user gives information</div>
+  <div class="flow-item">VARIABLES — data stored in named boxes</div>
+  <div class="flow-item">CONDITIONS — decisions made (if/else)</div>
+  <div class="flow-item">LOOPS — tasks repeat automatically</div>
+  <div class="flow-item">FUNCTIONS — steps organized + reused</div>
+  <div class="flow-item">FILES — data saved permanently</div>
+  <div class="flow-item">OUTPUT — result shown to user</div>
+</div>
+<p style="margin-top:16px;"><span class="hl">that pattern is in every app, website, game, and AI system you've ever used.</span> bank software, Instagram, robots — all of it. you just saw the blueprint.</p>
+
+<div class="callout c-tldr">
+  <span class="hl">TL;DR:</span> computer = only 0s and 1s. programming = giving it instructions in a language it understands. Python = cleanest way to start. variables = named boxes. input → process → output = the universal pattern of ALL software. day 1 complete. 🔥
+</div>
+<div class="ch-end">END OF DAY_01 // NEXT: HARDWARE &amp; OS</div>
+</div>
+
+<!-- ═══════════ DAY 2 ═══════════ -->
+<div class="page">
+<div class="sec-header">
+  <div class="prompt"><span class="path">root@breach:~/day02</span> <span class="dollar">$</span> <span class="cmd">./open_the_hood.sh</span></div>
+  <h1 class="sec-title">DAY_02 — UNDER THE HOOD</h1>
+  <div class="sec-sub">HARDWARE &amp; OPERATING SYSTEM BASICS</div>
+</div>
+
+<div class="callout c-real">
+  bro, if someone gives you a Ferrari but you don't know how an engine works, you'll only know how to drive it. most people know how to <span class="hl">use</span> a computer. very few know how it actually <span class="hl">works</span>. today we open the hood.
+</div>
+
+<h2>Your Computer Is A Human Body</h2>
+<table class="cmp-tbl">
+  <tr><th>HUMAN</th><th>COMPUTER</th></tr>
+  <tr><td>Brain</td><td>CPU</td></tr>
+  <tr><td>Short-term memory</td><td>RAM</td></tr>
+  <tr><td>Long-term memory</td><td>SSD / HDD</td></tr>
+  <tr><td>Nervous system (roads)</td><td>Motherboard</td></tr>
+  <tr><td>Blood</td><td>Electricity</td></tr>
+  <tr><td>Eyes</td><td>Camera / Monitor</td></tr>
+  <tr><td>Mouth</td><td>Speaker</td></tr>
+  <tr><td>Hands</td><td>Mouse &amp; Keyboard</td></tr>
+</table>
+
+<h2>CPU — The Brain</h2>
+<div class="analogy">
+  <div class="a-left"><div class="a-lbl">analogy</div>a chef. customers order food. the chef doesn't eat it. he follows recipes. doesn't know games, doesn't know music — just follows instructions.</div>
+  <div class="a-arrow">⇒</div>
+  <div class="a-right"><div class="a-lbl">reality</div>CPU = decision maker. every click, every game, every YouTube video eventually hits the CPU. it doesn't know any of those things — it only executes instructions. millions per second.</div>
+</div>
+
+<h2>RAM — Short Term Memory</h2>
+<p>you're solving math. you don't write every number in a permanent diary — you remember it temporarily. <span class="hl">that's RAM.</span> open Chrome? loaded in RAM. open VS Code? RAM. open a game? RAM. power goes off → everything inside RAM disappears. that's why unsaved work is gone after a power cut. fast but temporary.</p>
+
+<h2>SSD / HDD — Permanent Memory</h2>
+<p>your school notebook. even after one year your notes are still there. your photos, videos, games, downloads — everything stays even when power is off. slower than RAM but <span class="hl">permanent</span>.</p>
+
+<h2>Motherboard — The Roads of the City</h2>
+<p>imagine a city where roads connect every building. the motherboard is those roads. CPU needs RAM? motherboard connects them. SSD sends data to CPU? motherboard provides the path. without it, every component is isolated — nothing can communicate.</p>
+
+<h2>GPU — The Artist</h2>
+<p>CPU = general worker. GPU = artist. games, 3D rendering, video editing, AI image generation — all involve millions of visual calculations. the GPU performs thousands simultaneously, making graphics and parallel workloads far faster than the CPU ever could.</p>
+
+<h2>What Happens When You Press "A"?</h2>
+<div class="flow">
+  <div class="flow-item">Keyboard detects keypress</div>
+  <div class="flow-item">Signal travels through Motherboard</div>
+  <div class="flow-item">CPU receives instruction</div>
+  <div class="flow-item">RAM stores character temporarily</div>
+  <div class="flow-item">CPU processes: "display this character"</div>
+  <div class="flow-item">GPU prepares graphics</div>
+  <div class="flow-item">Monitor displays "A"</div>
+</div>
+<p style="margin-top:14px;">this entire journey happens in <span class="hl">milliseconds</span>. every single time.</p>
+
+<h2>Binary — The Language Of Everything</h2>
+<p>computers only understand electricity. electricity ON = <span class="hl">1</span>. electricity OFF = <span class="hl">0</span>. everything — the letter A, a photo, a song, a game, an AI model — is ultimately billions of 0s and 1s representing electrical states.</p>
+
+<div class="code"><span class="cc"># what the CPU actually receives:</span>
+10110010 11001011 00101100
+
+<span class="cc"># looks like nonsense to us.
+# to the CPU it could mean: add numbers, move data,
+# compare values, jump to another instruction.
+# this is called machine language.</span></div>
+
+<div class="callout c-fact">
+  Python, Java, C — none of these run directly. another program (compiler or interpreter) translates your code into machine instructions the CPU can execute. think of it like a translator between two people who speak different languages.
+</div>
+
+<h2>The Operating System — The Manager</h2>
+<p>imagine an office with CPU, RAM, SSD, keyboard, mouse, monitor, printer, wifi, bluetooth, and hundreds of programs. if everyone uses resources whenever they want → chaos. someone has to manage everything. <span class="hl">that's the Operating System.</span></p>
+
+<h3>what does an OS actually do?</h3>
+<ul class="checklist">
+  <li>decides which program gets CPU time</li>
+  <li>manages how much RAM each program can use</li>
+  <li>controls where files are stored on disk</li>
+  <li>handles device connections and drivers</li>
+  <li>manages user login and security permissions</li>
+  <li>coordinates multitasking so everything runs smoothly</li>
+</ul>
+
+<h2>Processes &amp; Threads</h2>
+<div class="analogy">
+  <div class="a-left"><div class="a-lbl">processes</div>five people waiting to use one printer. each gets a turn. OS rapidly switches between programs giving the illusion everything runs at once.</div>
+  <div class="a-arrow">⇒</div>
+  <div class="a-right"><div class="a-lbl">threads</div>one restaurant with five chefs working simultaneously. threads let parts of one program run concurrently — e.g. browser loads images while responding to your scroll.</div>
+</div>
+
+<h2>The Big Picture</h2>
+<div class="flow">
+  <div class="flow-item">Hardware — physical capability</div>
+  <div class="flow-item">Operating System — manages hardware</div>
+  <div class="flow-item">Programs — run on top of OS</div>
+  <div class="flow-item">You — interact with programs</div>
+  <div class="flow-item">Networks — programs on different computers talking</div>
+  <div class="flow-item">Internet — millions of those networks connected</div>
+</div>
+<p style="margin-top:16px;">that's why we studied hardware first. before learning how computers talk to each other, you need to understand how a <span class="hl">single computer</span> thinks and operates.</p>
+
+<div class="callout c-tldr">
+  <span class="hl">TL;DR:</span> CPU = brain (executes instructions). RAM = temporary fast memory. SSD = permanent storage. Motherboard = roads between components. GPU = graphics/parallel beast. OS = the manager of everything. binary = the only language hardware actually speaks. now you know how the machine actually works. 💀
+</div>
+<div class="ch-end">END OF DAY_02 // NEXT: LINUX &amp; THE TERMINAL</div>
+</div>
+
+<!-- ═══════════ DAY 3 ═══════════ -->
+<div class="page">
+<div class="sec-header">
+  <div class="prompt"><span class="path">root@breach:~/day03</span> <span class="dollar">$</span> <span class="cmd">bash --login</span></div>
+  <h1 class="sec-title">DAY_03 — TALK TO THE MACHINE</h1>
+  <div class="sec-sub">LINUX &amp; THE TERMINAL</div>
+</div>
+
+<div class="callout c-real">
+  imagine two people own the same car. first person only knows how to drive. second person knows the engine, can change oil, replace parts, diagnose problems. who understands the car better? Linux is opening the hood of your computer. instead of clicking icons, you give direct instructions to the OS. <span class="hl">you become the one in control.</span>
+</div>
+
+<h2>What Is Linux?</h2>
+<p>an operating system — just like Windows and macOS. but instead of hiding everything behind buttons and menus, Linux lets you <span class="hl">directly interact with the system</span>. that's why developers, cloud providers, supercomputers, servers, and embedded devices run Linux. it's everywhere under the hood of the internet.</p>
+
+<h2>The Terminal — Your Personal Assistant</h2>
+<p>imagine hiring an assistant. instead of clicking around yourself, you just say: <span class="amb">"open this folder."</span> <span class="amb">"copy this file."</span> <span class="amb">"delete that."</span> the terminal works like that. you type commands, the OS executes them. no mouse required.</p>
+
+<h2>Essential Commands</h2>
+
+<div class="code"><span class="cc"># where am i right now?</span>
+pwd
+<span class="cc"># Print Working Directory — shows your current location</span></div>
+
+<div class="code"><span class="cc"># what's inside this folder?</span>
+ls
+<span class="cc"># like opening your wardrobe and seeing what's inside</span></div>
+
+<div class="code"><span class="cc"># move to a different folder</span>
+cd Documents    <span class="cc"># go into Documents</span>
+cd ..           <span class="cc"># go back up one level (back to parent)</span>
+cd ~            <span class="cc"># go straight to home folder</span></div>
+
+<div class="code"><span class="cc"># create and destroy</span>
+mkdir Projects       <span class="cc"># make new folder (make directory)</span>
+touch notes.txt      <span class="cc"># create empty file</span>
+cp notes.txt bkp.txt <span class="cc"># copy file (original stays)</span>
+mv notes.txt work.txt <span class="cc"># rename or move a file</span>
+rm work.txt          <span class="cc"># delete file — NO recycle bin. be careful.</span></div>
+
+<div class="code"><span class="cc"># read and edit</span>
+cat notes.txt        <span class="cc"># display file contents</span>
+nano notes.txt       <span class="cc"># edit file in terminal text editor</span></div>
+
+<div class="callout c-warn">
+  <span class="rd">rm</span> has no recycle bin. once you delete something from the terminal, it's usually gone. experienced users always double-check before hitting Enter. you've been warned. 💀
+</div>
+
+<h2>Everything Is A File</h2>
+<p>in Linux, this idea appears everywhere. documents = files. pictures = files. configuration settings = files. even many devices are represented through file-like interfaces. this philosophy makes automation incredibly powerful.</p>
+
+<h2>Users, Root &amp; Permissions</h2>
+<div class="analogy">
+  <div class="a-left"><div class="a-lbl">real world</div>your diary is private. teacher shouldn't edit it. friend shouldn't delete it. not everyone gets access to everything.</div>
+  <div class="a-arrow">⇒</div>
+  <div class="a-right"><div class="a-lbl">linux</div>permissions define: who can <span class="hl">read</span> / <span class="hl">write</span> / <span class="hl">execute</span> each file. foundation of system security.</div>
+</div>
+
+<div class="code"><span class="cc"># root = the CEO of the entire system</span>
+<span class="cc"># root can change almost everything</span>
+<span class="cc"># with great power comes great responsibility</span>
+
+<span class="cc"># sudo = borrow the master key for ONE specific task</span>
+sudo apt install git
+<span class="cc"># "run this command with elevated privileges"</span></div>
+
+<h2>Installing Software The Right Way</h2>
+<p>unlike downloading random installers from sketchy websites, Linux uses <span class="hl">package managers</span>. you ask the system for software, it downloads and installs from trusted repositories. the OS handles everything.</p>
+<div class="code">sudo apt install python3   <span class="cc"># install Python</span>
+sudo apt install git       <span class="cc"># install Git</span>
+sudo apt update            <span class="cc"># refresh package list</span></div>
+
+<h2>Why Developers Love Linux</h2>
+<ul class="checklist">
+  <li>automation — repeat any task with one command</li>
+  <li>remote administration — manage servers from anywhere</li>
+  <li>powerful scripting — chain commands into workflows</li>
+  <li>transparency — you can see and control everything</li>
+  <li>stable servers — most of the internet runs on Linux</li>
+</ul>
+<p>once you're comfortable with the terminal, repetitive tasks that take minutes with a mouse happen in seconds.</p>
+
+<div class="callout c-tldr">
+  <span class="hl">TL;DR:</span> Linux = OS that gives you direct access to the system. terminal = type commands instead of clicking. pwd/ls/cd/mkdir/touch/cp/mv/rm = your starter kit. root = god mode (use carefully). sudo = borrowing god mode for one task. package managers = safe way to install software. the terminal is not scary — it's just faster.
+</div>
+<div class="ch-end">END OF DAY_03 // NEXT: NETWORKING</div>
+</div>
+
+<!-- ═══════════ DAY 4 ═══════════ -->
+<div class="page">
+<div class="sec-header">
+  <div class="prompt"><span class="path">root@breach:~/day04</span> <span class="dollar">$</span> <span class="cmd">./map_the_grid.sh --trace-route</span></div>
+  <h1 class="sec-title">DAY_04 — THE GRID</h1>
+  <div class="sec-sub">NETWORKING FUNDAMENTALS</div>
+</div>
+
+<div class="callout c-real">
+  your phone, laptop, TV, smartwatch, friend's PC, Google's servers, YouTube's servers — they're all individual computers. now imagine connecting all of them together. that giant connection is what we call the Internet. it's not one computer. it's <span class="hl">billions of computers talking to each other.</span>
+</div>
+
+<h2>What Is A Network?</h2>
+<div class="analogy">
+  <div class="a-left"><div class="a-lbl">real world</div>five houses. no roads. nobody can visit anyone. build roads between them → people can exchange things. those roads form a network.</div>
+  <div class="a-arrow">⇒</div>
+  <div class="a-right"><div class="a-lbl">computers</div>a network = two or more devices connected so they can exchange information. could be 2 laptops in your room, or billions of devices worldwide.</div>
+</div>
+
+<h2>Client &amp; Server</h2>
+<div class="analogy">
+  <div class="a-left"><div class="a-lbl">restaurant</div>you = client. you ask for pizza. the kitchen = server. it prepares the order and sends it back. the server provides services. the client requests them.</div>
+  <div class="a-arrow">⇒</div>
+  <div class="a-right"><div class="a-lbl">internet</div>your browser = client. it asks for a webpage. YouTube's server = server. it replies with the video. every website works like this.</div>
+</div>
+
+<h2>IP Address — The Postal Address</h2>
+<p>want to send a birthday gift? you can't write "to: my friend." you need an actual address. every device on a network needs an address too — that's an <span class="hl">IP address</span>.</p>
+<div class="code"><span class="cc"># example IP address</span>
+192.168.1.10
+
+<span class="cc"># without an address, nobody knows where to send data.
+# IP = postal address of a computer on the network.</span></div>
+
+<h2>Router vs Switch</h2>
+<table class="cmp-tbl">
+  <tr><th>ROUTER</th><th>SWITCH</th></tr>
+  <tr><td>like traffic police at a huge junction</td><td>like a receptionist in an office</td></tr>
+  <tr><td>decides which road each packet takes</td><td>delivers package directly to the right person</td></tr>
+  <tr><td>connects your local network to the internet</td><td>works inside a local network</td></tr>
+  <tr><td>your home Wi-Fi device is a router</td><td>used in offices, data centers</td></tr>
+</table>
+
+<h2>MAC Address vs IP Address</h2>
+<div class="analogy">
+  <div class="a-left"><div class="a-lbl">MAC address</div>permanent identity burned into the network card at manufacture. like a person's fingerprint. unique hardware ID.</div>
+  <div class="a-arrow">⇒</div>
+  <div class="a-right"><div class="a-lbl">IP address</div>the address on the network — can change. like your house address (you can move). tells the network WHERE the device is.</div>
+</div>
+
+<h2>DNS — The Internet's Phonebook</h2>
+<p>someone says "go to Rahul's house." you know Rahul but not his address. so you check your contacts. <span class="hl">DNS works exactly like that.</span></p>
+<div class="code"><span class="cc"># humans remember names:</span>
+youtube.com
+
+<span class="cc"># computers need IP addresses:</span>
+142.250.195.174
+
+<span class="cc"># DNS translates names → IP addresses automatically.
+# without DNS we'd memorize numbers for every site. 💀</span></div>
+
+<h2>Packets — How Data Actually Travels</h2>
+<p>sending a 500-page book? instead of one giant box, split it into many smaller boxes each numbered and addressed. if one gets delayed, the rest still travel. receiver reassembles in order. <span class="hl">internet data works exactly like this.</span></p>
+
+<h2>What Happens When You Open YouTube?</h2>
+<div class="flow">
+  <div class="flow-item">you type: youtube.com</div>
+  <div class="flow-item">DNS finds the IP address</div>
+  <div class="flow-item">your computer creates a request</div>
+  <div class="flow-item">router forwards it toward YouTube</div>
+  <div class="flow-item">travels through multiple networks</div>
+  <div class="flow-item">reaches YouTube's servers</div>
+  <div class="flow-item">servers send back HTML, images, video data</div>
+  <div class="flow-item">your browser reassembles everything</div>
+  <div class="flow-item">page appears</div>
+</div>
+<p style="margin-top:14px;">this entire sequence happens in <span class="hl">fractions of a second</span>.</p>
+
+<h2>Ports — Apartments In A Building</h2>
+<p>a building has one address but many apartments. a device has one IP address but many ports. port = which service or app on that device should receive the data.</p>
+<div class="code"><span class="cc"># common ports to know:</span>
+Port 80   → HTTP  (normal web)
+Port 443  → HTTPS (encrypted web)
+Port 22   → SSH   (remote terminal access)
+Port 3306 → MySQL (database)
+
+<span class="cc"># a web server and a game server can run on the
+# same computer because they use different ports.</span></div>
+
+<h2>TCP vs UDP</h2>
+<table class="cmp-tbl">
+  <tr><th>TCP</th><th>UDP</th></tr>
+  <tr><td>mails 10 important documents, wants confirmation every page arrived</td><td>live football match — one frame dropped? doesn't matter, keep going</td></tr>
+  <tr><td>reliable, ordered delivery</td><td>speed over guaranteed delivery</td></tr>
+  <tr><td>web pages, downloads, emails</td><td>video calls, live streams, gaming</td></tr>
+</table>
+
+<h2>HTTP vs HTTPS</h2>
+<div class="analogy">
+  <div class="a-left"><div class="a-lbl">HTTP</div>sending your ATM PIN on a postcard. anyone handling it can read it. plain unencrypted communication.</div>
+  <div class="a-arrow">⇒</div>
+  <div class="a-right"><div class="a-lbl">HTTPS</div>sealed locked envelope only the recipient can open. encrypted. that's why banking and login pages require it.</div>
+</div>
+
+<div class="callout c-tldr">
+  <span class="hl">TL;DR:</span> network = devices connected to exchange data. IP = address. DNS = translates names to IPs. packets = data broken into small chunks. router = traffic director. ports = which app gets the data. TCP = reliable. UDP = fast. HTTP = web language. HTTPS = encrypted web. the internet is just billions of computers exchanging packets by agreed rules. not magic. just logic.
+</div>
+<div class="ch-end">END OF DAY_04 // NEXT: BUILD YOUR LAB</div>
+</div>
+
+<!-- ═══════════ STAGE 1 ═══════════ -->
+<div class="page">
+<div class="sec-header">
+  <div class="prompt"><span class="path">root@breach:~/stage1</span> <span class="dollar">$</span> <span class="cmd">VBoxManage startvm "Ubuntu-Lab" --type headless</span></div>
+  <h1 class="sec-title">STAGE_1 — BUILD YOUR LAB</h1>
+  <div class="sec-sub">VIRTUALIZATION, VMs &amp; CYBERSECURITY ENVIRONMENT SETUP</div>
+</div>
+
+<div class="callout c-warn">
+  imagine learning electronics without a breadboard — every mistake destroys components. now imagine learning cybersecurity directly on your main laptop. eventually you'll break stuff, misconfigure stuff, crash stuff. <span class="hl">professionals don't learn on production systems. they learn in labs.</span>
+</div>
+
+<h2>The Biggest Beginner Mistake</h2>
+<div class="analogy">
+  <div class="a-left"><div class="a-lbl">most beginners</div>install Kali → open Metasploit → feel like hacker → understand nothing → get nowhere</div>
+  <div class="a-arrow">⇒</div>
+  <div class="a-right"><div class="a-lbl">professionals</div>build lab → understand systems → observe behavior → then learn tools. <span class="hl">the order matters.</span></div>
+</div>
+
+<h2>What Is Virtualization?</h2>
+<p>normally one machine runs one OS. virtualization changes everything.</p>
+<div class="code"><span class="cc"># BEFORE virtualization:</span>
+Physical Hardware → Operating System (one)
+
+<span class="cc"># AFTER virtualization:</span>
+Physical Hardware → Hypervisor → VM1 (Ubuntu)
+                             → VM2 (Kali)
+                             → VM3 (Windows)
+<span class="cc"># one physical computer. multiple virtual computers.
+# all running at the same time.</span></div>
+
+<h2>Hypervisor — The Apartment Building Manager</h2>
+<div class="analogy">
+  <div class="a-left"><div class="a-lbl">building analogy</div>hardware = the building. each VM = an apartment. hypervisor = the manager who allocates resources.</div>
+  <div class="a-arrow">⇒</div>
+  <div class="a-right"><div class="a-lbl">tools to use</div>Oracle VM VirtualBox (free)<br>VMware Workstation<br>either works great for learning</div>
+</div>
+
+<h2>Snapshots — Save Game For Computers</h2>
+<div class="callout c-fact">
+  this is one of the greatest inventions ever for learners. current state: everything working perfectly. take snapshot. later: experiment, break everything, destroy configuration. <span class="hl">restore snapshot → back to normal instantly.</span> it's literally save-game for your OS.
+</div>
+
+<h2>Why NOT Start With Kali?</h2>
+<p>Kali is not a beginner Linux distribution. it's a <span class="hl">security-focused</span> distribution. if you don't understand Linux first, you end up learning tool buttons instead of how systems work. start with Ubuntu. it's friendly, stable, widely used, and perfect for building foundations.</p>
+
+<h2>Your Lab Architecture</h2>
+<div class="flow">
+  <div class="flow-item">Host Computer (your main machine)</div>
+  <div class="flow-item">Ubuntu VM — Linux practice, networking, Python, server concepts</div>
+  <div class="flow-item">Windows VM — Windows internals, permissions, enterprise</div>
+  <div class="flow-item">Kali VM — security tools, traffic analysis (LATER, after foundations)</div>
+</div>
+
+<div class="callout c-warn">
+  <span class="hl">KALI ≠ CYBERSECURITY</span><br>
+  Kali = a toolbox. a very good toolbox. but a toolbox without the knowledge to use it is just buttons you click without understanding. huge difference. 🔧
+</div>
+
+<h2>Virtual Networking Modes</h2>
+<table class="cmp-tbl">
+  <tr><th>MODE</th><th>HOW IT WORKS</th><th>GOOD FOR</th></tr>
+  <tr><td class="hl">NAT</td><td>VM → Host → Internet (VM hides behind host)</td><td>general internet access, safe default</td></tr>
+  <tr><td class="hl">Bridged</td><td>VM behaves like a separate device on your real network</td><td>learning networking concepts</td></tr>
+  <tr><td class="hl">Internal</td><td>VMs talk to each other, completely isolated from internet</td><td>safe experimentation lab</td></tr>
+</table>
+
+<h2>The Professional Mindset</h2>
+<div class="analogy">
+  <div class="a-left"><div class="a-lbl">beginners ask</div>what command do I run?</div>
+  <div class="a-arrow">⇒</div>
+  <div class="a-right"><div class="a-lbl">professionals ask</div>what is actually happening? where did the packet go? which interface? what IP? what protocol? <span class="hl">that's how expertise develops.</span></div>
+</div>
+
+<h2>Stage 1 Mission</h2>
+<div class="callout c-mission">
+  <span class="hl">BUILD:</span> Host OS → Ubuntu VM → Windows VM<br><br>
+  <span class="hl">LEARN:</span> snapshots, CPU/RAM allocation, virtual disks, NAT, Bridged networking<br><br>
+  <span class="hl">PRACTICE:</span> ping between machines, transfer files, use SSH, observe IP addresses
+</div>
+
+<h2>Knowledge Check — Before Moving On</h2>
+<p>before Day 5, you should be able to answer these without looking:</p>
+<ul class="checklist">
+  <li>what is a hypervisor?</li>
+  <li>what is a virtual machine?</li>
+  <li>why use snapshots?</li>
+  <li>difference between NAT and Bridged networking?</li>
+  <li>why do security professionals use labs?</li>
+  <li>why is Kali NOT the first thing to learn?</li>
+</ul>
+
+<div class="callout c-tldr">
+  <span class="hl">TL;DR:</span> don't learn on your real machine. build a lab. a VM = computer inside a computer. hypervisor = manager. snapshots = save game. Ubuntu first, Kali later. NAT = VM uses internet through host. bridged = VM on real network. internal = isolated lab network. observe everything, not just the output.
+</div>
+<div class="ch-end">END OF STAGE_1 // NEXT: DAY_05 — DEVELOPMENT</div>
+</div>
+
+<!-- ═══════════ DAY 5 ═══════════ -->
+<div class="page">
+<div class="sec-header">
+  <div class="prompt"><span class="path">root@breach:~/day05</span> <span class="dollar">$</span> <span class="cmd">git init my-first-project</span></div>
+  <h1 class="sec-title">DAY_05 — CREATE MODE</h1>
+  <div class="sec-sub">DEVELOPMENT &amp; HOW SOFTWARE IS ACTUALLY BUILT</div>
+</div>
+
+<div class="callout c-real">
+  Instagram. YouTube. WhatsApp. Discord. Games. Banking apps. Shopping websites. Everything was built by developers. a developer = someone who solves problems using code. not a hacker, not a genius, not a magician. <span class="hl">just a problem solver with a keyboard.</span>
+</div>
+
+<h2>The Software Stack — Layers All The Way Down</h2>
+<div class="flow">
+  <div class="flow-item">User — uses the app</div>
+  <div class="flow-item">Frontend — what user sees (HTML/CSS/JS)</div>
+  <div class="flow-item">Backend — the logic and processing</div>
+  <div class="flow-item">Database — permanent storage</div>
+  <div class="flow-item">Server — runs the backend</div>
+  <div class="flow-item">Operating System — manages the server</div>
+  <div class="flow-item">Hardware — physical machine</div>
+</div>
+<p style="margin-top:14px;">every layer depends on the one below it. now you finally understand why we studied everything in that order.</p>
+
+<h2>Frontend vs Backend</h2>
+<div class="analogy">
+  <div class="a-left"><div class="a-lbl">frontend</div>you walk into a restaurant. what do you see? tables, menus, lights, waiters, decoration. everything the <span class="amb">user sees and interacts with</span>. buttons, text, images, forms, animations.</div>
+  <div class="a-arrow">⇒</div>
+  <div class="a-right"><div class="a-lbl">backend</div>now walk into the kitchen. customers never see it. but real work happens here: orders arrive, food gets prepared, bills generated, inventory checked. <span class="hl">handles all the logic.</span></div>
+</div>
+
+<h2>Database — Application Memory</h2>
+<p>every user account, photo, message, order — must be stored somewhere permanently. that's the database.</p>
+<div class="callout c-fact">
+  without databases: Instagram forgets your account. WhatsApp forgets your messages. YouTube forgets your videos. banks forget your balance. <span class="hl">databases are permanent memory for applications.</span>
+</div>
+
+<h2>Instagram Login — The Full Flow</h2>
+<div class="flow">
+  <div class="flow-item">you type username + password</div>
+  <div class="flow-item">Frontend sends request to backend</div>
+  <div class="flow-item">Backend receives and processes request</div>
+  <div class="flow-item">Database checks if credentials match</div>
+  <div class="flow-item">Backend replies: correct or incorrect</div>
+  <div class="flow-item">Frontend shows you the result</div>
+</div>
+
+<h2>APIs — The Waiter Between Kitchen And Customer</h2>
+<div class="analogy">
+  <div class="a-left"><div class="a-lbl">waiter</div>carries requests between customer and kitchen. customer says "pizza". waiter goes to kitchen. kitchen makes it. waiter brings it back.</div>
+  <div class="a-arrow">⇒</div>
+  <div class="a-right"><div class="a-lbl">API</div>Frontend says "give me profile info." API goes to Backend. Backend queries Database. Result comes back. Frontend displays it.</div>
+</div>
+
+<h2>Static vs Dynamic Websites</h2>
+<table class="cmp-tbl">
+  <tr><th>STATIC</th><th>DYNAMIC</th></tr>
+  <tr><td>same page for every visitor</td><td>changes based on the user</td></tr>
+  <tr><td>e.g. simple portfolio page</td><td>e.g. Instagram feed, bank dashboard</td></tr>
+  <tr><td>no backend needed</td><td>requires backend + database</td></tr>
+</table>
+
+<h2>Git — Time Machine For Code</h2>
+<p>imagine spending six months building a project, then accidentally deleting an important file. or introducing a bug that breaks everything. Git remembers every change and lets you travel back in time.</p>
+<div class="code"><span class="cc"># most important Git commands</span>
+git init           <span class="cc"># start tracking a project</span>
+git add .          <span class="cc"># stage all changes</span>
+git commit -m <span class="cs">"message"</span>  <span class="cc"># save a snapshot with description</span>
+git log            <span class="cc"># see full history of changes</span>
+git checkout       <span class="cc"># go back to an earlier version</span></div>
+
+<h2>GitHub — Social Network For Code</h2>
+<p>Git works locally on your machine. GitHub lets you store code online, collaborate with others, track changes across a team, share projects publicly, and contribute to open-source software. think of it as the world's biggest code library.</p>
+
+<div class="callout c-tldr">
+  <span class="hl">TL;DR:</span> developer = problem solver with code. frontend = what user sees. backend = the logic. database = permanent memory. API = messenger between layers. Git = time machine for code. GitHub = cloud storage + collaboration for code. full stack = understanding ALL layers. next up: building the actual frontend.
+</div>
+<div class="ch-end">END OF DAY_05 // NEXT: DAY_07 — HTML</div>
+</div>
+
+<!-- ═══════════ DAY 7 ═══════════ -->
+<div class="page">
+<div class="sec-header">
+  <div class="prompt"><span class="path">root@breach:~/day07</span> <span class="dollar">$</span> <span class="cmd">cat index.html | browser --render</span></div>
+  <h1 class="sec-title">DAY_07 — THE SKELETON</h1>
+  <div class="sec-sub">HTML &amp; THE STRUCTURE OF THE WEB</div>
+</div>
+
+<div class="callout c-real">
+  building a house — what comes first? paint? furniture? lights? no. first you build the structure: walls, doors, windows, rooms. <span class="hl">HTML is exactly that for a webpage.</span> without HTML: no websites, no buttons, no images, no forms, no YouTube, no Instagram. nothing.
+</div>
+
+<h2>What Is HTML?</h2>
+<p>HTML = HyperText Markup Language. and here's something that surprises people: <span class="hl">HTML is NOT a programming language.</span> it doesn't make decisions, doesn't perform calculations. it simply <span class="hl">describes content</span>. it tells the browser: "this is a heading." "this is a paragraph." "this is a button." that's it.</p>
+
+<h2>Basic Page Structure</h2>
+<div class="code"><span class="cn">&lt;!DOCTYPE html&gt;</span>
+<span class="ck">&lt;html&gt;</span>
+  <span class="ck">&lt;head&gt;</span>
+    <span class="cs">&lt;title&gt;</span>My First Website<span class="cs">&lt;/title&gt;</span>
+    <span class="cc">&lt;!-- invisible stuff: title, CSS links, metadata --&gt;</span>
+  <span class="ck">&lt;/head&gt;</span>
+  <span class="ck">&lt;body&gt;</span>
+    <span class="cc">&lt;!-- everything visible to the user goes here --&gt;</span>
+    Hello World
+  <span class="ck">&lt;/body&gt;</span>
+<span class="ck">&lt;/html&gt;</span>
+
+<span class="cc"># html = entire house
+# head = blueprints (invisible)
+# body = actual rooms (visible)</span></div>
+
+<h2>The Essential Tags</h2>
+<div class="code"><span class="cc">&lt;!-- headings (h1 = biggest, h6 = smallest) --&gt;</span>
+<span class="ck">&lt;h1&gt;</span>Main Title<span class="ck">&lt;/h1&gt;</span>
+<span class="ck">&lt;h2&gt;</span>Section<span class="ck">&lt;/h2&gt;</span>
+<span class="ck">&lt;h3&gt;</span>Subsection<span class="ck">&lt;/h3&gt;</span>
+
+<span class="cc">&lt;!-- paragraphs --&gt;</span>
+<span class="ck">&lt;p&gt;</span>This is a paragraph of text.<span class="ck">&lt;/p&gt;</span>
+
+<span class="cc">&lt;!-- images --&gt;</span>
+<span class="ck">&lt;img</span> src=<span class="cs">"cat.jpg"</span> alt=<span class="cs">"a cat"</span><span class="ck">&gt;</span>
+
+<span class="cc">&lt;!-- links — this changed the entire internet --&gt;</span>
+<span class="ck">&lt;a</span> href=<span class="cs">"https://google.com"</span><span class="ck">&gt;</span>Google<span class="ck">&lt;/a&gt;</span>
+
+<span class="cc">&lt;!-- buttons --&gt;</span>
+<span class="ck">&lt;button&gt;</span>Click Me<span class="ck">&lt;/button&gt;</span></div>
+
+<div class="code"><span class="cc">&lt;!-- lists --&gt;</span>
+<span class="ck">&lt;ul&gt;</span>  <span class="cc">&lt;!-- unordered (bullet points) --&gt;</span>
+  <span class="ck">&lt;li&gt;</span>Milk<span class="ck">&lt;/li&gt;</span>
+  <span class="ck">&lt;li&gt;</span>Bread<span class="ck">&lt;/li&gt;</span>
+<span class="ck">&lt;/ul&gt;</span>
+
+<span class="cc">&lt;!-- forms — how login pages work --&gt;</span>
+<span class="ck">&lt;input</span> type=<span class="cs">"text"</span> placeholder=<span class="cs">"Username"</span><span class="ck">&gt;</span>
+<span class="ck">&lt;input</span> type=<span class="cs">"password"</span> placeholder=<span class="cs">"Password"</span><span class="ck">&gt;</span>
+<span class="ck">&lt;button&gt;</span>Login<span class="ck">&lt;/button&gt;</span>
+
+<span class="cc">&lt;!-- div = container/box — used EVERYWHERE --&gt;</span>
+<span class="ck">&lt;div&gt;</span>
+  I'm a box that holds other elements
+<span class="ck">&lt;/div&gt;</span></div>
+
+<h2>The DOM — Browser's Internal Map</h2>
+<p>when the browser reads HTML, it builds an internal tree structure called the <span class="hl">DOM (Document Object Model)</span>. think of it as a family tree of your page. JavaScript later modifies this tree to make things interactive.</p>
+
+<div class="code"><span class="cc"># HTML structure becomes a DOM tree:</span>
+
+HTML
+ ├── HEAD
+ │    └── TITLE
+ └── BODY
+      ├── H1
+      ├── P
+      └── BUTTON
+
+<span class="cc"># JavaScript can find and change any node in this tree.</span></div>
+
+<h2>The Web Trinity — Remember This Forever</h2>
+<table class="cmp-tbl">
+  <tr><th>TECHNOLOGY</th><th>JOB</th><th>ANALOGY</th></tr>
+  <tr><td class="hl">HTML</td><td>Structure</td><td>walls, doors, rooms of a house</td></tr>
+  <tr><td class="hl">CSS</td><td>Appearance</td><td>paint, furniture, decoration</td></tr>
+  <tr><td class="hl">JavaScript</td><td>Behavior</td><td>electricity — makes things work</td></tr>
+</table>
+
+<div class="callout c-tldr">
+  <span class="hl">TL;DR:</span> HTML = structure of a webpage. NOT a programming language — it describes content. tags = instructions to the browser. body = everything visible. head = invisible config. div = universal container box. DOM = browser's internal tree of your page. every website on earth starts with HTML. CSS is next.
+</div>
+<div class="ch-end">END OF DAY_07 // NEXT: DAY_08 — CSS</div>
+</div>
+
+<!-- ═══════════ DAY 8 ═══════════ -->
+<div class="page">
+<div class="sec-header">
+  <div class="prompt"><span class="path">root@breach:~/day08</span> <span class="dollar">$</span> <span class="cmd">./paint_the_walls.sh --style=cyberpunk</span></div>
+  <h1 class="sec-title">DAY_08 — MAKE IT ALIVE</h1>
+  <div class="sec-sub">CSS &amp; VISUAL DESIGN</div>
+</div>
+
+<div class="callout c-real">
+  HTML built the house. everything is gray. no paint, no decoration, no furniture, no style. everything looks like a plain document from 1996. <span class="hl">CSS fixes that.</span>
+</div>
+
+<h2>What Is CSS?</h2>
+<p>CSS = Cascading Style Sheets. CSS controls <span class="hl">appearance</span>. that's all you need to remember. same HTML, completely different look. the content doesn't change — only how it's presented.</p>
+
+<div class="code"><span class="cc">/* WITHOUT CSS — works but looks 💀 */</span>
+<span class="cs">&lt;h1&gt;</span>My Website<span class="cs">&lt;/h1&gt;</span>
+<span class="cs">&lt;button&gt;</span>Click Me<span class="cs">&lt;/button&gt;</span>
+
+<span class="cc">/* WITH CSS — now we're cooking 🔥 */</span>
+<span class="ck">h1</span> {
+  font-size: 50px;
+  color: <span class="cs">#00ff41</span>;    <span class="cc">/* green like this textbook */</span>
+  font-family: <span class="cs">'Fira Code'</span>, monospace;
+}
+<span class="ck">button</span> {
+  background: black;
+  border: 1px solid #00ff41;
+  border-radius: 4px;
+  color: <span class="cs">#00ff41</span>;
+  padding: 10px 20px;
+}</div>
+
+<h2>Selectors, Properties &amp; Values</h2>
+<div class="code"><span class="cc">/* selector = WHAT to style */</span>
+<span class="cc">/* property: value; = HOW to style it */</span>
+
+<span class="ck">h1</span> {              <span class="cc">/* selector */</span>
+  color: red;     <span class="cc">/* property: value */</span>
+  font-size: 32px;
+}
+
+<span class="cc">/* class selector (dot) = apply to elements with that class */</span>
+<span class="ck">.primary-button</span> {
+  background: blue;
+}
+
+<span class="cc">/* ID selector (hash) = apply to ONE specific element */</span>
+<span class="ck">#header</span> {
+  background: black;
+}</div>
+
+<h2>The Box Model — The Most Important CSS Concept</h2>
+<p>every element on a webpage is actually a box. and every box has four layers:</p>
+<div class="flow">
+  <div class="flow-item">MARGIN — space OUTSIDE the box (pushes other boxes away)</div>
+  <div class="flow-item">BORDER — the box's visible border/outline</div>
+  <div class="flow-item">PADDING — space INSIDE the box (between content and border)</div>
+  <div class="flow-item">CONTENT — the actual text, image, etc.</div>
+</div>
+<div class="callout c-fact">
+  everything on a webpage is boxes inside boxes inside boxes. master the box model and 80% of CSS layout confusion disappears. no cap.
+</div>
+
+<h2>Colors, Spacing &amp; Sizing</h2>
+<div class="code"><span class="cc">/* colors */</span>
+color: red;                    <span class="cc">/* text color */</span>
+background-color: black;       <span class="cc">/* background */</span>
+color: <span class="cs">#00ff41</span>;              <span class="cc">/* hex code */</span>
+color: rgb(0, 255, 65);        <span class="cc">/* RGB values */</span>
+
+<span class="cc">/* spacing */</span>
+padding: 20px;                 <span class="cc">/* space inside */</span>
+margin: 20px;                  <span class="cc">/* space outside */</span>
+padding: 10px 20px;            <span class="cc">/* top/bottom then left/right */</span>
+
+<span class="cc">/* borders */</span>
+border: 2px solid white;
+border-radius: 8px;            <span class="cc">/* rounded corners */</span>
+
+<span class="cc">/* sizing */</span>
+width: 300px;
+height: 200px;
+font-size: 18px;</div>
+
+<h2>Flexbox — The Layout Savior</h2>
+<p>before flexbox, aligning things in CSS was genuinely painful. flexbox solved most common layout problems. use it constantly.</p>
+<div class="code"><span class="ck">.container</span> {
+  display: flex;               <span class="cc">/* activate flexbox */</span>
+  justify-content: center;    <span class="cc">/* horizontal alignment */</span>
+  align-items: center;        <span class="cc">/* vertical alignment */</span>
+  gap: 20px;                  <span class="cc">/* space between items */</span>
+}
+<span class="cc">/* now elements inside arrange themselves smartly */</span></div>
+
+<h2>Hover Effects &amp; Transitions</h2>
+<div class="code"><span class="cc">/* hover: change style when mouse enters element */</span>
+<span class="ck">button:hover</span> {
+  background: <span class="cs">#00ff41</span>;
+  color: black;
+}
+
+<span class="cc">/* transition: make that change smooth instead of instant */</span>
+<span class="ck">button</span> {
+  transition: all 0.3s ease;  <span class="cc">/* 0.3 seconds, smooth */</span>
+}
+<span class="cc">/* now hovering feels polished and professional */</span></div>
+
+<h2>How A Page Actually Renders</h2>
+<div class="flow">
+  <div class="flow-item">HTML creates elements</div>
+  <div class="flow-item">Browser builds DOM tree</div>
+  <div class="flow-item">CSS is loaded and parsed</div>
+  <div class="flow-item">Browser matches selectors to elements</div>
+  <div class="flow-item">Styles are applied</div>
+  <div class="flow-item">Layout is calculated</div>
+  <div class="flow-item">Page is painted</div>
+  <div class="flow-item">You see the final website</div>
+</div>
+
+<div class="callout c-tldr">
+  <span class="hl">TL;DR:</span> CSS = controls appearance (color, size, spacing, layout). selector targets what, property:value defines how. box model = margin/border/padding/content layers. flexbox = the layout tool you'll use constantly. transitions = smooth changes. without CSS the internet is a wall of plain text. with CSS it becomes Instagram. JavaScript is next — that's when pages start actually doing things.
+</div>
+<div class="ch-end">END OF DAY_08 // NEXT: DAY_09 — JAVASCRIPT &amp; DOM</div>
+</div>
+
+<!-- ═══════════ DAY 9 ═══════════ -->
+<div class="page">
+<div class="sec-header">
+  <div class="prompt"><span class="path">root@breach:~/day09</span> <span class="dollar">$</span> <span class="cmd">node --inspect brain_of_web.js</span></div>
+  <h1 class="sec-title">DAY_09 — BRAIN OF THE WEB</h1>
+  <div class="sec-sub">BROWSER, DOM &amp; JAVASCRIPT</div>
+</div>
+
+<div class="callout c-real">
+  you built a webpage. button looks nice. but nothing happens when you click it. page can't react, can't update, can't think, can't interact. it's just decoration. <span class="hl">that's why JavaScript was invented.</span>
+</div>
+
+<h2>JavaScript — The Language Of The Browser</h2>
+<p>JavaScript is a programming language that runs <span class="hl">inside the browser</span>. Python runs on your computer and servers. JavaScript mainly made its name because it runs directly inside web browsers — turning static pages into interactive applications.</p>
+
+<div class="callout c-fact">
+  most beginners think: browser = website viewer. not really. a browser is a massive software platform. it can: read HTML, apply CSS, execute JavaScript, store data, play videos, send network requests, handle events. it's basically a <span class="hl">mini operating system for webpages.</span>
+</div>
+
+<h2>DOM Manipulation — Controlling The Page</h2>
+<div class="code"><span class="cc">// find an element by its ID</span>
+<span class="ck">let</span> title = document.getElementById(<span class="cs">"title"</span>);
+
+<span class="cc">// change its text content</span>
+title.innerText = <span class="cs">"Welcome Bro"</span>;
+
+<span class="cc">// change its style</span>
+title.style.color = <span class="cs">"red"</span>;
+title.style.fontSize = <span class="cs">"50px"</span>;
+
+<span class="cc">// browser updates INSTANTLY — no page refresh needed</span></div>
+
+<h2>Events — When Things Happen</h2>
+<p>an event = something happened. examples: mouse click, key press, touch, scroll, form submission. events are what make websites actually <span class="hl">interactive</span>.</p>
+
+<div class="code"><span class="cc">// HTML</span>
+<span class="cs">&lt;button id="btn"&gt;</span>Click Me<span class="cs">&lt;/button&gt;</span>
+
+<span class="cc">// JavaScript — listen for click event</span>
+<span class="ck">let</span> btn = document.getElementById(<span class="cs">"btn"</span>);
+
+btn.addEventListener(<span class="cs">"click"</span>, <span class="ck">function</span>() {
+    alert(<span class="cs">"Bro clicked me!"</span>);
+});
+
+<span class="cc">// now the page actually REACTS to user interaction</span></div>
+
+<h2>Event Flow</h2>
+<div class="flow">
+  <div class="flow-item">User clicks / types / scrolls</div>
+  <div class="flow-item">Browser detects the action</div>
+  <div class="flow-item">Event is generated</div>
+  <div class="flow-item">JavaScript receives the event</div>
+  <div class="flow-item">Your code executes</div>
+  <div class="flow-item">DOM updates instantly</div>
+</div>
+<p style="margin-top:14px;">this cycle powers <span class="hl">almost every website you've ever used</span>.</p>
+
+<h2>JavaScript Is Just Python With Different Syntax</h2>
+<div class="code"><span class="cc">// variables</span>
+<span class="ck">let</span> name = <span class="cs">"Sarim"</span>;     <span class="cc">// Python: name = "Sarim"</span>
+
+<span class="cc">// conditions</span>
+<span class="ck">if</span>(age >= 18) {
+    console.log(<span class="cs">"Adult"</span>);   <span class="cc">// Python: print("Adult")</span>
+}
+
+<span class="cc">// loops</span>
+<span class="ck">for</span>(<span class="ck">let</span> i=0; i&lt;5; i++) {
+    console.log(i);
+}
+
+<span class="cc">// functions</span>
+<span class="ck">function</span> greet() {
+    console.log(<span class="cs">"Hello Bro"</span>);
+}
+greet();</div>
+
+<h2>Fetching Data From Servers</h2>
+<p>page needs weather info? JavaScript can ask a server without refreshing the whole page. this is why modern apps feel instant.</p>
+<div class="code"><span class="cc">// fetch data from an API</span>
+fetch(<span class="cs">"https://api.weather.com/city/delhi"</span>)
+  .then(response => response.json())
+  .then(data => {
+      <span class="cc">// data arrived — update the page</span>
+      document.getElementById(<span class="cs">"temp"</span>).innerText = data.temperature;
+  });
+<span class="cc">// page updates WITHOUT full reload — that's modern web dev</span></div>
+
+<h2>JSON — Universal Data Language</h2>
+<div class="code"><span class="cc">// JSON = JavaScript Object Notation
+// how frontend and backend exchange data</span>
+{
+    <span class="cs">"name"</span>: <span class="cs">"Sarim"</span>,
+    <span class="cs">"age"</span>: 17,
+    <span class="cs">"city"</span>: <span class="cs">"Delhi"</span>
+}
+<span class="cc">// humans can read it. computers can parse it.
+// works across ALL programming languages.</span></div>
+
+<h2>What Happens On Instagram When You Open It?</h2>
+<div class="flow">
+  <div class="flow-item">HTML loads — page structure appears</div>
+  <div class="flow-item">CSS styles it — looks nice</div>
+  <div class="flow-item">JavaScript starts executing</div>
+  <div class="flow-item">Requests sent to Instagram's servers</div>
+  <div class="flow-item">JSON data returns (your posts, stories)</div>
+  <div class="flow-item">DOM updated — content inserted</div>
+  <div class="flow-item">You scroll → more requests → more posts</div>
+</div>
+
+<div class="callout c-tldr">
+  <span class="hl">TL;DR:</span> JavaScript = programming language that runs inside the browser. DOM = browser's tree of the page that JS can modify. events = clicks/keys/scrolls that trigger code. fetch = asking servers for data without refreshing. JSON = universal data format. before JS: websites were documents. after JS: websites became apps. next: how websites actually talk to servers via APIs.
+</div>
+<div class="ch-end">END OF DAY_09 // NEXT: DAY_10 — APIs</div>
+</div>
+
+<!-- ═══════════ DAY 10 ═══════════ -->
+<div class="page">
+<div class="sec-header">
+  <div class="prompt"><span class="path">root@breach:~/day10</span> <span class="dollar">$</span> <span class="cmd">curl -X GET https://api.example.com/data</span></div>
+  <h1 class="sec-title">DAY_10 — THE MESSENGERS</h1>
+  <div class="sec-sub">APIs &amp; HOW WEBSITES TALK TO SERVERS</div>
+</div>
+
+<div class="callout c-real">
+  you built a weather app. looks amazing. but where does the weather come from? HTML doesn't know. CSS doesn't know. JavaScript alone doesn't know. somewhere another computer must provide the data. <span class="hl">that's where APIs come in.</span>
+</div>
+
+<h2>What Is An API?</h2>
+<p>API = Application Programming Interface. ignore the fancy name. think of it as a waiter.</p>
+<div class="analogy">
+  <div class="a-left"><div class="a-lbl">restaurant</div>you say "pizza". waiter takes your request to the kitchen. kitchen prepares it. waiter brings it back. you never go to the kitchen directly.</div>
+  <div class="a-arrow">⇒</div>
+  <div class="a-right"><div class="a-lbl">web</div>browser says "give me profile". API receives it, backend processes it, database is queried. result comes back. browser displays it.</div>
+</div>
+
+<h2>Why Can't JS Access The Database Directly?</h2>
+<div class="callout c-warn">
+  Browser → Database directly = terrible idea. everyone could access everything. your passwords, private data, other users' accounts — all exposed. instead: <span class="hl">Browser → Backend → Database</span>. the backend acts as the security guard and logic layer.
+</div>
+
+<h2>HTTP Methods — The Verbs</h2>
+<table class="cmp-tbl">
+  <tr><th>METHOD</th><th>MEANING</th><th>EXAMPLE</th></tr>
+  <tr><td class="hl">GET</td><td>give me data</td><td>load your Instagram feed</td></tr>
+  <tr><td class="hl">POST</td><td>create new data</td><td>create account, upload photo</td></tr>
+  <tr><td class="hl">PUT</td><td>update existing data</td><td>change profile picture</td></tr>
+  <tr><td class="hl">DELETE</td><td>remove data</td><td>delete a post</td></tr>
+</table>
+
+<h2>REST API Structure</h2>
+<div class="code"><span class="cc"># REST = common style for designing APIs
+# resources manipulated with HTTP methods</span>
+
+GET    /users        <span class="cc"># get all users</span>
+POST   /users        <span class="cc"># create new user</span>
+GET    /users/1      <span class="cc"># get user with ID 1</span>
+PUT    /users/1      <span class="cc"># update user 1</span>
+DELETE /users/1      <span class="cc"># delete user 1</span>
+
+<span class="cc"># clean, logical, predictable. that's why REST became the standard.</span></div>
+
+<h2>What Happens During Login?</h2>
+<div class="flow">
+  <div class="flow-item">you enter username + password</div>
+  <div class="flow-item">JavaScript sends POST request to /login</div>
+  <div class="flow-item">Backend receives credentials</div>
+  <div class="flow-item">Database checks if they match</div>
+  <div class="flow-item">Result generated: success or failure</div>
+  <div class="flow-item">Response sent back as JSON</div>
+  <div class="flow-item">Browser updates screen accordingly</div>
+</div>
+
+<h2>Authentication vs Authorization</h2>
+<table class="cmp-tbl">
+  <tr><th>AUTHENTICATION</th><th>AUTHORIZATION</th></tr>
+  <tr><td>who are you?</td><td>what are you allowed to do?</td></tr>
+  <tr><td>login: prove your identity</td><td>after login: what can you access?</td></tr>
+  <tr><td>username + password check</td><td>admin vs normal user permissions</td></tr>
+</table>
+
+<h2>Tokens — Digital ID Cards</h2>
+<div class="code"><span class="cc"># after successful login, server issues a token</span>
+
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+<span class="cc"># looks like gibberish but contains your identity
+# browser stores it, sends it with every future request
+# server reads it: "ah, this is Sarim. access granted."
+# no need to log in again every page load.</span></div>
+
+<h2>The Full Journey — Everything Connected</h2>
+<div class="flow">
+  <div class="flow-item">User Clicks Button</div>
+  <div class="flow-item">JavaScript Executes</div>
+  <div class="flow-item">HTTP Request Created (GET/POST/etc)</div>
+  <div class="flow-item">Internet Transmits Packets (Day 4 knowledge!)</div>
+  <div class="flow-item">Server Receives Request</div>
+  <div class="flow-item">Backend Processes Logic</div>
+  <div class="flow-item">Database Accessed (Day 11 coming up!)</div>
+  <div class="flow-item">Response Generated</div>
+  <div class="flow-item">JSON Returned</div>
+  <div class="flow-item">JavaScript Updates DOM</div>
+  <div class="flow-item">User Sees Result</div>
+</div>
+
+<div class="callout c-fact">
+  look at that flow. it connects Python, OS, Networking, HTML, CSS, JavaScript all at once. <span class="hl">the entire roadmap is starting to become one story.</span>
+</div>
+
+<div class="callout c-tldr">
+  <span class="hl">TL;DR:</span> API = messenger between frontend and backend (the waiter). HTTP methods: GET=fetch, POST=create, PUT=update, DELETE=remove. JSON = universal data format. backend exists as a security layer between browser and database. tokens = digital ID cards after login. REST = standard way to design APIs. the full user→click→server→database→response→screen cycle is how ALL modern web apps work.
+</div>
+<div class="ch-end">END OF DAY_10 // NEXT: DAY_11 — DATABASES</div>
+</div>
+
+<!-- ═══════════ DAY 11 ═══════════ -->
+<div class="page">
+<div class="sec-header">
+  <div class="prompt"><span class="path">root@breach:~/day11</span> <span class="dollar">$</span> <span class="cmd">mysql -u root -p quantum_db</span></div>
+  <h1 class="sec-title">DAY_11 — PERMANENT MEMORY</h1>
+  <div class="sec-sub">DATABASES &amp; SQL</div>
+</div>
+
+<div class="callout c-real">
+  you're building Instagram. users create accounts, posts, comments, messages. where does it all go? RAM = temporary. power off = everything gone. files = works for 10 users. now imagine <span class="hl">2 billion users</span>. finding data in files becomes impossibly slow. <span class="hl">that's why databases were invented.</span>
+</div>
+
+<h2>What Is A Database?</h2>
+<p>a system designed to: store data, organize data, retrieve data <span class="hl">efficiently</span>, update data safely. think of it as an extremely smart digital library with instant search across billions of records.</p>
+
+<h2>Tables — The Core Structure</h2>
+<div class="code"><span class="cc">-- database organizes data into tables (like spreadsheets)</span>
+
+Users Table:
++----+--------+-----+------------+
+| ID | Name   | Age | City       |
++----+--------+-----+------------+
+|  1 | Sarim  |  17 | Delhi      |
+|  2 | Rahul  |  18 | Mumbai     |
+|  3 | Ali    |  17 | Bangalore  |
++----+--------+-----+------------+
+
+<span class="cc">-- each ROW = one record (one user)
+-- each COLUMN = one property (name, age, etc)</span></div>
+
+<h2>Primary Keys &amp; Relationships</h2>
+<div class="code"><span class="cc">-- problem: two users named "Sarim" — how to tell them apart?
+-- solution: give each one a unique ID (Primary Key)</span>
+
+Users:   ID | Name
+          1 | Sarim
+          2 | Sarim   &lt;-- different person, unique ID
+
+<span class="cc">-- relationships: tables can reference each other</span>
+Posts:   PostID | UserID | Content
+            10  |   1    | "Hello World"  &lt;-- UserID 1 = Sarim
+            11  |   2    | "Sup"          &lt;-- UserID 2 = other Sarim
+
+<span class="cc">-- UserID in Posts = "Foreign Key" pointing to Users.ID
+-- this is how databases connect related data across tables</span></div>
+
+<h2>SQL — The Language of Databases</h2>
+<p>Python = talk to a computer. SQL = talk to a database. SQL stands for Structured Query Language.</p>
+
+<div class="code"><span class="cc">-- SELECT: show me data</span>
+SELECT * FROM users;               <span class="cc">-- all users</span>
+SELECT name FROM users WHERE age = 17;  <span class="cc">-- filtered</span>
+
+<span class="cc">-- INSERT: add new data</span>
+INSERT INTO users (name, age, city)
+VALUES (<span class="cs">'Ahmed'</span>, 19, <span class="cs">'Hyderabad'</span>);
+
+<span class="cc">-- UPDATE: modify existing data</span>
+UPDATE users SET age = 18 WHERE id = 1;
+
+<span class="cc">-- DELETE: remove data</span>
+DELETE FROM users WHERE id = 3;</div>
+
+<h2>Instagram's Database Structure</h2>
+<div class="flow">
+  <div class="flow-item">Users table — accounts</div>
+  <div class="flow-item">Posts table — UserID links each post to a user</div>
+  <div class="flow-item">Comments table — PostID + UserID links to posts and users</div>
+  <div class="flow-item">Likes table — PostID + UserID</div>
+  <div class="flow-item">Followers table — UserID + FollowerID</div>
+</div>
+<p style="margin-top:14px;">everything is <span class="hl">connected through relationships</span>. that's what "relational database" means.</p>
+
+<h2>SQL vs NoSQL</h2>
+<table class="cmp-tbl">
+  <tr><th>RELATIONAL (SQL)</th><th>NoSQL</th></tr>
+  <tr><td>tables, rows, columns</td><td>documents, key-value pairs</td></tr>
+  <tr><td>strict structure</td><td>flexible structure</td></tr>
+  <tr><td>MySQL, PostgreSQL, SQLite</td><td>MongoDB, Redis</td></tr>
+  <tr><td>learn this first — strongest fundamentals</td><td>learn after you understand relational</td></tr>
+</table>
+
+<h2>The Complete Application Flow</h2>
+<div class="flow">
+  <div class="flow-item">User clicks button</div>
+  <div class="flow-item">JavaScript executes</div>
+  <div class="flow-item">API request sent</div>
+  <div class="flow-item">Backend receives and validates</div>
+  <div class="flow-item">SQL query runs on database</div>
+  <div class="flow-item">Database returns results</div>
+  <div class="flow-item">Backend formats response as JSON</div>
+  <div class="flow-item">JavaScript updates DOM</div>
+  <div class="flow-item">User sees result</div>
+</div>
+
+<div class="callout c-fact">
+  without databases: no Instagram, no YouTube, no WhatsApp, no banking apps, no online games, no e-commerce. <span class="hl">almost every modern application depends on persistent data storage.</span>
+</div>
+
+<div class="callout c-tldr">
+  <span class="hl">TL;DR:</span> database = smart permanent storage for applications. table = spreadsheet-like structure. rows = records. columns = properties. primary key = unique ID for each row. foreign key = reference to another table (relationships). SQL = language to query databases. SELECT/INSERT/UPDATE/DELETE = the four main operations. next chapter: we leave pure software and start controlling the physical world.
+</div>
+<div class="ch-end">END OF DAY_11 // NEXT: DAY_12 — ELECTRONICS</div>
+</div>
+
+<!-- ═══════════ DAY 12 ═══════════ -->
+<div class="page">
+<div class="sec-header">
+  <div class="prompt"><span class="path">root@breach:~/day12</span> <span class="dollar">$</span> <span class="cmd">./measure_voltage.sh --multimeter</span></div>
+  <h1 class="sec-title">DAY_12 — REAL WORLD PROTOCOL</h1>
+  <div class="sec-sub">ELECTRONICS FUNDAMENTALS</div>
+</div>
+
+<div class="callout c-real">
+  you write: <span class="hl">digitalWrite(LED_PIN, HIGH);</span> and an LED turns on. why? not because the ESP32 understands LEDs, and not because the LED understands code. something else is happening. <span class="hl">electricity.</span> everything in electronics begins here.
+</div>
+
+<h2>The Three Laws Of Electronics</h2>
+<p>remember these forever. everything else is built on them.</p>
+<table class="cmp-tbl">
+  <tr><th>CONCEPT</th><th>WATER ANALOGY</th><th>UNIT</th><th>WHAT IT IS</th></tr>
+  <tr><td class="hl">Voltage (V)</td><td>water pressure — how high the tank is</td><td>Volt (V)</td><td>electrical pressure that pushes electrons</td></tr>
+  <tr><td class="hl">Current (I)</td><td>flow rate — how much water moves</td><td>Ampere (A) / mA</td><td>actual flow of electrons</td></tr>
+  <tr><td class="hl">Resistance (R)</td><td>pipe narrowness — restricts flow</td><td>Ohm (Ω)</td><td>opposition to current flow</td></tr>
+</table>
+
+<h2>Ohm's Law — The Most Famous Formula</h2>
+<div class="code"><span class="cc"># V = I × R
+# Voltage = Current × Resistance</span>
+
+<span class="cc"># examples:</span>
+V = 5V, R = 100Ω → I = 0.05A = 50mA
+V = 3.3V, R = 330Ω → I = 0.01A = 10mA
+
+<span class="cc"># this equation appears EVERYWHERE in electronics.
+# memorize it. use it. live it.</span></div>
+
+<h2>Why Resistors Exist</h2>
+<div class="analogy">
+  <div class="a-left"><div class="a-lbl">problem</div>connect LED directly to battery. too much current flows. LED gets fried instantly. 💀</div>
+  <div class="a-arrow">⇒</div>
+  <div class="a-right"><div class="a-lbl">solution</div>Battery → Resistor → LED. resistor limits current. like a traffic controller for electrons. LED lives. ✓</div>
+</div>
+
+<h2>Circuit — A Complete Path</h2>
+<div class="code"><span class="cc"># electricity MUST have a complete loop to flow</span>
+
+Battery (+) → LED → Resistor → Battery (-) ✓   <span class="cc"># works</span>
+Battery (+) → LED →  [GAP]  → Battery (-)  ✗   <span class="cc"># open circuit, nothing works</span>
+
+<span class="cc"># ground (GND) = the return path / reference point
+# current flows out of positive, through the circuit, returns to negative (GND)</span></div>
+
+<h2>Essential Components</h2>
+<table class="cmp-tbl">
+  <tr><th>COMPONENT</th><th>JOB</th><th>ANALOGY</th></tr>
+  <tr><td class="hl">LED</td><td>electricity → light</td><td>lightbulb that only needs 2V</td></tr>
+  <tr><td class="hl">Resistor</td><td>limits current</td><td>traffic controller for electrons</td></tr>
+  <tr><td class="hl">Button</td><td>opens/closes circuit</td><td>on/off switch</td></tr>
+  <tr><td class="hl">Buzzer</td><td>electricity → sound</td><td>tiny speaker</td></tr>
+  <tr><td class="hl">Potentiometer</td><td>variable resistance</td><td>volume knob</td></tr>
+  <tr><td class="hl">Sensor</td><td>physical world → electrical signal</td><td>the computer's senses</td></tr>
+  <tr><td class="hl">Actuator</td><td>electrical signal → physical action</td><td>motor, servo, relay</td></tr>
+</table>
+
+<h2>Digital vs Analog Signals</h2>
+<table class="cmp-tbl">
+  <tr><th>DIGITAL</th><th>ANALOG</th></tr>
+  <tr><td>only ON or OFF (0 or 1)</td><td>varies continuously between values</td></tr>
+  <tr><td>button pressed/released, LED on/off</td><td>light level, temperature, sound, pressure</td></tr>
+  <tr><td>simple, clean, noise-resistant</td><td>represents the real world accurately</td></tr>
+</table>
+
+<h2>DC vs AC</h2>
+<table class="cmp-tbl">
+  <tr><th>DC (Direct Current)</th><th>AC (Alternating Current)</th></tr>
+  <tr><td>current flows in one direction</td><td>current repeatedly reverses direction</td></tr>
+  <tr><td>batteries, power banks, ESP32, USB</td><td>household wall power</td></tr>
+  <tr><td>what microcontrollers use</td><td>what your wall socket provides</td></tr>
+</table>
+
+<h2>The Bridge Between Software And Hardware</h2>
+<div class="code"><span class="cc">// this is where it all comes together</span>
+<span class="ck">if</span>(buttonPressed) {
+    turnOnLED();
+}
+
+<span class="cc">// software (your code)
+//    ↓
+// microcontroller (processes instructions)
+//    ↓
+// GPIO pin (sends electrical signal)
+//    ↓
+// LED (receives electricity)
+//    ↓
+// light appears in the physical world</span></div>
+
+<div class="callout c-fact">
+  you just crossed from pure software into the physical world. a few lines of text caused actual light to appear. that's the magic of embedded systems. the physical world changed because of code you wrote. 🔥
+</div>
+
+<div class="callout c-tldr">
+  <span class="hl">TL;DR:</span> voltage = pressure, current = flow, resistance = restriction. Ohm's Law: V=IR. resistors protect components from too much current. circuits need a complete path. digital = ON/OFF, analog = continuous values. sensors detect the world, actuators change it. microcontrollers = tiny computers with GPIO pins that bridge code and electronics. ESP32 is next.
+</div>
+<div class="ch-end">END OF DAY_12 // NEXT: DAY_13 — ESP32</div>
+</div>
+
+<!-- ═══════════ DAY 13 ═══════════ -->
+<div class="page">
+<div class="sec-header">
+  <div class="prompt"><span class="path">root@breach:~/day13</span> <span class="dollar">$</span> <span class="cmd">idf.py flash monitor --port /dev/ttyUSB0</span></div>
+  <h1 class="sec-title">DAY_13 — BRIDGE TO REALITY</h1>
+  <div class="sec-sub">ESP32 &amp; EMBEDDED SYSTEMS</div>
+</div>
+
+<div class="callout c-real">
+  for the last several days everything happened inside a computer: CPU, RAM, browser, database. nothing physical. cool. but what if you want to: <span class="hl">turn on a light, move a motor, read temperature, detect motion, connect to WiFi, open a door?</span> software alone isn't enough anymore. you need a bridge between code and the real world.
+</div>
+
+<h2>Microcontroller vs Computer</h2>
+<div class="analogy">
+  <div class="a-left"><div class="a-lbl">laptop</div>big, general-purpose. runs Chrome, games, hundreds of apps simultaneously. powerful but power-hungry.</div>
+  <div class="a-arrow">⇒</div>
+  <div class="a-right"><div class="a-lbl">ESP32</div>tiny, specialized. runs ONE program controlling electronics. still has CPU + RAM + storage. designed to interact with the physical world.</div>
+</div>
+
+<h2>What Makes ESP32 Special?</h2>
+<p>inside a board smaller than your palm:</p>
+<ul class="checklist">
+  <li>dual-core CPU running at 240MHz</li>
+  <li>520KB RAM</li>
+  <li>4MB Flash storage</li>
+  <li>Wi-Fi built in (your networking knowledge returns!)</li>
+  <li>Bluetooth built in</li>
+  <li>30+ GPIO pins to interact with the world</li>
+</ul>
+
+<h2>GPIO — Hands And Ears Of The ESP32</h2>
+<p>GPIO = General Purpose Input/Output. this is the most important thing on the board. GPIO pins are how the ESP32 communicates with the outside world. without GPIO the ESP32 couldn't interact with anything.</p>
+
+<div class="code"><span class="cc">// GPIO as OUTPUT — ESP32 speaking to the world</span>
+<span class="ck">pinMode</span>(2, OUTPUT);   <span class="cc">// set pin 2 as output</span>
+<span class="ck">digitalWrite</span>(2, HIGH); <span class="cc">// send voltage → 3.3V</span>
+<span class="ck">digitalWrite</span>(2, LOW);  <span class="cc">// remove voltage → 0V</span>
+
+<span class="cc">// GPIO as INPUT — ESP32 listening to the world</span>
+<span class="ck">pinMode</span>(4, INPUT);    <span class="cc">// set pin 4 as input</span>
+<span class="ck">int</span> state = <span class="ck">digitalRead</span>(4);  <span class="cc">// read: HIGH or LOW</span></div>
+
+<h2>The Famous Blink — What REALLY Happens</h2>
+<div class="code"><span class="ck">void</span> setup() {
+    <span class="ck">pinMode</span>(2, OUTPUT);  <span class="cc">// run once at startup</span>
+}
+
+<span class="ck">void</span> loop() {
+    <span class="ck">digitalWrite</span>(2, HIGH);  <span class="cc">// Step 1: GPIO outputs voltage</span>
+    <span class="ck">delay</span>(1000);             <span class="cc">// Step 2: wait 1 second</span>
+    <span class="ck">digitalWrite</span>(2, LOW);   <span class="cc">// Step 3: remove voltage</span>
+    <span class="ck">delay</span>(1000);             <span class="cc">// Step 4: wait 1 second</span>
+    <span class="cc">// loop() repeats forever → LED blinks</span>
+}</div>
+
+<div class="flow">
+  <div class="flow-item">code text "digitalWrite(HIGH)"</div>
+  <div class="flow-item">compiled to machine instructions</div>
+  <div class="flow-item">CPU executes instruction</div>
+  <div class="flow-item">GPIO pin outputs 3.3V</div>
+  <div class="flow-item">current flows through LED</div>
+  <div class="flow-item">LED emits light</div>
+</div>
+<p style="margin-top:14px;"><span class="hl">text you wrote caused physical light to appear in the world. that's embedded systems.</span></p>
+
+<h2>ADC — Reading The Real World</h2>
+<div class="code"><span class="cc">// ADC = Analog to Digital Converter
+// ESP32 reads voltage on a pin (0 to 3.3V)
+// converts it to a number (0 to 4095)</span>
+
+<span class="ck">int</span> lightLevel = <span class="ck">analogRead</span>(34);
+<span class="cc">// dark room → ~200, bright room → ~3800</span>
+
+<span class="ck">if</span>(lightLevel &lt; 500) {
+    <span class="ck">digitalWrite</span>(STREETLIGHT, HIGH);  <span class="cc">// auto street light!</span>
+}
+<span class="cc">// exactly how automatic street lights work 💡</span></div>
+
+<h2>PWM — Fake Dimming With Blinking</h2>
+<div class="code"><span class="cc">// LED only understands ON or OFF
+// but you want 50% brightness?
+
+// PWM rapidly switches:
+// ON-OFF-ON-OFF-ON-OFF... thousands of times/second
+// your eyes average it out → looks like 50% brightness
+
+// duty cycle 0% = fully off
+// duty cycle 50% = half brightness
+// duty cycle 100% = fully on</span>
+
+<span class="ck">ledcWrite</span>(channel, 128);  <span class="cc">// ~50% brightness (0-255)</span></div>
+
+<h2>Communication Protocols</h2>
+<table class="cmp-tbl">
+  <tr><th>PROTOCOL</th><th>USE CASE</th><th>EXAMPLE DEVICES</th></tr>
+  <tr><td class="hl">UART</td><td>ESP32 ↔ Computer serial communication</td><td>GPS modules, debugging</td></tr>
+  <tr><td class="hl">I2C</td><td>multiple devices on 2 wires</td><td>OLED displays, temp sensors, RTC clocks</td></tr>
+  <tr><td class="hl">SPI</td><td>fast communication, 4 wires</td><td>SD cards, TFT displays</td></tr>
+</table>
+
+<h2>ESP32 + Wi-Fi = All Your Network Knowledge Returns</h2>
+<div class="code"><span class="cc">// ESP32 connects to Wi-Fi just like your browser does</span>
+
+WiFi.begin(<span class="cs">"MyNetwork"</span>, <span class="cs">"password"</span>);
+
+<span class="cc">// then fetch data from the internet:</span>
+HTTPClient http;
+http.begin(<span class="cs">"https://api.weather.com/delhi"</span>);
+<span class="ck">int</span> code = http.GET();
+String data = http.getString();
+
+<span class="cc">// IP addresses, DNS, HTTP, TCP — all the Day 4 stuff
+// running on a board the size of your thumb</span></div>
+
+<h2>IoT — The Big Picture</h2>
+<div class="flow">
+  <div class="flow-item">Physical sensors detect the world</div>
+  <div class="flow-item">ESP32 reads sensor values</div>
+  <div class="flow-item">Decision made by code</div>
+  <div class="flow-item">ESP32 sends data over Wi-Fi</div>
+  <div class="flow-item">Cloud server receives and stores it</div>
+  <div class="flow-item">Your phone app shows the data</div>
+</div>
+<p style="margin-top:14px;">smart lights, smart locks, smart thermostats, fitness trackers — they're all basically: <span class="hl">sensor → microcontroller → internet → cloud.</span></p>
+
+<div class="callout c-tldr">
+  <span class="hl">TL;DR:</span> ESP32 = tiny computer with Wi-Fi + Bluetooth + GPIO. GPIO = how it interacts with the physical world. INPUT = ESP32 listening. OUTPUT = ESP32 speaking. ADC = reads analog values (light, temp). PWM = fake dimming. UART/I2C/SPI = communication protocols. Wi-Fi lets it talk to the internet just like a browser. IoT = sensors + microcontrollers + internet. you've officially bridged software and hardware.
+</div>
+<div class="ch-end">END OF DAY_13 // NEXT: DAY_14 — CYBERSECURITY</div>
+</div>
+
+<!-- ═══════════ DAY 14 ═══════════ -->
+<div class="page">
+<div class="sec-header">
+  <div class="prompt"><span class="path">root@breach:~/day14</span> <span class="dollar">$</span> <span class="cmd">nmap -sV --script vuln target.local</span></div>
+  <h1 class="sec-title">DAY_14 — THE LOCKS</h1>
+  <div class="sec-sub">CYBERSECURITY FUNDAMENTALS</div>
+</div>
+
+<div class="callout c-warn">
+  bro. i know. this is the chapter you've been waiting for since page 1. and now that you're here — after 13 days of actual knowledge — you'll understand why this chapter hits completely different from just watching YouTube hacking videos. <span class="hl">you now understand what you're actually attacking or defending.</span>
+</div>
+
+<h2>The CIA Triad — Foundation Of All Security</h2>
+<table class="cmp-tbl">
+  <tr><th>PRINCIPLE</th><th>MEANING</th><th>EXAMPLE ATTACK</th></tr>
+  <tr><td class="hl">Confidentiality</td><td>only authorized people see data</td><td>someone reads your private messages</td></tr>
+  <tr><td class="hl">Integrity</td><td>data hasn't been modified</td><td>attacker changes a bank transfer amount</td></tr>
+  <tr><td class="hl">Availability</td><td>systems work when needed</td><td>DDoS crashes a website</td></tr>
+</table>
+<p>every single security concept — firewalls, encryption, backups, authentication — protects one or more of these three.</p>
+
+<h2>How Hacking Actually Works</h2>
+<div class="flow">
+  <div class="flow-item">RECONNAISSANCE — gather info about target</div>
+  <div class="flow-item">SCANNING — find open ports, services, software versions</div>
+  <div class="flow-item">VULNERABILITY ANALYSIS — identify weaknesses</div>
+  <div class="flow-item">EXPLOITATION — attempt to use vulnerabilities</div>
+  <div class="flow-item">POST-EXPLOITATION — maintain access, gather data</div>
+  <div class="flow-item">REPORTING — document findings (ethical hacking)</div>
+</div>
+<div class="callout c-fact">
+  notice step 1: <span class="hl">reconnaissance</span>. real attacks don't start with running tools. they start with collecting intelligence. OSINT (Open Source Intelligence) — finding publicly available information — is often the most powerful phase. no tools needed, just observation.
+</div>
+
+<h2>Common Attack Types</h2>
+<table class="cmp-tbl">
+  <tr><th>ATTACK</th><th>WHAT HAPPENS</th><th>PREVENTION</th></tr>
+  <tr><td class="hl">Phishing</td><td>fake email/page tricks you into entering credentials</td><td>verify URLs, never click suspicious links</td></tr>
+  <tr><td class="hl">SQL Injection</td><td>malicious SQL input manipulates the database query</td><td>parameterized queries, input validation</td></tr>
+  <tr><td class="hl">XSS</td><td>malicious JS injected into a webpage, runs in victim's browser</td><td>sanitize all user input</td></tr>
+  <tr><td class="hl">DDoS</td><td>flood server with requests until it crashes</td><td>rate limiting, CDN, traffic filtering</td></tr>
+  <tr><td class="hl">Man-in-the-Middle</td><td>attacker sits between client and server, intercepts traffic</td><td>HTTPS (encryption), certificate verification</td></tr>
+  <tr><td class="hl">Brute Force</td><td>try thousands of passwords until one works</td><td>rate limiting, 2FA, strong passwords</td></tr>
+</table>
+
+<h2>SQL Injection — Why Your Day 11 Knowledge Matters</h2>
+<div class="code"><span class="cc">-- normal login query:</span>
+SELECT * FROM users WHERE username='sarim' AND password='secret';
+
+<span class="cc">-- attacker types as username:</span>
+sarim' OR '1'='1
+
+<span class="cc">-- resulting query becomes:</span>
+SELECT * FROM users WHERE username='sarim' OR '1'='1' AND password='x';
+
+<span class="cc">-- '1'='1' is ALWAYS true → returns ALL users → access granted
+-- without knowing the password. 💀
+-- THIS is why understanding databases makes you a better defender.</span></div>
+
+<h2>Encryption — The Lock On Everything</h2>
+<div class="code"><span class="cc"># encryption = scrambling data so only authorized parties can read it</span>
+
+plaintext:   "Hello World"
+encrypted:   "Xq9#mK2@pL7"   ← meaningless without the key
+
+<span class="cc"># two types:</span>
+<span class="cc"># Symmetric: same key encrypts and decrypts (like a house key)</span>
+<span class="cc"># Asymmetric: public key encrypts, private key decrypts (HTTPS uses this)</span>
+
+<span class="cc"># HTTPS = HTTP + encryption
+# the padlock in your browser = encrypted connection</span></div>
+
+<h2>Firewalls &amp; IDS</h2>
+<table class="cmp-tbl">
+  <tr><th>TOOL</th><th>JOB</th></tr>
+  <tr><td class="hl">Firewall</td><td>filters traffic. blocks unauthorized ports/IPs. like a security guard at the door checking IDs.</td></tr>
+  <tr><td class="hl">IDS</td><td>intrusion detection. monitors for suspicious patterns. like CCTV inside the building.</td></tr>
+</table>
+
+<h2>Passwords — The Weakest Link</h2>
+<div class="code"><span class="cc"># passwords are stored HASHED — not plain text</span>
+
+password: "hello123"
+stored:   "$2b$12$K9.jH3xLm..." ← bcrypt hash
+
+<span class="cc"># hash = one-way function. fast to hash. impossible to reverse.
+# even if attacker steals database → sees hashes, not passwords
+
+# why "password123" is dangerous:
+# attacker pre-computes hashes of common passwords
+# finds matching hash instantly → account compromised
+# long, random, unique passwords = the actual defense</span></div>
+
+<h2>The Mindset Shift — Offense Teaches Defense</h2>
+<div class="analogy">
+  <div class="a-left"><div class="a-lbl">script kiddie</div>runs tools they don't understand. copies commands from YouTube. doesn't know WHY things work. gets nowhere serious.</div>
+  <div class="a-arrow">⇒</div>
+  <div class="a-right"><div class="a-lbl">security researcher</div>understands networking, protocols, databases, OS internals. knows exactly what's happening at every layer. <span class="hl">that's you after this book.</span></div>
+</div>
+
+<div class="callout c-tldr">
+  <span class="hl">TL;DR:</span> CIA triad = Confidentiality + Integrity + Availability — foundation of all security thinking. recon → scan → exploit → report = how ethical hacking works. SQL injection, XSS, phishing, DDoS = most common attacks. encryption = scrambles data with a key. HTTPS = encrypted web. firewalls = traffic filters. passwords stored as hashes. the best defense is understanding how attacks work. Part B dives deep into all of this.
+</div>
+<div class="ch-end">END OF DAY_14 // NEXT: DAY_15 — AI</div>
+</div>
+
+<!-- ═══════════ DAY 15 ═══════════ -->
+<div class="page">
+<div class="sec-header">
+  <div class="prompt"><span class="path">root@breach:~/day15</span> <span class="dollar">$</span> <span class="cmd">python3 train_model.py --epochs 100</span></div>
+  <h1 class="sec-title">DAY_15 — THE ORACLE</h1>
+  <div class="sec-sub">ARTIFICIAL INTELLIGENCE &amp; MACHINE LEARNING</div>
+</div>
+
+<div class="callout c-real">
+  ChatGPT. image generators. self-driving cars. voice assistants. everyone's talking about AI. most people think it's magic. it's not. AI is <span class="hl">math and statistics applied to data</span>. once you understand how it works, it stops being mystical and starts being a tool you can actually use.
+</div>
+
+<h2>AI vs ML vs Deep Learning</h2>
+<div class="flow">
+  <div class="flow-item">AI — anything making computers seem intelligent</div>
+  <div class="flow-item">Machine Learning — AI that learns from data (subset of AI)</div>
+  <div class="flow-item">Deep Learning — ML using neural networks (subset of ML)</div>
+</div>
+<p style="margin-top:14px;">when people say "AI" today, they usually mean machine learning or deep learning specifically. not robots with consciousness.</p>
+
+<h2>Traditional Programming vs Machine Learning</h2>
+<div class="analogy">
+  <div class="a-left"><div class="a-lbl">traditional</div>you write rules:<br>if pixels look like this → it's a cat<br>if pixels look like that → it's a dog<br>problem: impossible to write rules for every case.</div>
+  <div class="a-arrow">⇒</div>
+  <div class="a-right"><div class="a-lbl">machine learning</div>you give it 1 million labeled photos. it figures out the rules itself. model learns patterns from examples. you never write the rules manually.</div>
+</div>
+
+<h2>How A Model Actually Learns</h2>
+<div class="flow">
+  <div class="flow-item">collect labeled training data (photos + labels)</div>
+  <div class="flow-item">model makes a prediction</div>
+  <div class="flow-item">compare prediction to correct answer</div>
+  <div class="flow-item">calculate the error (loss)</div>
+  <div class="flow-item">adjust internal numbers (weights) to reduce error</div>
+  <div class="flow-item">repeat millions of times</div>
+  <div class="flow-item">model gets better at predicting</div>
+</div>
+<p style="margin-top:14px;">this process is called <span class="hl">training</span>. those internal numbers the model adjusts are called <span class="hl">weights</span>. ChatGPT has billions of them.</p>
+
+<h2>Neural Networks — Inspired By The Brain</h2>
+<div class="code"><span class="cc"># basic concept: layers of nodes processing data</span>
+
+INPUT LAYER      →    HIDDEN LAYERS     →    OUTPUT LAYER
+(image pixels)        (detect patterns)       (cat or dog?)
+
+<span class="cc"># each connection has a weight (a number)
+# during training, weights are adjusted to minimize errors
+# millions of weights = the "knowledge" stored in the model</span></div>
+
+<h2>Types Of Machine Learning</h2>
+<table class="cmp-tbl">
+  <tr><th>TYPE</th><th>HOW</th><th>EXAMPLE</th></tr>
+  <tr><td class="hl">Supervised</td><td>learns from labeled data (input + correct answer)</td><td>spam detection, image classification</td></tr>
+  <tr><td class="hl">Unsupervised</td><td>finds patterns in unlabeled data</td><td>customer segmentation, anomaly detection</td></tr>
+  <tr><td class="hl">Reinforcement</td><td>learns by trial and error with rewards</td><td>game-playing AI, self-driving cars</td></tr>
+</table>
+
+<h2>How ChatGPT Works (Simplified)</h2>
+<div class="flow">
+  <div class="flow-item">trained on massive amounts of text from the internet</div>
+  <div class="flow-item">learned statistical patterns: what words follow other words</div>
+  <div class="flow-item">you type a question (prompt)</div>
+  <div class="flow-item">model predicts most likely next word, then next, then next</div>
+  <div class="flow-item">repeats until complete response generated</div>
+</div>
+<div class="callout c-fact">
+  ChatGPT is not "thinking." it's predicting the most statistically likely next token based on everything it learned during training. very sophisticated pattern completion. still incredibly useful. but not consciousness.
+</div>
+
+<h2>The Tools — Python + Libraries</h2>
+<div class="code"><span class="cc"># this is why Python is everywhere in AI</span>
+
+<span class="ck">import</span> numpy   <span class="cc"># fast math arrays</span>
+<span class="ck">import</span> pandas  <span class="cc"># data manipulation</span>
+<span class="ck">import</span> sklearn <span class="cc"># traditional ML algorithms</span>
+
+<span class="cc"># deep learning frameworks:</span>
+<span class="ck">import</span> tensorflow  <span class="cc"># Google's framework</span>
+<span class="ck">import</span> torch       <span class="cc"># PyTorch (Meta's framework)</span>
+
+<span class="cc"># five lines and you have access to state-of-the-art algorithms
+# that took decades of research to develop. that's Python's power.</span></div>
+
+<h2>AI In Cybersecurity</h2>
+<ul class="checklist">
+  <li>anomaly detection — flag unusual network traffic</li>
+  <li>malware analysis — detect patterns in malicious code</li>
+  <li>automated vulnerability scanning</li>
+  <li>deepfake detection</li>
+  <li>social engineering attacks powered by AI (the new threat)</li>
+</ul>
+
+<h2>Where You Are Now</h2>
+<p>you started Day 1 not knowing what a variable is. now you understand: how hardware executes code, how OS manages resources, how networks transmit data, how databases store everything, how electronics bridge code and reality, how security works, and <span class="hl">how AI actually learns</span>.</p>
+<p>that's the complete picture. most people understand only one or two of these layers. <span class="hl">you understand all of them and how they connect.</span></p>
+
+<div class="callout c-tldr">
+  <span class="hl">TL;DR:</span> AI = statistics + data at scale. ML = machines learning patterns from examples instead of following hardcoded rules. neural networks = layers of weighted math. training = adjusting weights to minimize prediction errors. ChatGPT = sophisticated next-token prediction. Python = the language of AI/ML. supervised/unsupervised/reinforcement = three learning styles. one more day left.
+</div>
+<div class="ch-end">END OF DAY_15 // NEXT: DAY_16 — GO MODE</div>
+</div>
+
+<!-- ═══════════ DAY 16 ═══════════ -->
+<div class="page">
+<div class="sec-header">
+  <div class="prompt"><span class="path">root@breach:~/day16</span> <span class="dollar">$</span> <span class="cmd">./deploy.sh --env production --go-mode ON</span></div>
+  <h1 class="sec-title">DAY_16 — GO MODE</h1>
+  <div class="sec-sub">BUILDING REAL THINGS &amp; WHAT COMES NEXT</div>
+</div>
+
+<div class="callout c-fact">
+  16 days. you went from not knowing what a variable is to understanding hardware, OS, Linux, networking, web development, databases, electronics, embedded systems, cybersecurity, and AI. <span class="hl">that's not a small thing.</span>
+</div>
+
+<h2>You Now Understand The Full Stack</h2>
+<div class="flow">
+  <div class="flow-item">Day 1 — Python: wrote code that controls logic</div>
+  <div class="flow-item">Day 2 — Hardware: understood what executes that code</div>
+  <div class="flow-item">Day 3 — Linux: talked directly to the OS</div>
+  <div class="flow-item">Day 4 — Networking: connected computers across the world</div>
+  <div class="flow-item">Stage 1 — Lab: built a safe environment to experiment</div>
+  <div class="flow-item">Day 5 — Dev: understood software architecture</div>
+  <div class="flow-item">Days 7–9 — Web: built visual interactive pages</div>
+  <div class="flow-item">Day 10 — APIs: connected frontend to backend</div>
+  <div class="flow-item">Day 11 — Databases: stored everything permanently</div>
+  <div class="flow-item">Day 12 — Electronics: understood physical signals</div>
+  <div class="flow-item">Day 13 — ESP32: bridged code and the real world</div>
+  <div class="flow-item">Day 14 — Security: understood how systems get attacked and defended</div>
+  <div class="flow-item">Day 15 — AI: understood how machines learn</div>
+</div>
+
+<h2>What To Build Next</h2>
+<div class="callout c-mission">
+  <span class="hl">PROJECT TIER 1 — STARTER 🟢</span><br><br>
+  Personal portfolio website (HTML + CSS + JS)<br>
+  Python script that automates a boring task<br>
+  Linux bash script for system management<br>
+  ESP32 LED control from a webpage over Wi-Fi
+</div>
+
+<div class="callout c-mission">
+  <span class="hl">PROJECT TIER 2 — INTERMEDIATE 🟡</span><br><br>
+  Full login system (HTML + JS + Backend API + Database)<br>
+  Weather dashboard using a public API<br>
+  ESP32 sensor that logs data to a web server<br>
+  Simple chatbot with Python
+</div>
+
+<div class="callout c-mission">
+  <span class="hl">PROJECT TIER 3 — ADVANCED 🔴</span><br><br>
+  Home automation system (ESP32 + Web dashboard + Database)<br>
+  Security scanner that checks open ports (use your own lab!)<br>
+  ML model that classifies images (Python + TensorFlow)<br>
+  Full-stack app with user accounts, database, deployed live
+</div>
+
+<h2>The Most Important Rule</h2>
+<div class="analogy">
+  <div class="a-left"><div class="a-lbl">reading only</div>reading about swimming forever. knowing all the theory. understanding every stroke. never getting in the water.</div>
+  <div class="a-arrow">⇒</div>
+  <div class="a-right"><div class="a-lbl">building</div>jump in. break things. fix them. build something bad. rebuild it better. <span class="hl">30 days of building beats 6 months of watching tutorials.</span></div>
+</div>
+
+<h2>Your Learning Path Forward</h2>
+<table class="cmp-tbl">
+  <tr><th>GOAL</th><th>FOCUS</th></tr>
+  <tr><td class="hl">Web Developer</td><td>HTML/CSS/JS deeper → React framework → Node.js backend → PostgreSQL</td></tr>
+  <tr><td class="hl">Cybersecurity</td><td>Part B of this book → CTF challenges → TryHackMe → bug bounty programs</td></tr>
+  <tr><td class="hl">IoT / Hardware</td><td>ESP32 projects → MQTT protocol → PCB design → FreeRTOS</td></tr>
+  <tr><td class="hl">AI / ML</td><td>Python deeper → NumPy/Pandas → scikit-learn → PyTorch</td></tr>
+  <tr><td class="hl">Systems / Linux</td><td>Linux deeper → networking tools → Docker → cloud (AWS/GCP)</td></tr>
+</table>
+
+<h2>One Last Thing</h2>
+<p>every senior developer, every security researcher, every hardware engineer — they all started exactly where you started on Day 1. not knowing what a variable is. the gap between them and a beginner isn't intelligence. <span class="hl">it's time spent building things and refusing to quit when they break.</span></p>
+<p>you've got the foundation. now go build something. break it. fix it. build something bigger. that's the entire secret.</p>
+
+<div class="ch-end" style="border-top:2px solid var(--g);">END OF PART A — PART B DROPS WHEN YOU'RE READY 🔒</div>
+</div>
+
+<!-- ═══════════ FINAL PAGE ═══════════ -->
+<div class="page" style="min-height:60vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;">
+  <div style="font-family:'VT323',monospace;font-size:13px;color:var(--dim);letter-spacing:4px;margin-bottom:24px;">QUANTUM CORE v1.0 — PART A COMPLETE</div>
+  <div style="font-family:'VT323',monospace;font-size:64px;color:var(--g);letter-spacing:12px;animation:glitch 4s infinite;margin-bottom:12px;">YOU MADE IT</div>
+  <div style="font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--amber);letter-spacing:4px;margin-bottom:48px;">ACCESS LEVEL UPGRADED // NEW CAPABILITIES UNLOCKED</div>
+  <div style="font-size:12px;color:var(--dim);max-width:500px;line-height:2;border:1px solid var(--dg);padding:28px;">
+    <div style="color:var(--g);margin-bottom:16px;">[ SESSION SUMMARY ]</div>
+    <div>DAYS COMPLETED &nbsp;&nbsp; 16 / 16 &nbsp;&nbsp;&nbsp; [████████████] 100%</div>
+    <div style="margin-top:8px;">CONCEPTS LEARNED &nbsp; Python · Hardware · Linux</div>
+    <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Networking · Web Dev · APIs</div>
+    <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Databases · Electronics · ESP32</div>
+    <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Cybersecurity · AI/ML</div>
+    <div style="margin-top:16px;color:var(--amber);">PART B &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; LOCKED 🔒 — earned after Part A builds</div>
+    <div style="margin-top:16px;color:var(--dim);">compiled with ❤ by your bro<span class="blink">_</span></div>
+  </div>
+</div>
+
+<!-- STATUS BAR -->
+<div class="statusbar">
+  <span>QUANTUM_CORE v1.0 &nbsp;|&nbsp; PART A</span>
+  <span>root@breach:~/<span class="blink">_</span></span>
+  <span>16 / 16 MODULES &nbsp; ▓▓▓▓▓▓▓▓▓▓ 100%</span>
+</div>
+
+<script>
+// Matrix rain on cover
+const canvas = document.getElementById('matrix-canvas');
+const cover  = document.getElementById('cover-page');
+if(canvas && cover){
+  canvas.width = cover.offsetWidth;
+  canvas.height = cover.offsetHeight;
+  const ctx = canvas.getContext('2d');
+  const cols = Math.floor(canvas.width / 15);
+  const drops = new Array(cols).fill(0);
+  const chars = 'アイウエオ01ABCDEF0123456789ΞΣΠΩλφψ∂∇><{}[]|\\/*+-=';
+  function draw(){
+    ctx.fillStyle = 'rgba(0,0,0,0.05)';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    for(let i=0;i<drops.length;i++){
+      ctx.fillStyle = Math.random()>.93 ? '#39ff14' : '#00b32c';
+      ctx.font = '13px Fira Code';
+      ctx.fillText(chars[Math.floor(Math.random()*chars.length)], i*15, drops[i]*15);
+      if(drops[i]*15 > canvas.height && Math.random()>.975) drops[i]=0;
+      drops[i]++;
+    }
+  }
+  setInterval(draw, 55);
+}
+</script>
+</body>
+</html>

@@ -99,8 +99,82 @@ function betaProjectsPlugin(): Plugin {
   };
 }
 
+// ===========================================================
+// ESP-32 Library Manifest Plugin
+//
+// Scans public/library/ESP-32/ at build time and in dev mode for
+// .html guide files and writes public/library/ESP-32/manifest.json
+// so the ESP-32 Library page can discover guides at runtime with
+// zero React/TS changes per guide.
+//
+// To add a new ESP-32 guide:
+//   1. Drop <name>.html into public/library/ESP-32/
+//   2. Done — display name is <name> (only the .html extension is
+//      stripped; no other transformation), sorted alphabetically.
+//
+// Handles a missing/empty folder gracefully (writes an empty array).
+// ===========================================================
+
+function generateEsp32Manifest(esp32Dir: string): void {
+  const manifestPath = path.join(esp32Dir, 'manifest.json');
+
+  if (!fs.existsSync(esp32Dir)) {
+    fs.mkdirSync(esp32Dir, { recursive: true });
+    fs.writeFileSync(manifestPath, JSON.stringify([], null, 2));
+    return;
+  }
+
+  const entries = fs.readdirSync(esp32Dir, { withFileTypes: true });
+  const guides = entries
+    .filter((e) => e.isFile() && e.name.toLowerCase().endsWith('.html'))
+    .map((e) => {
+      const title = e.name.slice(0, -'.html'.length); // strip only the extension
+      return {
+        slug: title,
+        title,
+        file: `/library/ESP-32/${e.name}`,
+      };
+    })
+    .sort((a, b) => a.title.localeCompare(b.title));
+
+  fs.writeFileSync(manifestPath, JSON.stringify(guides, null, 2));
+  console.log(`\x1b[36m[esp32-library]\x1b[0m manifest updated — ${guides.length} guide(s)`);
+}
+
+function esp32LibraryPlugin(): Plugin {
+  let esp32Dir: string;
+
+  return {
+    name: 'esp32-library-manifest',
+
+    configResolved(config) {
+      esp32Dir = path.join(config.root, 'public', 'library', 'ESP-32');
+    },
+
+    buildStart() {
+      generateEsp32Manifest(esp32Dir);
+    },
+
+    configureServer(server) {
+      generateEsp32Manifest(esp32Dir);
+
+      // Watch for added / removed / renamed guides in dev mode
+      server.watcher.add(esp32Dir);
+      server.watcher.on('all', (event, filePath) => {
+        if (
+          filePath.startsWith(esp32Dir) &&
+          !filePath.endsWith('manifest.json')
+        ) {
+          generateEsp32Manifest(esp32Dir);
+          server.ws.send({ type: 'full-reload' });
+        }
+      });
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [react(), betaProjectsPlugin()],
+  plugins: [react(), betaProjectsPlugin(), esp32LibraryPlugin()],
   optimizeDeps: {
     exclude: ['lucide-react'],
   },

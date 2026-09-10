@@ -11,7 +11,7 @@ import { cn } from '../lib/cn';
 // ===========================================================
 // TextbookPage — renders a volume's real HTML content inside
 // the Quantum Core shell. Each volume slug maps to a static
-// HTML file in /public/library/. Loaded in an iframe so the
+// HTML file in /public/library/cyber-security/. Loaded in an iframe so the
 // volume's own styling is preserved while the app shell wraps it.
 //
 // Reader features: loading indicator, fullscreen, open-in-new-tab,
@@ -20,11 +20,11 @@ import { cn } from '../lib/cn';
 // ===========================================================
 
 const VOLUME_FILES: Record<string, string> = {
-  volume1: '/library/Volume_I.html',
-  volume2: '/library/Volume_II.html',
-  // volume3: '/library/Volume_III.html',
-  // volume4: '/library/Volume_IV.html',
-  // volume5: '/library/Volume_V.html',
+  volume1: '/library/cyber-security/Volume_I.html',
+  volume2: '/library/cyber-security/Volume_II.html',
+  // volume3: '/library/cyber-security/Volume_III.html',
+  // volume4: '/library/cyber-security/Volume_IV.html',
+  // volume5: '/library/cyber-security/Volume_V.html',
 };
 
 export function TextbookPage({ slug }: { slug: string }) {
@@ -256,7 +256,7 @@ export function TextbookPage({ slug }: { slug: string }) {
               VOLUME_FILES
             </code>{' '}
             in <code className="font-mono text-[11px] text-neon-300">TextbookPage.tsx</code> and drop the
-            file in <code className="font-mono text-[11px] text-neon-300">public/library/</code>.
+            file in <code className="font-mono text-[11px] text-neon-300">public/library/cyber-security/</code>.
           </p>
         </GlassPanel>
       )}
