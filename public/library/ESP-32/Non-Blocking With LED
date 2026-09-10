@@ -1,0 +1,3155 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#050807">
+<meta name="description" content="Quantum Core ESP32 Project 08 — Non-Blocking Multitasking with millis()">
+<title>Project 08 — Non-Blocking Multitasking | Quantum Core</title>
+
+<style>
+:root {
+    --bg: #050807;
+    --bg-soft: #08100c;
+    --panel: #0b120f;
+    --panel-2: #0e1713;
+    --green: #39ff88;
+    --green-soft: #1bd96d;
+    --cyan: #32e6ff;
+    --yellow: #ffd166;
+    --red: #ff5577;
+    --purple: #b084ff;
+    --text: #eefcf3;
+    --muted: #8a9a91;
+    --muted-2: #64736b;
+    --border: rgba(100,255,160,.13);
+    --border-bright: rgba(57,255,136,.32);
+    --sidebar: 285px;
+    --shadow: 0 18px 60px rgba(0,0,0,.45);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    background:
+        radial-gradient(circle at 15% 10%, rgba(57,255,136,.055), transparent 28%),
+        radial-gradient(circle at 85% 75%, rgba(50,230,255,.035), transparent 30%),
+        var(--bg);
+    color: var(--text);
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    overflow-x: hidden;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: .14;
+    background-image:
+        linear-gradient(rgba(57,255,136,.055) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(57,255,136,.055) 1px, transparent 1px);
+    background-size: 42px 42px;
+    mask-image: linear-gradient(to bottom, black, transparent 90%);
+    z-index: -1;
+}
+
+button {
+    font: inherit;
+}
+
+code,
+pre,
+.mono {
+    font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace;
+}
+
+/* =========================================================
+   SIDEBAR
+   ========================================================= */
+
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: var(--sidebar);
+    padding: 26px 18px;
+    background:
+        linear-gradient(180deg, rgba(11,18,15,.98), rgba(5,8,7,.98));
+    border-right: 1px solid var(--border);
+    z-index: 50;
+    overflow-y: auto;
+}
+
+.brand {
+    padding: 4px 10px 25px;
+}
+
+.brand-line {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.brand-orb {
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow:
+        0 0 8px var(--green),
+        0 0 22px rgba(57,255,136,.55);
+}
+
+.brand-title {
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: .18em;
+    color: white;
+}
+
+.brand-sub {
+    margin-top: 9px;
+    color: var(--muted-2);
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: 9px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+}
+
+.progress-area {
+    padding: 0 10px 22px;
+}
+
+.progress-meta {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    color: var(--muted);
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+}
+
+.progress-track {
+    height: 4px;
+    background: rgba(255,255,255,.06);
+    border-radius: 99px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    width: 7.14%;
+    height: 100%;
+    background: linear-gradient(90deg, var(--green), var(--cyan));
+    box-shadow: 0 0 14px rgba(57,255,136,.55);
+    transition: width .35s ease;
+}
+
+.nav-label {
+    margin: 4px 10px 9px;
+    color: var(--muted-2);
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+}
+
+.nav {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.nav-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    width: 100%;
+    padding: 10px 11px;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    text-align: left;
+    transition: .2s ease;
+}
+
+.nav-item:hover {
+    color: white;
+    background: rgba(255,255,255,.025);
+    border-color: rgba(255,255,255,.05);
+}
+
+.nav-item.active {
+    color: var(--green);
+    background: rgba(57,255,136,.065);
+    border-color: rgba(57,255,136,.14);
+}
+
+.nav-num {
+    min-width: 21px;
+    color: var(--muted-2);
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: 9px;
+}
+
+.nav-item.active .nav-num {
+    color: var(--green-soft);
+}
+
+.nav-name {
+    font-size: 11px;
+    line-height: 1.25;
+}
+
+/* =========================================================
+   MOBILE TOPBAR
+   ========================================================= */
+
+.mobile-topbar {
+    display: none;
+}
+
+/* =========================================================
+   MAIN
+   ========================================================= */
+
+.main {
+    min-height: 100vh;
+    margin-left: var(--sidebar);
+}
+
+.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    height: 58px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 34px;
+    background: rgba(5,8,7,.78);
+    backdrop-filter: blur(18px);
+    border-bottom: 1px solid var(--border);
+}
+
+.topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    color: var(--muted);
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: 10px;
+}
+
+.topbar-left .signal {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 10px var(--green);
+}
+
+.topbar-right {
+    color: var(--muted-2);
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: 9px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.content {
+    width: min(1100px, calc(100% - 60px));
+    margin: 0 auto;
+    padding: 45px 0 70px;
+}
+
+/* =========================================================
+   HERO
+   ========================================================= */
+
+.hero {
+    position: relative;
+    padding: 48px;
+    margin-bottom: 24px;
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    background:
+        radial-gradient(circle at 88% 18%, rgba(57,255,136,.09), transparent 25%),
+        linear-gradient(135deg, rgba(14,23,19,.96), rgba(7,12,10,.96));
+    box-shadow: var(--shadow);
+    overflow: hidden;
+}
+
+.hero::after {
+    content: "";
+    position: absolute;
+    right: -90px;
+    bottom: -130px;
+    width: 340px;
+    height: 340px;
+    border: 1px solid rgba(57,255,136,.08);
+    border-radius: 50%;
+    box-shadow:
+        0 0 0 35px rgba(57,255,136,.025),
+        0 0 0 70px rgba(57,255,136,.018);
+}
+
+.eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 18px;
+    color: var(--green);
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+}
+
+.eyebrow::before {
+    content: ">";
+    color: var(--cyan);
+}
+
+.hero h1 {
+    max-width: 820px;
+    margin: 0;
+    font-size: clamp(34px, 5vw, 65px);
+    line-height: .98;
+    letter-spacing: -.045em;
+}
+
+.hero h1 span {
+    color: var(--green);
+    text-shadow: 0 0 25px rgba(57,255,136,.2);
+}
+
+.hero-sub {
+    max-width: 720px;
+    margin: 23px 0 0;
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1.8;
+}
+
+.terminal {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    margin-top: 30px;
+    padding: 11px 14px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: rgba(0,0,0,.28);
+    color: var(--green);
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: 10px;
+}
+
+.terminal-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 9px var(--green);
+}
+
+/* =========================================================
+   SECTIONS
+   ========================================================= */
+
+.section {
+    display: none;
+    animation: sectionIn .35s ease both;
+}
+
+.section.active {
+    display: block;
+}
+
+@keyframes sectionIn {
+    from {
+        opacity: 0;
+        transform: translateY(9px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.section-heading {
+    margin-bottom: 20px;
+}
+
+.section-number {
+    color: var(--green);
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: 10px;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+}
+
+.section-heading h2 {
+    margin: 8px 0 0;
+    font-size: clamp(25px, 3vw, 38px);
+    letter-spacing: -.03em;
+}
+
+.section-heading p {
+    max-width: 750px;
+    margin: 10px 0 0;
+    color: var(--muted);
+    line-height: 1.7;
+    font-size: 14px;
+}
+
+/* =========================================================
+   CARDS
+   ========================================================= */
+
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0,1fr));
+    gap: 14px;
+}
+
+.card-grid.three {
+    grid-template-columns: repeat(3, minmax(0,1fr));
+}
+
+.card {
+    padding: 22px;
+    border: 1px solid var(--border);
+    border-radius: 15px;
+    background: linear-gradient(145deg, rgba(14,23,19,.9), rgba(8,13,11,.9));
+}
+
+.card.full {
+    grid-column: 1 / -1;
+}
+
+.card h3 {
+    margin: 0 0 11px;
+    font-size: 15px;
+}
+
+.card p {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.75;
+    font-size: 13px;
+}
+
+.card p + p {
+    margin-top: 12px;
+}
+
+.card .accent {
+    color: var(--green);
+}
+
+.card .cyan {
+    color: var(--cyan);
+}
+
+.card .yellow {
+    color: var(--yellow);
+}
+
+.card .red {
+    color: var(--red);
+}
+
+.card .purple {
+    color: var(--purple);
+}
+
+/* =========================================================
+   LISTS
+   ========================================================= */
+
+.clean-list {
+    display: grid;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.clean-list li {
+    position: relative;
+    padding-left: 21px;
+    color: var(--muted);
+    line-height: 1.65;
+    font-size: 13px;
+}
+
+.clean-list li::before {
+    content: "•";
+    position: absolute;
+    left: 3px;
+    color: var(--green);
+}
+
+/* =========================================================
+   CALLOUT
+   ========================================================= */
+
+.callout {
+    margin: 16px 0;
+    padding: 18px 20px;
+    border: 1px solid rgba(57,255,136,.18);
+    border-left: 3px solid var(--green);
+    border-radius: 11px;
+    background: rgba(57,255,136,.035);
+}
+
+.callout strong {
+    color: var(--green);
+}
+
+.callout p {
+    margin: 6px 0 0;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.7;
+}
+
+/* =========================================================
+   BLOCKING VISUAL
+   ========================================================= */
+
+.compare-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0,1fr));
+    gap: 16px;
+    margin-top: 18px;
+}
+
+.compare-card {
+    position: relative;
+    min-height: 250px;
+    padding: 24px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    background: var(--panel);
+}
+
+.compare-card.blocking {
+    border-color: rgba(255,85,119,.18);
+}
+
+.compare-card.nonblocking {
+    border-color: rgba(57,255,136,.18);
+}
+
+.compare-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.compare-title h3 {
+    margin: 0;
+    font-size: 16px;
+}
+
+.badge {
+    padding: 5px 8px;
+    border-radius: 6px;
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+}
+
+.badge.red {
+    color: var(--red);
+    background: rgba(255,85,119,.08);
+    border: 1px solid rgba(255,85,119,.15);
+}
+
+.badge.green {
+    color: var(--green);
+    background: rgba(57,255,136,.08);
+    border: 1px solid rgba(57,255,136,.15);
+}
+
+.timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.timeline-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.timeline-label {
+    width: 74px;
+    flex: 0 0 74px;
+    color: var(--muted-2);
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: 8px;
+    text-transform: uppercase;
+}
+
+.timeline-bar {
+    flex: 1;
+    height: 25px;
+    border-radius: 5px;
+    background: rgba(255,255,255,.04);
+    overflow: hidden;
+}
+
+.timeline-fill {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding-left: 9px;
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: 8px;
+}
+
+.timeline-fill.sleep {
+    width: 78%;
+    color: var(--red);
+    background: rgba(255,85,119,.13);
+}
+
+.timeline-fill.work {
+    width: 22%;
+    color: var(--green);
+    background: rgba(57,255,136,.13);
+}
+
+.timeline-fill.listen {
+    width: 100%;
+    color: var(--green);
+    background: rgba(57,255,136,.13);
+}
+
+/* =========================================================
+   STOPWATCH VISUAL
+   ========================================================= */
+
+.stopwatch {
+    display: grid;
+    grid-template-columns: 150px 1fr;
+    align-items: center;
+    gap: 30px;
+    padding: 27px;
+    margin-top: 18px;
+    border: 1px solid var(--border);
+    border-radius: 17px;
+    background: radial-gradient(circle at 20% 50%, rgba(57,255,136,.06), transparent 35%), var(--panel);
+}
+
+.watch-face {
+    position: relative;
+    width: 125px;
+    height: 125px;
+    display: grid;
+    place-items: center;
+    margin: auto;
+    border: 2px solid rgba(57,255,136,.35);
+    border-radius: 50%;
+    box-shadow:
+        0 0 25px rgba(57,255,136,.08),
+        inset 0 0 25px rgba(57,255,136,.04);
+}
+
+.watch-face::before {
+    content: "";
+    position: absolute;
+    width: 7px;
+    height: 7px;
+    top: -6px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 10px var(--green);
+}
+
+.watch-number {
+    color: var(--green);
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: 22px;
+    font-weight: 700;
+}
+
+.watch-label {
+    display: block;
+    margin-top: 3px;
+    color: var(--muted-2);
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: 7px;
+    text-align: center;
+    letter-spacing: .12em;
+}
+
+.watch-explanation {
+    color: var(--muted);
+    line-height: 1.75;
+    font-size: 13px;
+}
+
+/* =========================================================
+   WIRING
+   ========================================================= */
+
+.wiring {
+    padding: 25px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: #060a08;
+    overflow-x: auto;
+}
+
+.wiring pre {
+    margin: 0;
+    color: #a8cdb6;
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.7;
+}
+
+/* =========================================================
+   SAFETY
+   ========================================================= */
+
+.safety {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 17px 19px;
+    margin-top: 16px;
+    border: 1px solid rgba(255,209,102,.17);
+    border-left: 3px solid var(--yellow);
+    border-radius: 11px;
+    background: rgba(255,209,102,.035);
+}
+
+.safety-icon {
+    color: var(--yellow);
+    font-size: 18px;
+}
+
+.safety strong {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--yellow);
+    font-size: 12px;
+}
+
+.safety p {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.65;
+    font-size: 12px;
+}
+
+/* =========================================================
+   STEPS
+   ========================================================= */
+
+.steps {
+    display: grid;
+    gap: 11px;
+}
+
+.step {
+    display: grid;
+    grid-template-columns: 36px 1fr;
+    gap: 14px;
+    align-items: start;
+    padding: 17px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: rgba(255,255,255,.012);
+}
+
+.step-num {
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(57,255,136,.2);
+    border-radius: 8px;
+    color: var(--green);
+    background: rgba(57,255,136,.045);
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.step h3 {
+    margin: 1px 0 6px;
+    font-size: 13px;
+}
+
+.step p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.65;
+}
+
+.inline-code {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--green);
+    background: rgba(57,255,136,.07);
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: .9em;
+}
+
+/* =========================================================
+   CODE
+   ========================================================= */
+
+.code-wrap {
+    position: relative;
+    margin-top: 18px;
+    border: 1px solid var(--border);
+    border-radius: 15px;
+    background: #050806;
+    overflow: hidden;
+}
+
+.code-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(255,255,255,.018);
+}
+
+.code-lang {
+    color: var(--cyan);
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: .12em;
+}
+
+.copy-btn {
+    padding: 6px 9px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: rgba(255,255,255,.025);
+    color: var(--muted);
+    cursor: pointer;
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: 9px;
+    transition: .2s ease;
+}
+
+.copy-btn:hover {
+    color: white;
+    border-color: var(--border-bright);
+}
+
+pre.code {
+    margin: 0;
+    padding: 20px;
+    max-height: 650px;
+    overflow: auto;
+    color: #ccebd7;
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: 11px;
+    line-height: 1.7;
+    tab-size: 4;
+}
+
+/* =========================================================
+   FLOW
+   ========================================================= */
+
+.flow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 24px 0;
+}
+
+.flow-box {
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: rgba(255,255,255,.018);
+    color: var(--text);
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: 9px;
+    text-align: center;
+}
+
+.flow-box.active {
+    color: var(--green);
+    border-color: rgba(57,255,136,.25);
+    background: rgba(57,255,136,.045);
+}
+
+.flow-arrow {
+    color: var(--green);
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: 14px;
+}
+
+/* =========================================================
+   MATH
+   ========================================================= */
+
+.math-box {
+    margin: 18px 0;
+    padding: 25px;
+    border: 1px solid rgba(57,255,136,.18);
+    border-radius: 15px;
+    background:
+        radial-gradient(circle at center, rgba(57,255,136,.055), transparent 60%),
+        #070b09;
+    text-align: center;
+}
+
+.math-main {
+    color: var(--green);
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: clamp(15px, 2.5vw, 22px);
+    font-weight: 700;
+    letter-spacing: .03em;
+}
+
+.math-sub {
+    margin-top: 9px;
+    color: var(--muted);
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: 9px;
+}
+
+/* =========================================================
+   TABLE
+   ========================================================= */
+
+.table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 600px;
+}
+
+th,
+td {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    font-size: 12px;
+}
+
+th {
+    color: var(--green);
+    background: rgba(57,255,136,.035);
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: 9px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+}
+
+td {
+    color: var(--muted);
+}
+
+tr:last-child td {
+    border-bottom: 0;
+}
+
+td strong {
+    color: var(--text);
+}
+
+/* =========================================================
+   CHALLENGE
+   ========================================================= */
+
+.challenge {
+    position: relative;
+    padding: 27px;
+    border: 1px solid rgba(255,120,80,.2);
+    border-radius: 16px;
+    background:
+        radial-gradient(circle at 90% 10%, rgba(255,120,80,.07), transparent 30%),
+        var(--panel);
+}
+
+.challenge-label {
+    color: #ff9b68;
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+}
+
+.challenge h3 {
+    margin: 9px 0 10px;
+    font-size: 21px;
+}
+
+.challenge p {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.75;
+    font-size: 13px;
+}
+
+/* =========================================================
+   TROUBLESHOOTING
+   ========================================================= */
+
+.bug-list {
+    display: grid;
+    gap: 10px;
+}
+
+.bug {
+    padding: 17px 19px;
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    background: rgba(255,255,255,.012);
+}
+
+.bug-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.bug-title::before {
+    content: "!";
+    width: 17px;
+    height: 17px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    color: var(--red);
+    background: rgba(255,85,119,.1);
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: 9px;
+}
+
+.bug p {
+    margin: 7px 0 0 25px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.65;
+}
+
+/* =========================================================
+   VOCABULARY
+   ========================================================= */
+
+.vocab {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0,1fr));
+    gap: 11px;
+}
+
+.vocab-item {
+    padding: 17px;
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    background: rgba(255,255,255,.012);
+}
+
+.vocab-word {
+    color: var(--green);
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.vocab-def {
+    margin-top: 7px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.65;
+}
+
+/* =========================================================
+   EXPECTED RESULT
+   ========================================================= */
+
+.result-list {
+    display: grid;
+    gap: 10px;
+    counter-reset: result;
+}
+
+.result-item {
+    counter-increment: result;
+    display: grid;
+    grid-template-columns: 34px 1fr;
+    gap: 13px;
+    align-items: center;
+    padding: 15px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: rgba(255,255,255,.012);
+}
+
+.result-item::before {
+    content: counter(result);
+    width: 27px;
+    height: 27px;
+    display: grid;
+    place-items: center;
+    border-radius: 7px;
+    color: var(--green);
+    background: rgba(57,255,136,.07);
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: 9px;
+    font-weight: 700;
+}
+
+.result-item span {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.result-item strong {
+    color: var(--text);
+}
+
+/* =========================================================
+   NEXT PROJECT
+   ========================================================= */
+
+.next-card {
+    position: relative;
+    padding: 30px;
+    border: 1px solid rgba(57,255,136,.22);
+    border-radius: 17px;
+    background:
+        radial-gradient(circle at 80% 20%, rgba(57,255,136,.07), transparent 30%),
+        linear-gradient(145deg, rgba(57,255,136,.035), rgba(8,13,11,.95));
+}
+
+.next-label {
+    color: var(--green);
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: 9px;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+}
+
+.next-card h3 {
+    margin: 9px 0;
+    font-size: 24px;
+}
+
+.next-card p {
+    max-width: 700px;
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.75;
+}
+
+/* =========================================================
+   NAVIGATION
+   ========================================================= */
+
+.bottom-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-top: 28px;
+    padding-top: 22px;
+    border-top: 1px solid var(--border);
+}
+
+.nav-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    min-width: 115px;
+    padding: 11px 14px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: rgba(255,255,255,.018);
+    color: var(--muted);
+    cursor: pointer;
+    transition: .2s ease;
+}
+
+.nav-btn:hover:not(:disabled) {
+    color: white;
+    border-color: var(--border-bright);
+    background: rgba(57,255,136,.04);
+}
+
+.nav-btn.next {
+    justify-content: flex-end;
+}
+
+.nav-btn:disabled {
+    opacity: .3;
+    cursor: not-allowed;
+}
+
+.nav-btn span {
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: 10px;
+}
+
+.keyboard-hint {
+    color: var(--muted-2);
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: 8px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 900px) {
+    :root {
+        --sidebar: 0px;
+    }
+
+    .sidebar {
+        display: none;
+    }
+
+    .mobile-topbar {
+        position: sticky;
+        top: 0;
+        z-index: 60;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 55px;
+        padding: 0 17px;
+        background: rgba(5,8,7,.9);
+        backdrop-filter: blur(18px);
+        border-bottom: 1px solid var(--border);
+    }
+
+    .mobile-brand {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: white;
+        font-family: "JetBrains Mono", Consolas, monospace;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: .1em;
+    }
+
+    .mobile-brand-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--green);
+        box-shadow: 0 0 9px var(--green);
+    }
+
+    .mobile-progress {
+        color: var(--green);
+        font-family: "JetBrains Mono", Consolas, monospace;
+        font-size: 9px;
+    }
+
+    .topbar {
+        display: none;
+    }
+
+    .main {
+        margin-left: 0;
+    }
+
+    .content {
+        width: min(100% - 30px, 700px);
+        padding-top: 25px;
+    }
+
+    .hero {
+        padding: 29px 24px;
+        border-radius: 17px;
+    }
+
+    .card-grid,
+    .card-grid.three,
+    .compare-grid,
+    .vocab {
+        grid-template-columns: 1fr;
+    }
+
+    .stopwatch {
+        grid-template-columns: 1fr;
+        text-align: center;
+    }
+
+    .bottom-nav {
+        gap: 8px;
+    }
+
+    .keyboard-hint {
+        display: none;
+    }
+}
+
+@media (max-width: 520px) {
+    .hero h1 {
+        font-size: 34px;
+    }
+
+    .hero-sub {
+        font-size: 13px;
+    }
+
+    .content {
+        width: calc(100% - 22px);
+    }
+
+    .hero {
+        padding: 25px 19px;
+    }
+
+    .card,
+    .challenge,
+    .next-card {
+        padding: 19px;
+    }
+
+    .flow-arrow {
+        transform: rotate(90deg);
+    }
+
+    .flow {
+        flex-direction: column;
+    }
+
+    .nav-btn {
+        min-width: 95px;
+        padding: 10px;
+    }
+}
+</style>
+
+</head>
+
+<body>
+
+<!-- =========================================================
+     MOBILE HEADER
+     ========================================================= -->
+
+<div class="mobile-topbar">
+    <div class="mobile-brand">
+        <span class="mobile-brand-dot"></span>
+        QUANTUM CORE
+    </div>
+    <div class="mobile-progress" id="mobileProgress">01 / 14</div>
+</div>
+
+<!-- =========================================================
+     SIDEBAR
+     ========================================================= -->
+
+<aside class="sidebar">
+
+```
+<div class="brand">
+    <div class="brand-line">
+        <div class="brand-orb"></div>
+        <div class="brand-title">QUANTUM CORE</div>
+    </div>
+    <div class="brand-sub">ESP32 // PROJECT SERIES</div>
+</div>
+
+<div class="progress-area">
+    <div class="progress-meta">
+        <span>Progress</span>
+        <span id="progressText">1 / 14</span>
+    </div>
+
+    <div class="progress-track">
+        <div class="progress-fill" id="progressFill"></div>
+    </div>
+</div>
+
+<div class="nav-label">Project 08</div>
+
+<nav class="nav">
+
+    <button class="nav-item active" data-section="0">
+        <span class="nav-num">01</span>
+        <span class="nav-name">Mission Brief</span>
+    </button>
+
+    <button class="nav-item" data-section="1">
+        <span class="nav-num">02</span>
+        <span class="nav-name">What You Have</span>
+    </button>
+
+    <button class="nav-item" data-section="2">
+        <span class="nav-num">03</span>
+        <span class="nav-name">What We're Learning</span>
+    </button>
+
+    <button class="nav-item" data-section="3">
+        <span class="nav-num">04</span>
+        <span class="nav-name">Wiring</span>
+    </button>
+
+    <button class="nav-item" data-section="4">
+        <span class="nav-num">05</span>
+        <span class="nav-name">Create Project</span>
+    </button>
+
+    <button class="nav-item" data-section="5">
+        <span class="nav-num">06</span>
+        <span class="nav-name">Complete Code</span>
+    </button>
+
+    <button class="nav-item" data-section="6">
+        <span class="nav-num">07</span>
+        <span class="nav-name">Understand Code</span>
+    </button>
+
+    <button class="nav-item" data-section="7">
+        <span class="nav-num">08</span>
+        <span class="nav-name">Build + Upload</span>
+    </button>
+
+    <button class="nav-item" data-section="8">
+        <span class="nav-num">09</span>
+        <span class="nav-name">Expected Result</span>
+    </button>
+
+    <button class="nav-item" data-section="9">
+        <span class="nav-num">10</span>
+        <span class="nav-name">Experiment</span>
+    </button>
+
+    <button class="nav-item" data-section="10">
+        <span class="nav-num">11</span>
+        <span class="nav-name">Challenge</span>
+    </button>
+
+    <button class="nav-item" data-section="11">
+        <span class="nav-num">12</span>
+        <span class="nav-name">Troubleshooting</span>
+    </button>
+
+    <button class="nav-item" data-section="12">
+        <span class="nav-num">13</span>
+        <span class="nav-name">Vocabulary</span>
+    </button>
+
+    <button class="nav-item" data-section="13">
+        <span class="nav-num">14</span>
+        <span class="nav-name">What You Learned</span>
+    </button>
+
+</nav>
+```
+
+</aside>
+
+<!-- =========================================================
+     MAIN
+     ========================================================= -->
+
+<main class="main">
+
+```
+<div class="topbar">
+    <div class="topbar-left">
+        <span class="signal"></span>
+        ESP32 / PROJECT_08 / ONLINE
+    </div>
+
+    <div class="topbar-right">
+        Non-Blocking Timing
+    </div>
+</div>
+
+<div class="content">
+
+    <!-- =====================================================
+         HERO
+         ===================================================== -->
+
+    <section class="hero">
+        <div class="eyebrow">PROJECT 08 // EMBEDDED SYSTEMS</div>
+
+        <h1>
+            NON-BLOCKING<br>
+            <span>MULTITASKING</span>
+        </h1>
+
+        <p class="hero-sub">
+            Master <code class="inline-code">millis()</code> without freezing
+            the ESP32. Replace sleeping code with a running stopwatch
+            that lets your microcontroller keep listening, checking,
+            and reacting.
+        </p>
+
+        <div class="terminal">
+            <span class="terminal-dot"></span>
+            mission:// replace delay() with non-blocking timing
+        </div>
+    </section>
+
+    <!-- =====================================================
+         SECTION 01
+         ===================================================== -->
+
+    <section class="section active" data-section="0">
+
+        <div class="section-heading">
+            <div class="section-number">01 / Mission Brief</div>
+            <h2>Hey my brooo 👋</h2>
+            <p>
+                Welcome back! We're about to remove one of the biggest
+                beginner problems in embedded programming: making the
+                ESP32 wait.
+            </p>
+        </div>
+
+        <div class="card-grid">
+
+            <div class="card full">
+                <h3>⏳ The problem with <span class="red">delay()</span></h3>
+
+                <p>
+                    Up until now, we have used <code class="inline-code">delay()</code>
+                    whenever we wanted the ESP32 to wait.
+                </p>
+
+                <p>
+                    But <code class="inline-code">delay()</code> has a massive
+                    problem: while your program is waiting, the code after it
+                    cannot execute.
+                </p>
+
+                <div class="callout">
+                    <strong>Think of it like freezing the brain.</strong>
+                    <p>
+                        If the ESP32 reaches <code class="inline-code">delay(3000)</code>,
+                        the current program flow waits for roughly three seconds.
+                        During that time, code that would normally read your
+                        button or sensor does not get a chance to run.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="compare-grid">
+
+            <div class="compare-card blocking">
+                <div class="compare-title">
+                    <h3>Using delay()</h3>
+                    <span class="badge red">BLOCKING</span>
+                </div>
+
+                <div class="timeline">
+                    <div class="timeline-row">
+                        <div class="timeline-label">LED</div>
+                        <div class="timeline-bar">
+                            <div class="timeline-fill work">
+                                BLINK
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-row">
+                        <div class="timeline-label">CPU</div>
+                        <div class="timeline-bar">
+                            <div class="timeline-fill sleep">
+                                WAIT / BLOCKED
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-row">
+                        <div class="timeline-label">BUTTON</div>
+                        <div class="timeline-bar">
+                            <div class="timeline-fill sleep">
+                                NOT CHECKED
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="compare-card nonblocking">
+                <div class="compare-title">
+                    <h3>Using millis()</h3>
+                    <span class="badge green">NON-BLOCKING</span>
+                </div>
+
+                <div class="timeline">
+                    <div class="timeline-row">
+                        <div class="timeline-label">LED</div>
+                        <div class="timeline-bar">
+                            <div class="timeline-fill listen">
+                                CHECK TIMER
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-row">
+                        <div class="timeline-label">BUTTON</div>
+                        <div class="timeline-bar">
+                            <div class="timeline-fill listen">
+                                LISTEN
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-row">
+                        <div class="timeline-label">LOOP</div>
+                        <div class="timeline-bar">
+                            <div class="timeline-fill listen">
+                                RUNNING
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="card full" style="margin-top:16px;">
+            <h3>🎯 The mission</h3>
+
+            <p>
+                We're going from:
+                <span class="red">"My ESP32 freezes every time it blinks."</span>
+            </p>
+
+            <p>
+                to:
+                <span class="accent">
+                    "My ESP32 can manage a blinking LED while continuously
+                    checking my button!"
+                </span>
+                😎
+            </p>
+        </div>
+
+    </section>
+
+    <!-- =====================================================
+         SECTION 02
+         ===================================================== -->
+
+    <section class="section" data-section="1">
+
+        <div class="section-heading">
+            <div class="section-number">02 / Hardware</div>
+            <h2>What You Have</h2>
+            <p>
+                Nothing crazy. Just enough hardware to prove that
+                non-blocking timing actually works.
+            </p>
+        </div>
+
+        <div class="card-grid three">
+
+            <div class="card">
+                <h3>💻 Computer</h3>
+                <p>Windows laptop or PC</p>
+            </div>
+
+            <div class="card">
+                <h3>🔌 Connection</h3>
+                <p>USB cable</p>
+            </div>
+
+            <div class="card">
+                <h3>🟦 Controller</h3>
+                <p>ESP32 DevKit V1</p>
+            </div>
+
+            <div class="card">
+                <h3>🍞 Breadboard</h3>
+                <p>1× breadboard</p>
+            </div>
+
+            <div class="card">
+                <h3>💡 LEDs</h3>
+                <p>2× LEDs — different colors if possible</p>
+            </div>
+
+            <div class="card">
+                <h3>🔘 Input</h3>
+                <p>1× push button</p>
+            </div>
+
+            <div class="card full">
+                <h3>🔗 Connections</h3>
+                <p>
+                    Jumper wires for connecting everything together.
+                </p>
+            </div>
+
+        </div>
+
+        <div class="safety">
+            <div class="safety-icon">⚠</div>
+            <div>
+                <strong>Important LED safety note</strong>
+                <p>
+                    Put a current-limiting resistor, typically around
+                    220–330 Ω, in series with each LED. Do not rely on
+                    connecting an LED directly to an ESP32 GPIO pin.
+                </p>
+            </div>
+        </div>
+
+    </section>
+
+    <!-- =====================================================
+         SECTION 03
+         ===================================================== -->
+
+    <section class="section" data-section="2">
+
+        <div class="section-heading">
+            <div class="section-number">03 / Core Concept</div>
+            <h2>What Are We Learning?</h2>
+            <p>
+                Today the main character is
+                <code class="inline-code">millis()</code>.
+            </p>
+        </div>
+
+        <div class="card-grid">
+
+            <div class="card">
+                <h3><span class="red">Blocking</span></h3>
+                <p>
+                    A blocking operation prevents the current program flow
+                    from continuing until the operation finishes.
+                </p>
+
+                <p>
+                    <code class="inline-code">delay()</code> is the classic
+                    Arduino example.
+                </p>
+            </div>
+
+            <div class="card">
+                <h3><span class="accent">Non-Blocking</span></h3>
+                <p>
+                    Non-blocking timing lets the program continue running
+                    while repeatedly checking whether enough time has passed.
+                </p>
+
+                <p>
+                    That's what we're doing with
+                    <code class="inline-code">millis()</code>.
+                </p>
+            </div>
+
+        </div>
+
+        <div class="stopwatch">
+
+            <div class="watch-face">
+                <div>
+                    <div class="watch-number">1000</div>
+                    <span class="watch-label">MILLISECONDS</span>
+                </div>
+            </div>
+
+            <div class="watch-explanation">
+                <strong style="color:var(--green);">
+                    Think of millis() as a hidden stopwatch.
+                </strong>
+
+                <p>
+                    From the moment the ESP32 starts running your program,
+                    the stopwatch keeps counting milliseconds.
+                </p>
+
+                <p>
+                    Instead of saying "stop everything and wait one second,"
+                    we say:
+                </p>
+
+                <p>
+                    <span class="accent">
+                        "Keep running. But every time through the loop,
+                        check whether one second has passed."
+                    </span>
+                </p>
+            </div>
+
+        </div>
+
+        <div class="math-box">
+            <div class="math-main">
+                currentMillis − previousMillis ≥ interval
+            </div>
+
+            <div class="math-sub">
+                HAS ENOUGH TIME PASSED?
+            </div>
+        </div>
+
+        <div class="callout">
+            <strong>Important:</strong>
+            <p>
+                This is not true parallel execution on one CPU core.
+                The ESP32 rapidly performs small pieces of work in sequence.
+                Because the loop keeps running instead of sleeping,
+                it behaves like cooperative multitasking.
+            </p>
+        </div>
+
+    </section>
+
+    <!-- =====================================================
+         SECTION 04
+         ===================================================== -->
+
+    <section class="section" data-section="3">
+
+        <div class="section-heading">
+            <div class="section-number">04 / Hardware</div>
+            <h2>Wire It Up</h2>
+            <p>
+                We need one automatically blinking LED, one manually
+                controlled LED, and one button.
+            </p>
+        </div>
+
+        <div class="card-grid">
+
+            <div class="card">
+                <h3>💡 Auto-Blink LED</h3>
+                <ul class="clean-list">
+                    <li>Long leg → <strong>D2</strong></li>
+                    <li>Short leg → GND through resistor</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h3>💡 Manual Button LED</h3>
+                <ul class="clean-list">
+                    <li>Long leg → <strong>D4</strong></li>
+                    <li>Short leg → GND through resistor</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h3>🔘 Button</h3>
+                <ul class="clean-list">
+                    <li>One side → <strong>D14</strong></li>
+                    <li>Opposite side → GND</li>
+                    <li>We'll use <code class="inline-code">INPUT_PULLUP</code></li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h3>🔵 Common Ground</h3>
+                <ul class="clean-list">
+                    <li>ESP32 GND → blue rail</li>
+                    <li>Both LEDs → blue rail</li>
+                    <li>Button → blue rail</li>
+                </ul>
+            </div>
+
+        </div>
+
+        <div class="wiring" style="margin-top:16px;">
+```
+
+<pre>
+ ESP32              BREADBOARD
+
+  D2 ────────────► Auto-Blink LED
+                    │
+                   [220–330Ω]
+                    │
+                   GND
+
+  D4 ────────────► Manual Button LED
+                    │
+                   [220–330Ω]
+                    │
+                   GND
+
+  D14 ───────────► Button
+                    │
+                   GND
+
+  GND ───────────► [ BLUE GROUND RAIL ]
+                         ▲
+                         │
+                   All grounds connect here
+</pre>
+
+```
+        </div>
+
+    </section>
+
+    <!-- =====================================================
+         SECTION 05
+         ===================================================== -->
+
+    <section class="section" data-section="4">
+
+        <div class="section-heading">
+            <div class="section-number">05 / PlatformIO</div>
+            <h2>Create the Project</h2>
+            <p>
+                Time to create the PlatformIO project that will run our
+                non-blocking timing experiment.
+            </p>
+        </div>
+
+        <div class="steps">
+
+            <div class="step">
+                <div class="step-num">01</div>
+                <div>
+                    <h3>Open VS Code</h3>
+                    <p>
+                        Launch Visual Studio Code and open the PlatformIO
+                        environment.
+                    </p>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-num">02</div>
+                <div>
+                    <h3>Create a New Project</h3>
+                    <p>
+                        Open PlatformIO and choose <strong>New Project</strong>.
+                    </p>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-num">03</div>
+                <div>
+                    <h3>Name the project</h3>
+                    <p>
+                        Use <code class="inline-code">ESP32-08-Millis</code>.
+                        The folder name can remain this even though the
+                        project concept is now called Non-Blocking Multitasking.
+                    </p>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-num">04</div>
+                <div>
+                    <h3>Select the board</h3>
+                    <p>
+                        Choose <strong>DOIT ESP32 DEVKIT V1</strong>.
+                    </p>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-num">05</div>
+                <div>
+                    <h3>Select the framework</h3>
+                    <p>
+                        Choose <strong>Arduino</strong>.
+                    </p>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-num">06</div>
+                <div>
+                    <h3>Open main.cpp</h3>
+                    <p>
+                        Open <code class="inline-code">src/main.cpp</code>.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- =====================================================
+         SECTION 06
+         ===================================================== -->
+
+    <section class="section" data-section="5">
+
+        <div class="section-heading">
+            <div class="section-number">06 / Source Code</div>
+            <h2>Complete Code</h2>
+            <p>
+                Delete the default code and paste this into
+                <code class="inline-code">src/main.cpp</code>.
+                Look closely at the timing variables.
+            </p>
+        </div>
+
+        <div class="code-wrap">
+
+            <div class="code-head">
+                <span class="code-lang">C++ / ARDUINO</span>
+                <button class="copy-btn">Copy</button>
+            </div>
+```
+
+<pre class="code">/*
+ * ============================================================
+ * MY BRO'S EIGHTH ESP32 PROGRAM: NON-BLOCKING MULTITASKING
+ * ============================================================
+ */
+
+const int BLINK_LED = 2;
+const int BUTTON_LED = 4;
+const int BUTTON_PIN = 14;
+
+// 1. TIMING VARIABLES
+// unsigned long is the standard type used for millis() timestamps.
+unsigned long previousMillis = 0;
+
+// How long we want to wait: 1 second
+const unsigned long interval = 1000;
+
+int blinkState = LOW;
+
+void setup() {
+    pinMode(BLINK_LED, OUTPUT);
+    pinMode(BUTTON_LED, OUTPUT);
+    pinMode(BUTTON_PIN, INPUT_PULLUP);
+}
+
+void loop() {
+    // ========================================================
+    // TASK 1: THE AUTO-BLINKER
+    // ========================================================
+
+    // Check the stopwatch right now
+    unsigned long currentMillis = millis();
+
+    // Has enough time passed?
+    if (currentMillis - previousMillis >= interval) {
+
+        // Save the current time as the new "last blink" time
+        previousMillis = currentMillis;
+
+        // Toggle the LED state
+        if (blinkState == LOW) {
+            blinkState = HIGH;
+        } else {
+            blinkState = LOW;
+        }
+
+        // Actually turn the LED on or off
+        digitalWrite(BLINK_LED, blinkState);
+    }
+
+    // ========================================================
+    // TASK 2: THE INSTANT BUTTON
+    // ========================================================
+
+    int buttonState = digitalRead(BUTTON_PIN);
+
+    // Because there is no delay(), this check runs continuously.
+    if (buttonState == LOW) {
+        digitalWrite(BUTTON_LED, HIGH);
+    } else {
+        digitalWrite(BUTTON_LED, LOW);
+    }
+}</pre>
+
+```
+        </div>
+
+        <div class="callout">
+            <strong>Save it!</strong>
+            <p>
+                Press <strong>Ctrl + S</strong> before building.
+            </p>
+        </div>
+
+    </section>
+
+    <!-- =====================================================
+         SECTION 07
+         ===================================================== -->
+
+    <section class="section" data-section="6">
+
+        <div class="section-heading">
+            <div class="section-number">07 / Deep Dive</div>
+            <h2>Understand the Code</h2>
+            <p>
+                This is where <code class="inline-code">millis()</code>
+                stops looking like magic.
+            </p>
+        </div>
+
+        <div class="card-grid">
+
+            <div class="card full">
+                <h3><code class="accent">unsigned long</code></h3>
+
+                <p>
+                    <code class="inline-code">millis()</code> returns an
+                    unsigned millisecond count, so
+                    <code class="inline-code">unsigned long</code> is the
+                    standard type used for storing these timestamps on
+                    Arduino-style ESP32 code.
+                </p>
+
+                <p>
+                    On ESP32, <code class="inline-code">int</code> is normally
+                    32-bit too, so the beginner explanation that an
+                    <code class="inline-code">int</code> can only reach about
+                    32,000 is not correct for this board.
+                </p>
+
+                <p>
+                    A 32-bit unsigned millisecond counter wraps after roughly
+                    49.7 days. The subtraction technique we use here is
+                    designed to work correctly across that wrap.
+                </p>
+            </div>
+
+        </div>
+
+        <div class="card" style="margin-top:16px;">
+            <h3>
+                <code class="accent">
+                    currentMillis - previousMillis &gt;= interval
+                </code>
+            </h3>
+
+            <p>
+                Imagine you want to eat a snack every four hours.
+            </p>
+        </div>
+
+        <div class="steps" style="margin-top:14px;">
+
+            <div class="step">
+                <div class="step-num">01</div>
+                <div>
+                    <h3>Eat at 12:00</h3>
+                    <p>
+                        Write <strong>12:00</strong> on a sticky note.
+                        That's <code class="inline-code">previousMillis</code>.
+                    </p>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-num">02</div>
+                <div>
+                    <h3>Check the clock at 1:00</h3>
+                    <p>
+                        Only one hour has passed.
+                        One hour is not enough.
+                    </p>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-num">03</div>
+                <div>
+                    <h3>Check again later</h3>
+                    <p>
+                        Eventually the difference reaches four hours.
+                    </p>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-num">04</div>
+                <div>
+                    <h3>Four hours passed!</h3>
+                    <p>
+                        The condition becomes true, so you eat the snack
+                        and update your sticky note.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="math-box">
+            <div class="math-main">
+                currentMillis − previousMillis ≥ interval
+            </div>
+            <div class="math-sub">
+                CURRENT TIME − LAST EVENT TIME ≥ WAIT TIME
+            </div>
+        </div>
+
+        <div class="card-grid">
+
+            <div class="card">
+                <h3>🕐 currentMillis</h3>
+                <p>
+                    The current reading from the ESP32's running
+                    millisecond counter.
+                </p>
+            </div>
+
+            <div class="card">
+                <h3>📝 previousMillis</h3>
+                <p>
+                    The timestamp recorded when the LED last changed.
+                </p>
+            </div>
+
+            <div class="card">
+                <h3>⏱ interval</h3>
+                <p>
+                    How long we want to wait before changing the LED again.
+                </p>
+            </div>
+
+            <div class="card">
+                <h3>🔄 Update</h3>
+                <p>
+                    Once the condition is true, we save the current time
+                    as the new reference point.
+                </p>
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- =====================================================
+         SECTION 08
+         ===================================================== -->
+
+    <section class="section" data-section="7">
+
+        <div class="section-heading">
+            <div class="section-number">08 / Deployment</div>
+            <h2>Build + Upload</h2>
+            <p>
+                Time to move the code from VS Code into the ESP32.
+            </p>
+        </div>
+
+        <div class="flow">
+
+            <div class="flow-box active">
+                WRITE CODE
+            </div>
+
+            <div class="flow-arrow">→</div>
+
+            <div class="flow-box">
+                BUILD
+            </div>
+
+            <div class="flow-arrow">→</div>
+
+            <div class="flow-box">
+                UPLOAD
+            </div>
+
+            <div class="flow-arrow">→</div>
+
+            <div class="flow-box active">
+                ESP32 RUNS
+            </div>
+
+            <div class="flow-arrow">→</div>
+
+            <div class="flow-box">
+                HARDWARE RESPONDS
+            </div>
+
+        </div>
+
+        <div class="steps">
+
+            <div class="step">
+                <div class="step-num">01</div>
+                <div>
+                    <h3>Connect USB</h3>
+                    <p>
+                        Connect your ESP32 to the computer.
+                    </p>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-num">02</div>
+                <div>
+                    <h3>Build</h3>
+                    <p>
+                        Click the PlatformIO <strong>Build ✓</strong> button.
+                    </p>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-num">03</div>
+                <div>
+                    <h3>Upload</h3>
+                    <p>
+                        Click the PlatformIO <strong>Upload →</strong> button.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="callout">
+            <strong>Build succeeds?</strong>
+            <p>
+                Your code has been compiled. After upload, the ESP32
+                starts executing the program.
+            </p>
+        </div>
+
+    </section>
+
+    <!-- =====================================================
+         SECTION 09
+         ===================================================== -->
+
+    <section class="section" data-section="8">
+
+        <div class="section-heading">
+            <div class="section-number">09 / Hardware Test</div>
+            <h2>What Should Happen?</h2>
+            <p>
+                This is the moment where the concept becomes visible.
+            </p>
+        </div>
+
+        <div class="result-list">
+
+            <div class="result-item">
+                <span>
+                    <strong>LED 1 on D2</strong> should change state every
+                    one second.
+                </span>
+            </div>
+
+            <div class="result-item">
+                <span>
+                    While D2 is blinking, press the button connected to D14.
+                </span>
+            </div>
+
+            <div class="result-item">
+                <span>
+                    <strong>LED 2 on D4</strong> should turn on while the
+                    button is pressed.
+                </span>
+            </div>
+
+            <div class="result-item">
+                <span>
+                    The button keeps being checked because there is no
+                    long blocking <code class="inline-code">delay()</code>
+                    in the loop.
+                </span>
+            </div>
+
+        </div>
+
+        <div class="card" style="margin-top:16px;">
+            <h3>🧠 The proof</h3>
+            <p>
+                The ESP32 is checking the timer and checking the button
+                repeatedly in the same loop.
+            </p>
+
+            <p>
+                That is the fundamental idea behind this style of
+                non-blocking embedded programming.
+            </p>
+        </div>
+
+        <div class="compare-grid">
+
+            <div class="compare-card blocking">
+                <div class="compare-title">
+                    <h3>delay(1000)</h3>
+                    <span class="badge red">WAIT</span>
+                </div>
+
+                <p style="color:var(--muted);font-size:12px;line-height:1.7;">
+                    The program waits for the delay to finish before
+                    continuing through the current loop.
+                </p>
+            </div>
+
+            <div class="compare-card nonblocking">
+                <div class="compare-title">
+                    <h3>millis()</h3>
+                    <span class="badge green">CHECK</span>
+                </div>
+
+                <p style="color:var(--muted);font-size:12px;line-height:1.7;">
+                    The program keeps looping and checks whether the
+                    required time has passed.
+                </p>
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- =====================================================
+         SECTION 10
+         ===================================================== -->
+
+    <section class="section" data-section="9">
+
+        <div class="section-heading">
+            <div class="section-number">10 / Experiment</div>
+            <h2>Break the Timer ⚡</h2>
+            <p>
+                Let's prove that the button remains responsive even when
+                the blinking interval becomes extremely small.
+            </p>
+        </div>
+
+        <div class="card">
+            <h3>Change this:</h3>
+
+            <div class="code-wrap">
+                <div class="code-head">
+                    <span class="code-lang">ORIGINAL</span>
+                    <button class="copy-btn">Copy</button>
+                </div>
+```
+
+<pre class="code">const unsigned long interval = 1000;</pre>
+
+```
+            </div>
+
+            <h3 style="margin-top:20px;">To this:</h3>
+
+            <div class="code-wrap">
+                <div class="code-head">
+                    <span class="code-lang">EXPERIMENT</span>
+                    <button class="copy-btn">Copy</button>
+                </div>
+```
+
+<pre class="code">const unsigned long interval = 50;</pre>
+
+```
+            </div>
+        </div>
+
+        <div class="card-grid" style="margin-top:16px;">
+
+            <div class="card">
+                <h3>💡 LED 1</h3>
+                <p>
+                    The LED will change state extremely quickly.
+                </p>
+            </div>
+
+            <div class="card">
+                <h3>🔘 Button</h3>
+                <p>
+                    Try pressing the button while the LED is changing.
+                </p>
+            </div>
+
+            <div class="card full">
+                <h3>🧠 What are you proving?</h3>
+                <p>
+                    The timer is being checked constantly, but the program
+                    still reaches the button-reading code over and over.
+                </p>
+
+                <p>
+                    That's the power of non-blocking timing:
+                    <span class="accent">
+                        one timed behavior doesn't have to freeze everything else.
+                    </span>
+                </p>
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- =====================================================
+         SECTION 11
+         ===================================================== -->
+
+    <section class="section" data-section="10">
+
+        <div class="section-heading">
+            <div class="section-number">11 / Challenge</div>
+            <h2>Two Timers. One Loop. 🔥</h2>
+            <p>
+                Now you're going to manage multiple independent timers.
+            </p>
+        </div>
+
+        <div class="challenge">
+
+            <div class="challenge-label">LEVEL UP // CHALLENGE 08</div>
+
+            <h3>Build a second timed LED</h3>
+
+            <p>
+                Add a third LED.
+                Make LED 1 blink every <strong>1 second</strong>.
+                Make LED 3 blink every <strong>300 milliseconds</strong>.
+            </p>
+
+        </div>
+
+        <div class="card" style="margin-top:16px;">
+
+            <h3>Requirements</h3>
+
+            <ul class="clean-list">
+
+                <li>
+                    Create a second timestamp:
+                    <code class="inline-code">
+                        unsigned long previousMillis2 = 0;
+                    </code>
+                </li>
+
+                <li>
+                    Create a second interval variable.
+                </li>
+
+                <li>
+                    Create another
+                    <code class="inline-code">
+                        if (currentMillis - ...)
+                    </code>
+                    timing block.
+                </li>
+
+                <li>
+                    Use the same
+                    <code class="inline-code">currentMillis</code>
+                    for both timers.
+                </li>
+
+            </ul>
+
+        </div>
+
+        <div class="math-box">
+
+            <div class="math-main">
+                One current time → Multiple timers
+            </div>
+
+            <div class="math-sub">
+                CURRENTMILLIS CAN BE USED BY EVERY TASK
+
+            </div>
+
+        </div>
+
+        <div class="callout">
+            <strong>Hint:</strong>
+            <p>
+                You don't need a second clock.
+                The current time is the same for every task.
+                Each task simply remembers its own
+                <code class="inline-code">previousMillis</code>.
+            </p>
+        </div>
+
+        <div class="card-grid three" style="margin-top:16px;">
+
+            <div class="card">
+                <h3>LED 1</h3>
+                <p>
+                    Previous timestamp #1<br>
+                    Interval = 1000 ms
+                </p>
+            </div>
+
+            <div class="card">
+                <h3>LED 3</h3>
+                <p>
+                    Previous timestamp #2<br>
+                    Interval = 300 ms
+                </p>
+            </div>
+
+            <div class="card">
+                <h3>Button</h3>
+                <p>
+                    No timer required.<br>
+                    Read continuously.
+                </p>
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- =====================================================
+         SECTION 12
+         ===================================================== -->
+
+    <section class="section" data-section="11">
+
+        <div class="section-heading">
+            <div class="section-number">12 / Debugging</div>
+            <h2>Troubleshooting 🐛</h2>
+            <p>
+                If the experiment doesn't behave correctly, check these
+                first.
+            </p>
+        </div>
+
+        <div class="bug-list">
+
+            <div class="bug">
+
+                <div class="bug-title">
+                    The LED never blinks
+                </div>
+
+                <p>
+                    Did you forget
+                    <code class="inline-code">
+                        previousMillis = currentMillis;
+                    </code>
+                    inside the timing condition?
+                </p>
+
+                <p>
+                    Without updating the timestamp, the condition remains
+                    true after the interval has been reached, causing the
+                    LED state to toggle repeatedly at loop speed.
+                </p>
+
+            </div>
+
+            <div class="bug">
+
+                <div class="bug-title">
+                    The code won't compile
+                </div>
+
+                <p>
+                    Check your variable declarations carefully.
+                    For <code class="inline-code">millis()</code> timestamps,
+                    use <code class="inline-code">unsigned long</code>.
+                </p>
+
+            </div>
+
+            <div class="bug">
+
+                <div class="bug-title">
+                    Button LED does nothing
+                </div>
+
+                <p>
+                    Check that the button is actually connected between
+                    D14 and GND and that the code uses
+                    <code class="inline-code">INPUT_PULLUP</code>.
+                </p>
+
+            </div>
+
+            <div class="bug">
+
+                <div class="bug-title">
+                    LED is always off
+                </div>
+
+                <p>
+                    Check the LED orientation. The long leg is normally
+                    the anode and should connect toward the GPIO through
+                    the current-limiting resistor.
+                </p>
+
+            </div>
+
+            <div class="bug">
+
+                <div class="bug-title">
+                    LED is always on
+                </div>
+
+                <p>
+                    Check your ground connection and confirm the code
+                    actually reaches both HIGH and LOW states.
+                </p>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- =====================================================
+         SECTION 13
+         ===================================================== -->
+
+    <section class="section" data-section="12">
+
+        <div class="section-heading">
+            <div class="section-number">13 / Vocabulary</div>
+            <h2>New Vocabulary 🧠</h2>
+            <p>
+                These words are going to appear everywhere once you start
+                writing serious embedded programs.
+            </p>
+        </div>
+
+        <div class="vocab">
+
+            <div class="vocab-item">
+                <div class="vocab-word">Blocking</div>
+                <div class="vocab-def">
+                    Code that prevents the current program flow from
+                    continuing until the operation finishes.
+                </div>
+            </div>
+
+            <div class="vocab-item">
+                <div class="vocab-word">Non-blocking</div>
+                <div class="vocab-def">
+                    A programming approach where the program continues
+                    executing while checking whether an event is ready.
+                </div>
+            </div>
+
+            <div class="vocab-item">
+                <div class="vocab-word">millis()</div>
+                <div class="vocab-def">
+                    An Arduino timing function that returns the number
+                    of milliseconds elapsed since the program started.
+                </div>
+            </div>
+
+            <div class="vocab-item">
+                <div class="vocab-word">unsigned long</div>
+                <div class="vocab-def">
+                    An unsigned integer type commonly used to store
+                    millisecond timestamps returned by millis().
+                </div>
+            </div>
+
+            <div class="vocab-item">
+                <div class="vocab-word">Timestamp</div>
+                <div class="vocab-def">
+                    A stored value representing when an event occurred.
+                </div>
+            </div>
+
+            <div class="vocab-item">
+                <div class="vocab-word">Cooperative Multitasking</div>
+                <div class="vocab-def">
+                    Rapidly handling multiple activities by giving each
+                    one small pieces of processor time without blocking.
+                </div>
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- =====================================================
+         SECTION 14
+         ===================================================== -->
+
+    <section class="section" data-section="13">
+
+        <div class="section-heading">
+            <div class="section-number">14 / Mission Complete</div>
+            <h2>What You Just Learned 🎯</h2>
+            <p>
+                Massive congratulations, my bro.
+                This is a major step in embedded programming.
+            </p>
+        </div>
+
+        <div class="card full">
+
+            <h3>⚡ You just crossed an important line.</h3>
+
+            <p>
+                You learned how to replace a long blocking wait with a
+                continuously running timer check.
+            </p>
+
+            <p>
+                You learned that
+                <code class="inline-code">millis()</code>
+                lets your program keep moving instead of stopping the
+                entire loop for a long period.
+            </p>
+
+            <p>
+                You also learned the core pattern:
+            </p>
+
+        </div>
+
+        <div class="math-box">
+
+            <div class="math-main">
+                NOW − LAST EVENT ≥ INTERVAL
+            </div>
+
+            <div class="math-sub">
+                CHECK → ACT → REMEMBER → KEEP RUNNING
+            </div>
+
+        </div>
+
+        <div class="card-grid">
+
+            <div class="card">
+                <h3>🕐 Timing</h3>
+                <p>
+                    You can measure elapsed time without using a long
+                    blocking delay.
+                </p>
+            </div>
+
+            <div class="card">
+                <h3>🔘 Responsiveness</h3>
+                <p>
+                    The program can keep checking inputs while managing
+                    timed behavior.
+                </p>
+            </div>
+
+            <div class="card">
+                <h3>🧠 Program Design</h3>
+                <p>
+                    You separated timed behavior from the main loop's
+                    continuous execution.
+                </p>
+            </div>
+
+            <div class="card">
+                <h3>🔥 Embedded Thinking</h3>
+                <p>
+                    You are starting to think in terms of events,
+                    states, timers, and independent tasks.
+                </p>
+            </div>
+
+        </div>
+
+        <div class="callout">
+
+            <strong>Massive congratulations, my bro! 🚀</strong>
+
+            <p>
+                Non-blocking timing is one of the most important concepts
+                you'll use when building robots, sensor systems,
+                control panels, IoT devices, games, and real embedded
+                systems.
+            </p>
+
+        </div>
+
+        <div class="next-card" style="margin-top:18px;">
+
+            <div class="next-label">
+                NEXT MISSION // PROJECT 09
+            </div>
+
+            <h3>Multi-Task LED System</h3>
+
+            <p>
+                Now that you can manage timing without freezing the ESP32,
+                we're ready to combine multiple concepts into one system:
+                button toggles, state machines, and
+                <code class="inline-code">millis()</code>
+                timing — all working together to create a fully animated
+                control panel.
+            </p>
+
+        </div>
+
+        <div class="card" style="margin-top:16px;text-align:center;">
+
+            <h3 style="color:var(--green);">
+                MISSION STATUS: COMPLETE ✓
+            </h3>
+
+            <p>
+                Say <strong style="color:white;">"next"</strong> when you're
+                ready for Project 09.
+            </p>
+
+        </div>
+
+    </section>
+
+    <!-- =====================================================
+         BOTTOM NAVIGATION
+         ===================================================== -->
+
+    <div class="bottom-nav">
+
+        <button class="nav-btn" id="prevBtn" disabled>
+            <span>←</span>
+            <span>Previous</span>
+        </button>
+
+        <div class="keyboard-hint">
+            Use ← → arrow keys to navigate
+        </div>
+
+        <button class="nav-btn next" id="nextBtn">
+            <span>Next</span>
+            <span>→</span>
+        </button>
+
+    </div>
+
+</div>
+```
+
+</main>
+
+<script>
+/* =========================================================
+   SECTION NAVIGATION
+   ========================================================= */
+
+const sections = [...document.querySelectorAll(".section")];
+const navItems = [...document.querySelectorAll(".nav-item")];
+
+const progressFill = document.getElementById("progressFill");
+const progressText = document.getElementById("progressText");
+const mobileProgress = document.getElementById("mobileProgress");
+
+const prevBtn = document.getElementById("prevBtn");
+const nextBtn = document.getElementById("nextBtn");
+
+let currentSection = 0;
+
+function updateSection(index) {
+
+    index = Math.max(0, Math.min(index, sections.length - 1));
+
+    currentSection = index;
+
+    sections.forEach((section, i) => {
+        section.classList.toggle("active", i === currentSection);
+    });
+
+    navItems.forEach((item, i) => {
+        item.classList.toggle("active", i === currentSection);
+    });
+
+    const progress =
+        ((currentSection + 1) / sections.length) * 100;
+
+    progressFill.style.width = `${progress}%`;
+
+    progressText.textContent =
+        `${currentSection + 1} / ${sections.length}`;
+
+    mobileProgress.textContent =
+        `${String(currentSection + 1).padStart(2, "0")} / ${sections.length}`;
+
+    prevBtn.disabled = currentSection === 0;
+    nextBtn.disabled = currentSection === sections.length - 1;
+
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
+
+    localStorage.setItem(
+        "qc-esp32-project-08-section",
+        currentSection
+    );
+}
+
+/* Sidebar */
+
+navItems.forEach(item => {
+
+    item.addEventListener("click", () => {
+
+        updateSection(
+            Number(item.dataset.section)
+        );
+
+    });
+
+});
+
+/* Previous */
+
+prevBtn.addEventListener("click", () => {
+
+    updateSection(currentSection - 1);
+
+});
+
+/* Next */
+
+nextBtn.addEventListener("click", () => {
+
+    updateSection(currentSection + 1);
+
+});
+
+/* Keyboard */
+
+document.addEventListener("keydown", event => {
+
+    if (
+        event.target.tagName === "INPUT" ||
+        event.target.tagName === "TEXTAREA"
+    ) {
+        return;
+    }
+
+    if (event.key === "ArrowLeft") {
+        updateSection(currentSection - 1);
+    }
+
+    if (event.key === "ArrowRight") {
+        updateSection(currentSection + 1);
+    }
+
+});
+
+/* =========================================================
+   COPY BUTTONS
+   ========================================================= */
+
+document.querySelectorAll(".copy-btn").forEach(button => {
+
+    button.addEventListener("click", async () => {
+
+        const code =
+            button
+                .closest(".code-wrap")
+                .querySelector("pre.code")
+                .innerText;
+
+        try {
+
+            await navigator.clipboard.writeText(code);
+
+            const original =
+                button.textContent;
+
+            button.textContent = "Copied ✓";
+            button.style.color = "var(--green)";
+
+            setTimeout(() => {
+
+                button.textContent = original;
+                button.style.color = "";
+
+            }, 1400);
+
+        } catch {
+
+            button.textContent = "Copy failed";
+
+            setTimeout(() => {
+
+                button.textContent = "Copy";
+
+            }, 1400);
+
+        }
+
+    });
+
+});
+
+/* =========================================================
+   RESTORE PROGRESS
+   ========================================================= */
+
+const savedSection =
+    Number(
+        localStorage.getItem(
+            "qc-esp32-project-08-section"
+        )
+    );
+
+if (
+    Number.isInteger(savedSection) &&
+    savedSection >= 0 &&
+    savedSection < sections.length
+) {
+
+    updateSection(savedSection);
+
+} else {
+
+    updateSection(0);
+
+}
+</script>
+
+</body>
+</html>
