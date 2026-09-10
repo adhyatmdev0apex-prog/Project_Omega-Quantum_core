@@ -1,0 +1,1979 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project 09 — Multi-Task LED System | Quantum Core</title>
+
+<style>
+:root{
+    --bg:#050807;
+    --bg2:#08100c;
+    --panel:#0b120f;
+    --panel2:#0f1814;
+    --green:#39ff88;
+    --green2:#16d96b;
+    --cyan:#35d9ff;
+    --yellow:#ffd84d;
+    --red:#ff5c67;
+    --text:#e7fff0;
+    --muted:#82978b;
+    --border:rgba(57,255,136,.14);
+    --border2:rgba(255,255,255,.08);
+    --shadow:0 20px 60px rgba(0,0,0,.45);
+    --sidebar:285px;
+}
+
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+}
+
+html{
+    scroll-behavior:smooth;
+}
+
+body{
+    min-height:100vh;
+    background:
+        radial-gradient(circle at 15% 10%,rgba(57,255,136,.09),transparent 28%),
+        radial-gradient(circle at 85% 80%,rgba(53,217,255,.055),transparent 25%),
+        linear-gradient(135deg,var(--bg),var(--bg2));
+    color:var(--text);
+    font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    overflow-x:hidden;
+}
+
+body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    opacity:.15;
+    background-image:
+        linear-gradient(rgba(57,255,136,.035) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(57,255,136,.035) 1px,transparent 1px);
+    background-size:44px 44px;
+    mask-image:linear-gradient(to bottom,black,transparent 95%);
+    z-index:-1;
+}
+
+button{
+    font:inherit;
+}
+
+code,
+pre{
+    font-family:"JetBrains Mono","Cascadia Code","Fira Code",Consolas,monospace;
+}
+
+.sidebar{
+    position:fixed;
+    left:0;
+    top:0;
+    bottom:0;
+    width:var(--sidebar);
+    padding:24px 18px;
+    border-right:1px solid var(--border);
+    background:rgba(5,8,7,.88);
+    backdrop-filter:blur(20px);
+    z-index:50;
+    overflow-y:auto;
+}
+
+.brand{
+    padding:4px 10px 22px;
+    border-bottom:1px solid var(--border);
+    margin-bottom:18px;
+}
+
+.brand-top{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    color:var(--green);
+    font-family:monospace;
+    font-size:11px;
+    font-weight:800;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+}
+
+.brand-dot{
+    width:9px;
+    height:9px;
+    border-radius:50%;
+    background:var(--green);
+    box-shadow:0 0 16px var(--green);
+}
+
+.brand h2{
+    margin-top:9px;
+    font-size:18px;
+    letter-spacing:.04em;
+}
+
+.brand p{
+    margin-top:5px;
+    color:var(--muted);
+    font-size:11px;
+    line-height:1.5;
+}
+
+.progress-area{
+    padding:0 10px 20px;
+}
+
+.progress-head{
+    display:flex;
+    justify-content:space-between;
+    color:var(--muted);
+    font-family:monospace;
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    margin-bottom:8px;
+}
+
+.progress-track{
+    height:4px;
+    border-radius:20px;
+    overflow:hidden;
+    background:rgba(255,255,255,.06);
+}
+
+.progress-fill{
+    width:7.14%;
+    height:100%;
+    background:linear-gradient(90deg,var(--green2),var(--green));
+    box-shadow:0 0 14px rgba(57,255,136,.7);
+    transition:width .35s ease;
+}
+
+.nav{
+    display:flex;
+    flex-direction:column;
+    gap:5px;
+}
+
+.nav-item{
+    width:100%;
+    display:flex;
+    align-items:center;
+    gap:11px;
+    padding:10px 11px;
+    border:1px solid transparent;
+    border-radius:10px;
+    background:transparent;
+    color:#6f8177;
+    cursor:pointer;
+    text-align:left;
+    transition:.2s ease;
+}
+
+.nav-item:hover{
+    color:#b8d8c5;
+    background:rgba(57,255,136,.035);
+}
+
+.nav-item.active{
+    color:var(--green);
+    background:rgba(57,255,136,.075);
+    border-color:rgba(57,255,136,.13);
+    box-shadow:inset 3px 0 var(--green);
+}
+
+.nav-number{
+    min-width:24px;
+    color:#53645b;
+    font-family:monospace;
+    font-size:10px;
+}
+
+.nav-item.active .nav-number{
+    color:var(--green);
+}
+
+.nav-label{
+    font-size:11px;
+    font-weight:650;
+}
+
+.main{
+    margin-left:var(--sidebar);
+    min-height:100vh;
+}
+
+.topbar{
+    position:sticky;
+    top:0;
+    height:58px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 30px;
+    border-bottom:1px solid rgba(255,255,255,.045);
+    background:rgba(5,8,7,.7);
+    backdrop-filter:blur(18px);
+    z-index:30;
+}
+
+.topbar-left{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    color:var(--muted);
+    font-family:monospace;
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:.12em;
+}
+
+.status-dot{
+    width:7px;
+    height:7px;
+    border-radius:50%;
+    background:var(--green);
+    box-shadow:0 0 12px var(--green);
+}
+
+.topbar-right{
+    color:#607167;
+    font-family:monospace;
+    font-size:10px;
+}
+
+.content{
+    width:min(1100px,calc(100% - 48px));
+    margin:0 auto;
+    padding:42px 0 110px;
+}
+
+.section{
+    display:none;
+    animation:sectionIn .35s ease;
+}
+
+.section.active{
+    display:block;
+}
+
+@keyframes sectionIn{
+    from{
+        opacity:0;
+        transform:translateY(10px);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+
+.hero{
+    position:relative;
+    overflow:hidden;
+    padding:52px 48px;
+    border:1px solid var(--border);
+    border-radius:24px;
+    background:
+        radial-gradient(circle at 85% 20%,rgba(57,255,136,.12),transparent 28%),
+        linear-gradient(145deg,rgba(14,26,20,.95),rgba(7,13,10,.96));
+    box-shadow:var(--shadow);
+}
+
+.hero::after{
+    content:"09";
+    position:absolute;
+    right:34px;
+    bottom:-34px;
+    color:rgba(57,255,136,.025);
+    font-family:monospace;
+    font-size:180px;
+    font-weight:900;
+    pointer-events:none;
+}
+
+.eyebrow{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    color:var(--green);
+    font-family:monospace;
+    font-size:10px;
+    font-weight:800;
+    letter-spacing:.17em;
+    text-transform:uppercase;
+}
+
+.eyebrow::before{
+    content:"";
+    width:24px;
+    height:1px;
+    background:var(--green);
+    box-shadow:0 0 8px var(--green);
+}
+
+h1{
+    position:relative;
+    z-index:1;
+    margin-top:17px;
+    max-width:850px;
+    font-size:clamp(38px,6vw,72px);
+    line-height:.95;
+    letter-spacing:-.055em;
+}
+
+.gradient{
+    color:var(--green);
+    text-shadow:0 0 25px rgba(57,255,136,.18);
+}
+
+.hero-subtitle{
+    position:relative;
+    z-index:1;
+    max-width:700px;
+    margin-top:18px;
+    color:#9eb3a6;
+    font-size:15px;
+    line-height:1.75;
+}
+
+.terminal{
+    position:relative;
+    z-index:1;
+    margin-top:32px;
+    padding:16px 18px;
+    border:1px solid rgba(57,255,136,.12);
+    border-radius:12px;
+    background:#030605;
+    color:#91a99b;
+    font-family:monospace;
+    font-size:11px;
+}
+
+.terminal span{
+    color:var(--green);
+}
+
+.section-title{
+    margin-bottom:24px;
+}
+
+.section-title .number{
+    color:var(--green);
+    font-family:monospace;
+    font-size:11px;
+    letter-spacing:.12em;
+}
+
+.section-title h2{
+    margin-top:7px;
+    font-size:34px;
+    letter-spacing:-.035em;
+}
+
+.section-title p{
+    margin-top:8px;
+    color:var(--muted);
+    line-height:1.7;
+}
+
+.card{
+    margin-top:18px;
+    padding:25px;
+    border:1px solid var(--border);
+    border-radius:18px;
+    background:linear-gradient(145deg,rgba(13,22,17,.9),rgba(7,13,10,.9));
+    box-shadow:0 12px 40px rgba(0,0,0,.2);
+}
+
+.card h3{
+    font-size:17px;
+    margin-bottom:11px;
+}
+
+.card p{
+    color:#a0b3a8;
+    line-height:1.75;
+    font-size:14px;
+}
+
+.list{
+    display:grid;
+    gap:10px;
+    margin-top:15px;
+}
+
+.list-item{
+    display:flex;
+    gap:12px;
+    padding:13px 15px;
+    border:1px solid rgba(255,255,255,.055);
+    border-radius:11px;
+    background:rgba(255,255,255,.018);
+    color:#a9bdb0;
+    line-height:1.55;
+    font-size:13px;
+}
+
+.list-item::before{
+    content:"›";
+    color:var(--green);
+    font-family:monospace;
+    font-weight:bold;
+}
+
+.grid-2{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:16px;
+}
+
+.grid-3{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:15px;
+}
+
+.mini-card{
+    padding:19px;
+    border:1px solid var(--border2);
+    border-radius:15px;
+    background:rgba(255,255,255,.018);
+}
+
+.mini-card .icon{
+    font-size:23px;
+}
+
+.mini-card h4{
+    margin-top:9px;
+    font-size:14px;
+}
+
+.mini-card p{
+    margin-top:6px;
+    font-size:12px;
+    color:var(--muted);
+    line-height:1.6;
+}
+
+.step-list{
+    display:grid;
+    gap:12px;
+    margin-top:15px;
+    counter-reset:steps;
+}
+
+.step{
+    counter-increment:steps;
+    position:relative;
+    padding:17px 18px 17px 54px;
+    border:1px solid rgba(255,255,255,.055);
+    border-radius:13px;
+    background:rgba(255,255,255,.018);
+    color:#a9bdb0;
+    line-height:1.65;
+    font-size:13px;
+}
+
+.step::before{
+    content:counter(steps,decimal-leading-zero);
+    position:absolute;
+    left:17px;
+    top:17px;
+    color:var(--green);
+    font-family:monospace;
+    font-size:10px;
+}
+
+.flow{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-wrap:wrap;
+    gap:9px;
+    margin-top:20px;
+}
+
+.flow-box{
+    padding:13px 17px;
+    border:1px solid rgba(57,255,136,.16);
+    border-radius:10px;
+    background:rgba(57,255,136,.035);
+    color:#bdeacc;
+    font-family:monospace;
+    font-size:11px;
+    text-align:center;
+}
+
+.flow-arrow{
+    color:var(--green);
+    font-family:monospace;
+}
+
+.code-wrap{
+    margin-top:18px;
+    overflow:hidden;
+    border:1px solid rgba(57,255,136,.13);
+    border-radius:15px;
+    background:#020504;
+}
+
+.code-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:10px 14px;
+    border-bottom:1px solid rgba(255,255,255,.05);
+    background:rgba(255,255,255,.025);
+}
+
+.code-lang{
+    color:var(--green);
+    font-family:monospace;
+    font-size:10px;
+    font-weight:800;
+    letter-spacing:.12em;
+}
+
+.copy-btn{
+    padding:6px 10px;
+    border:1px solid rgba(255,255,255,.09);
+    border-radius:7px;
+    background:transparent;
+    color:#74867c;
+    cursor:pointer;
+    font-family:monospace;
+    font-size:10px;
+    transition:.2s ease;
+}
+
+.copy-btn:hover{
+    border-color:rgba(57,255,136,.3);
+    color:var(--green);
+}
+
+pre.code{
+    max-height:650px;
+    overflow:auto;
+    padding:20px;
+    color:#b8d5c4;
+    font-size:12px;
+    line-height:1.7;
+    white-space:pre;
+}
+
+pre.code::-webkit-scrollbar{
+    width:8px;
+    height:8px;
+}
+
+pre.code::-webkit-scrollbar-thumb{
+    background:rgba(57,255,136,.12);
+    border-radius:20px;
+}
+
+.wiring{
+    margin-top:20px;
+    padding:23px;
+    border:1px solid rgba(53,217,255,.12);
+    border-radius:15px;
+    background:#030708;
+    overflow:auto;
+}
+
+.wiring pre{
+    color:#9dd6de;
+    font-size:12px;
+    line-height:1.8;
+}
+
+.note{
+    margin-top:17px;
+    padding:15px 17px;
+    border-left:3px solid var(--yellow);
+    border-radius:0 10px 10px 0;
+    background:rgba(255,216,77,.045);
+    color:#c8c19d;
+    font-size:12px;
+    line-height:1.65;
+}
+
+.note strong{
+    color:var(--yellow);
+}
+
+.green-note{
+    margin-top:17px;
+    padding:15px 17px;
+    border-left:3px solid var(--green);
+    border-radius:0 10px 10px 0;
+    background:rgba(57,255,136,.04);
+    color:#a9c9b5;
+    font-size:12px;
+    line-height:1.65;
+}
+
+.timer-visual{
+    display:grid;
+    grid-template-columns:1fr auto 1fr;
+    align-items:center;
+    gap:18px;
+    margin-top:20px;
+}
+
+.timer-box{
+    padding:23px;
+    border:1px solid rgba(57,255,136,.13);
+    border-radius:15px;
+    background:rgba(57,255,136,.025);
+    text-align:center;
+}
+
+.timer-box .big{
+    color:var(--green);
+    font-family:monospace;
+    font-size:28px;
+    font-weight:800;
+}
+
+.timer-box span{
+    display:block;
+    margin-top:7px;
+    color:var(--muted);
+    font-size:11px;
+}
+
+.timer-arrow{
+    color:var(--green);
+    font-family:monospace;
+    font-size:22px;
+}
+
+.task-card{
+    position:relative;
+    overflow:hidden;
+    min-height:190px;
+}
+
+.task-card::after{
+    content:"TASK";
+    position:absolute;
+    right:12px;
+    bottom:-10px;
+    color:rgba(57,255,136,.025);
+    font-family:monospace;
+    font-size:70px;
+    font-weight:900;
+}
+
+.task-number{
+    color:var(--green);
+    font-family:monospace;
+    font-size:10px;
+    letter-spacing:.12em;
+}
+
+.task-card h3{
+    margin-top:9px;
+}
+
+.task-card p{
+    margin-top:7px;
+}
+
+.expected{
+    display:grid;
+    gap:11px;
+    margin-top:18px;
+}
+
+.expected-row{
+    display:grid;
+    grid-template-columns:115px 1fr;
+    gap:15px;
+    padding:14px;
+    border:1px solid rgba(255,255,255,.05);
+    border-radius:11px;
+    background:rgba(255,255,255,.015);
+}
+
+.expected-label{
+    color:var(--green);
+    font-family:monospace;
+    font-size:11px;
+}
+
+.expected-value{
+    color:#a7bbb0;
+    font-size:13px;
+    line-height:1.55;
+}
+
+.challenge{
+    border-color:rgba(255,216,77,.15);
+    background:
+        radial-gradient(circle at 90% 10%,rgba(255,216,77,.055),transparent 30%),
+        linear-gradient(145deg,rgba(23,21,10,.75),rgba(9,13,10,.9));
+}
+
+.challenge h3{
+    color:var(--yellow);
+}
+
+.trouble{
+    display:grid;
+    gap:12px;
+    margin-top:18px;
+}
+
+.trouble-item{
+    padding:17px;
+    border:1px solid rgba(255,92,103,.11);
+    border-radius:13px;
+    background:rgba(255,92,103,.025);
+}
+
+.trouble-item strong{
+    display:block;
+    color:#ff8790;
+    font-size:13px;
+    margin-bottom:5px;
+}
+
+.trouble-item p{
+    font-size:12px;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:18px;
+    overflow:hidden;
+    border:1px solid var(--border);
+    border-radius:12px;
+}
+
+th,
+td{
+    padding:13px 15px;
+    border-bottom:1px solid rgba(255,255,255,.055);
+    text-align:left;
+    font-size:12px;
+}
+
+th{
+    color:var(--green);
+    background:rgba(57,255,136,.045);
+    font-family:monospace;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+}
+
+td{
+    color:#a4b7ab;
+}
+
+tr:last-child td{
+    border-bottom:0;
+}
+
+.bottom-nav{
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    margin-top:42px;
+    padding-top:24px;
+    border-top:1px solid rgba(255,255,255,.06);
+}
+
+.nav-btn{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:12px 16px;
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:10px;
+    background:rgba(255,255,255,.025);
+    color:#8ca095;
+    cursor:pointer;
+    transition:.2s ease;
+}
+
+.nav-btn:hover:not(:disabled){
+    color:var(--green);
+    border-color:rgba(57,255,136,.25);
+    background:rgba(57,255,136,.035);
+}
+
+.nav-btn:disabled{
+    opacity:.28;
+    cursor:not-allowed;
+}
+
+.nav-btn small{
+    display:block;
+    color:#56675e;
+    font-family:monospace;
+    font-size:9px;
+}
+
+.mobile-header{
+    display:none;
+}
+
+.mobile-progress{
+    color:var(--green);
+    font-family:monospace;
+    font-size:10px;
+}
+
+kbd{
+    padding:2px 5px;
+    border:1px solid rgba(255,255,255,.1);
+    border-radius:4px;
+    background:rgba(255,255,255,.04);
+    color:#9aac9f;
+    font-family:monospace;
+    font-size:10px;
+}
+
+@media(max-width:900px){
+    .sidebar{
+        display:none;
+    }
+
+    .main{
+        margin-left:0;
+    }
+
+    .topbar{
+        display:none;
+    }
+
+    .mobile-header{
+        position:sticky;
+        top:0;
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        height:56px;
+        padding:0 16px;
+        border-bottom:1px solid var(--border);
+        background:rgba(5,8,7,.9);
+        backdrop-filter:blur(18px);
+        z-index:40;
+    }
+
+    .mobile-brand{
+        color:var(--green);
+        font-family:monospace;
+        font-size:10px;
+        font-weight:800;
+        letter-spacing:.12em;
+    }
+
+    .content{
+        width:min(100% - 26px,1100px);
+        padding:25px 0 70px;
+    }
+
+    .hero{
+        padding:35px 25px;
+        border-radius:19px;
+    }
+
+    .hero::after{
+        font-size:100px;
+    }
+
+    h1{
+        font-size:42px;
+    }
+
+    .grid-2,
+    .grid-3{
+        grid-template-columns:1fr;
+    }
+
+    .timer-visual{
+        grid-template-columns:1fr;
+    }
+
+    .timer-arrow{
+        transform:rotate(90deg);
+        text-align:center;
+    }
+
+    .expected-row{
+        grid-template-columns:1fr;
+        gap:6px;
+    }
+
+    .bottom-nav{
+        position:relative;
+    }
+
+    pre.code{
+        font-size:11px;
+    }
+}
+</style>
+
+</head>
+
+<body>
+
+<aside class="sidebar">
+    <div class="brand">
+        <div class="brand-top">
+            <span class="brand-dot"></span>
+            Quantum Core
+        </div>
+        <h2>ESP-32 LAB</h2>
+        <p>Embedded Systems Learning Sequence</p>
+    </div>
+
+```
+<div class="progress-area">
+    <div class="progress-head">
+        <span>Progress</span>
+        <span id="progressText">1 / 14</span>
+    </div>
+    <div class="progress-track">
+        <div class="progress-fill" id="progressFill"></div>
+    </div>
+</div>
+
+<nav class="nav">
+    <button class="nav-item active" data-section="0"><span class="nav-number">01</span><span class="nav-label">Introduction</span></button>
+    <button class="nav-item" data-section="1"><span class="nav-number">02</span><span class="nav-label">What We're Learning</span></button>
+    <button class="nav-item" data-section="2"><span class="nav-number">03</span><span class="nav-label">Wiring</span></button>
+    <button class="nav-item" data-section="3"><span class="nav-number">04</span><span class="nav-label">Create Project</span></button>
+    <button class="nav-item" data-section="4"><span class="nav-number">05</span><span class="nav-label">Complete Code</span></button>
+    <button class="nav-item" data-section="5"><span class="nav-number">06</span><span class="nav-label">Understand Code</span></button>
+    <button class="nav-item" data-section="6"><span class="nav-number">07</span><span class="nav-label">Build + Upload</span></button>
+    <button class="nav-item" data-section="7"><span class="nav-number">08</span><span class="nav-label">Expected Result</span></button>
+    <button class="nav-item" data-section="8"><span class="nav-number">09</span><span class="nav-label">Experiment</span></button>
+    <button class="nav-item" data-section="9"><span class="nav-number">10</span><span class="nav-label">Challenge</span></button>
+    <button class="nav-item" data-section="10"><span class="nav-number">11</span><span class="nav-label">Troubleshooting</span></button>
+    <button class="nav-item" data-section="11"><span class="nav-number">12</span><span class="nav-label">Vocabulary</span></button>
+    <button class="nav-item" data-section="12"><span class="nav-number">13</span><span class="nav-label">What You Learned</span></button>
+    <button class="nav-item" data-section="13"><span class="nav-number">14</span><span class="nav-label">Next Project</span></button>
+</nav>
+```
+
+</aside>
+
+<div class="mobile-header">
+    <div class="mobile-brand">QC // ESP-32 LAB</div>
+    <div class="mobile-progress" id="mobileProgress">01 / 14</div>
+</div>
+
+<main class="main">
+    <div class="topbar">
+        <div class="topbar-left">
+            <span class="status-dot"></span>
+            Project 09 // Multi-Task System
+        </div>
+        <div class="topbar-right">← / → navigate</div>
+    </div>
+
+```
+<div class="content">
+
+    <!-- 01 -->
+    <section class="section active">
+        <div class="hero">
+            <div class="eyebrow">PROJECT 09 // EMBEDDED SYSTEMS</div>
+            <h1>MULTI-TASK<br><span class="gradient">LED SYSTEM</span></h1>
+            <p class="hero-subtitle">
+                Welcome back, my bro! ⚡ You already know button memory,
+                state machines, and non-blocking timing. Now we're going
+                to combine them into one organized embedded system.
+            </p>
+
+            <div class="terminal">
+                <span>ESP32&gt;</span> initialize control_panel --tasks=3 --blocking=false
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Hey my brooo 👋</h3>
+            <p>
+                You have learned a ton over the last few projects.
+                You know how to toggle states, you know how to build a
+                state machine, and you know how to use <code>millis()</code>
+                to multitask without freezing the ESP32.
+            </p>
+            <p style="margin-top:12px">
+                Today we're putting everything together. We're building a
+                <strong>Multi-Task Control Panel</strong>.
+            </p>
+        </div>
+
+        <div class="grid-2">
+            <div class="mini-card">
+                <div class="icon">🧠</div>
+                <h4>Before</h4>
+                <p>"My ESP32 does one complex thing."</p>
+            </div>
+            <div class="mini-card">
+                <div class="icon">⚡</div>
+                <h4>After</h4>
+                <p>"My ESP32 handles multiple independent buttons and timers at the same time!"</p>
+            </div>
+        </div>
+
+        <div class="green-note">
+            <strong>Mission:</strong> Build a system where buttons,
+            variables, and a <code>millis()</code>-driven timer all cooperate
+            inside one clean loop.
+        </div>
+    </section>
+
+    <!-- 02 -->
+    <section class="section">
+        <div class="section-title">
+            <div class="number">02 // CONCEPT</div>
+            <h2>What Are We Learning?</h2>
+            <p>Today is less about one new function and more about learning how to structure a bigger program.</p>
+        </div>
+
+        <div class="card">
+            <h3>🧠 System Architecture</h3>
+            <p>
+                When programs get bigger, you can't just throw code
+                everywhere. You need to organize behavior into separate
+                responsibilities.
+            </p>
+
+            <div class="grid-3" style="margin-top:18px">
+                <div class="mini-card task-card">
+                    <div class="task-number">TASK 01</div>
+                    <h3>Toggle Button</h3>
+                    <p>Button B controls whether the toggle LED is ON or OFF.</p>
+                </div>
+
+                <div class="mini-card task-card">
+                    <div class="task-number">TASK 02</div>
+                    <h3>Speed Changer</h3>
+                    <p>Button A changes the speed stored in <code>blinkInterval</code>.</p>
+                </div>
+
+                <div class="mini-card task-card">
+                    <div class="task-number">TASK 03</div>
+                    <h3>Auto-Blinker</h3>
+                    <p>The blinker checks <code>millis()</code> and uses the current interval.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="flow">
+            <div class="flow-box">BUTTON INPUT</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-box">VARIABLE</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-box">TIMER LOGIC</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-box">LED OUTPUT</div>
+        </div>
+
+        <div class="green-note">
+            <strong>Key idea:</strong> Button tasks don't need to directly
+            control everything. One task can change a variable, and another
+            task can use that variable later.
+        </div>
+    </section>
+
+    <!-- 03 -->
+    <section class="section">
+        <div class="section-title">
+            <div class="number">03 // HARDWARE</div>
+            <h2>Wiring</h2>
+            <p>Let's build the control panel.</p>
+        </div>
+
+        <div class="card">
+            <h3>💡 The LEDs</h3>
+            <div class="list">
+                <div class="list-item">
+                    <strong>LED 1 — Blinker:</strong>&nbsp; long leg to <code>D2</code>, short leg through a current-limiting resistor to the GND rail.
+                </div>
+                <div class="list-item">
+                    <strong>LED 2 — Toggle Light:</strong>&nbsp; long leg to <code>D4</code>, short leg through a current-limiting resistor to the GND rail.
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>🔘 The Buttons</h3>
+            <div class="list">
+                <div class="list-item">
+                    <strong>Button 1 — Speed:</strong>&nbsp; one side to <code>D14</code>, opposite side to GND.
+                </div>
+                <div class="list-item">
+                    <strong>Button 2 — Toggle:</strong>&nbsp; one side to <code>D15</code>, opposite side to GND.
+                </div>
+            </div>
+        </div>
+
+        <div class="wiring">
+```
+
+<pre>
+ ESP32          BREADBOARD
+
+  D2 ─────────────► LED 1 (Blinker)
+                     │
+                     └── resistor ──► GND
+
+  D4 ─────────────► LED 2 (Toggle Light)
+                     │
+                     └── resistor ──► GND
+
+
+ D14 ─────────────► Button 1 (Speed)
+                     │
+                     └────────────► GND
+
+ D15 ─────────────► Button 2 (Toggle)
+                     │
+                     └────────────► GND
+
+
+ GND ─────────────► [Blue GND Rail]
+                           ▲
+                           │
+                    All LEDs + Buttons
+</pre>
+
+```
+        </div>
+
+        <div class="note">
+            <strong>⚠ Hardware safety:</strong>
+            Use a <strong>220–330 Ω resistor</strong> in series with each
+            LED. Do not connect an LED directly to an ESP32 GPIO pin
+            without current limiting.
+        </div>
+
+        <div class="green-note">
+            <strong>Button logic:</strong>
+            Because the program uses <code>INPUT_PULLUP</code>, a pressed
+            button reads <code>LOW</code>.
+        </div>
+    </section>
+
+    <!-- 04 -->
+    <section class="section">
+        <div class="section-title">
+            <div class="number">04 // PLATFORMIO</div>
+            <h2>Create the Project</h2>
+            <p>Set up the PlatformIO project before writing the program.</p>
+        </div>
+
+        <div class="card">
+            <div class="step-list">
+                <div class="step">Open <strong>VS Code</strong> and go to PlatformIO 🧩.</div>
+                <div class="step">Click <strong>New Project</strong>.</div>
+                <div class="step">Name it <code>ESP32-09-MultiTask</code>.</div>
+                <div class="step">Select board <strong>DOIT ESP32 DEVKIT V1</strong>.</div>
+                <div class="step">Select framework <strong>Arduino</strong>.</div>
+                <div class="step">Click <strong>Finish</strong>.</div>
+                <div class="step">Open <code>src/main.cpp</code>.</div>
+            </div>
+        </div>
+
+        <div class="flow">
+            <div class="flow-box">VS CODE</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-box">PLATFORMIO</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-box">ESP32 DEVKIT V1</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-box">ARDUINO</div>
+        </div>
+    </section>
+
+    <!-- 05 -->
+    <section class="section">
+        <div class="section-title">
+            <div class="number">05 // SOURCE</div>
+            <h2>Complete Code</h2>
+            <p>Delete the default code and paste this into <code>src/main.cpp</code>.</p>
+        </div>
+
+        <div class="code-wrap">
+            <div class="code-head">
+                <span class="code-lang">C++ // MAIN.CPP</span>
+                <button class="copy-btn">Copy</button>
+            </div>
+```
+
+<pre class="code">/*
+ * ============================================================
+ * MY BRO'S NINTH ESP32 PROGRAM: MULTI-TASKING SYSTEM
+ * ============================================================
+ */
+
+// Name our pins
+const int PIN_LED_BLINK = 2;
+const int PIN_LED_TOGGLE = 4;
+const int PIN_BTN_SPEED = 14;
+const int PIN_BTN_TOGGLE = 15;
+
+// Variables for Task 1 & 2 (Button Memory)
+int lastBtnSpeedState = HIGH;
+int lastBtnToggleState = HIGH;
+int toggleLedState = LOW; // Remembers if LED 2 is ON or OFF
+
+// Variables for Task 3 (Millis Blinker)
+unsigned long previousMillis = 0;
+unsigned long blinkInterval = 1000; // Starts at 1 second (1000ms)
+int blinkLedState = LOW;
+
+void setup() {
+    pinMode(PIN_LED_BLINK, OUTPUT);
+    pinMode(PIN_LED_TOGGLE, OUTPUT);
+    pinMode(PIN_BTN_SPEED, INPUT_PULLUP);
+    pinMode(PIN_BTN_TOGGLE, INPUT_PULLUP);
+}
+
+void loop() {
+    // Read both buttons at the start of the loop
+    int currentBtnSpeedState = digitalRead(PIN_BTN_SPEED);
+    int currentBtnToggleState = digitalRead(PIN_BTN_TOGGLE);
+
+    // ========================================================
+    // TASK 1: TOGGLE LED 2
+    // ========================================================
+    if (lastBtnToggleState == HIGH && currentBtnToggleState == LOW) {
+        if (toggleLedState == LOW) {
+            toggleLedState = HIGH;
+        } else {
+            toggleLedState = LOW;
+        }
+
+        digitalWrite(PIN_LED_TOGGLE, toggleLedState);
+
+        delay(50); // Tiny debounce
+    }
+
+    lastBtnToggleState = currentBtnToggleState;
+
+
+    // ========================================================
+    // TASK 2: CHANGE BLINK SPEED
+    // ========================================================
+    if (lastBtnSpeedState == HIGH && currentBtnSpeedState == LOW) {
+
+        // If it's slow, make it fast.
+        // If it's fast, make it slow!
+        if (blinkInterval == 1000) {
+            blinkInterval = 150;
+        } else {
+            blinkInterval = 1000;
+        }
+
+        delay(50); // Tiny debounce
+    }
+
+    lastBtnSpeedState = currentBtnSpeedState;
+
+
+    // ========================================================
+    // TASK 3: AUTO-BLINKER USING MILLIS
+    // ========================================================
+    unsigned long currentMillis = millis();
+
+    // Notice that we use the 'blinkInterval' variable here!
+    if (currentMillis - previousMillis &gt;= blinkInterval) {
+        previousMillis = currentMillis;
+
+        if (blinkLedState == LOW) {
+            blinkLedState = HIGH;
+        } else {
+            blinkLedState = LOW;
+        }
+
+        digitalWrite(PIN_LED_BLINK, blinkLedState);
+    }
+}</pre>
+
+```
+        </div>
+
+        <div class="green-note">
+            <strong>Save:</strong> Press <kbd>Ctrl</kbd> + <kbd>S</kbd>
+            after pasting the code.
+        </div>
+    </section>
+
+    <!-- 06 -->
+    <section class="section">
+        <div class="section-title">
+            <div class="number">06 // ANALYSIS</div>
+            <h2>Understand the Code</h2>
+            <p>The secret is not more code. It's better organization.</p>
+        </div>
+
+        <div class="card">
+            <h3>🔑 Secret #1 — Keep Tasks Separate</h3>
+            <p>
+                Task 1 has nothing to do with Task 3.
+                Task 1 only cares about <code>PIN_BTN_TOGGLE</code>.
+                Task 3 only cares about <code>millis()</code>,
+                <code>previousMillis</code>, and <code>blinkInterval</code>.
+            </p>
+        </div>
+
+        <div class="card">
+            <h3>🌉 Secret #2 — Variables Are the Bridge</h3>
+            <p>
+                Look at Task 2. When you press the Speed button, it doesn't
+                directly control the blinking LED.
+            </p>
+            <p style="margin-top:10px">
+                It changes <code>blinkInterval</code>.
+                Then Task 3 reads that variable and automatically uses the
+                new timing.
+            </p>
+
+            <div class="flow">
+                <div class="flow-box">BUTTON D14</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-box">blinkInterval = 150</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-box">MILLIS TASK</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-box">FAST BLINK</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>⏱️ Secret #3 — The Timer Keeps Running</h3>
+            <p>
+                The loop repeatedly checks the current time. It doesn't
+                stop and sleep for 1 second.
+            </p>
+
+            <div class="timer-visual">
+                <div class="timer-box">
+                    <div class="big">millis()</div>
+                    <span>Current stopwatch value</span>
+                </div>
+
+                <div class="timer-arrow">−</div>
+
+                <div class="timer-box">
+                    <div class="big">previousMillis</div>
+                    <span>Last blink timestamp</span>
+                </div>
+            </div>
+
+            <div class="green-note">
+                When the difference reaches <code>blinkInterval</code>,
+                the LED changes state and the timestamp is updated.
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>🤔 "Didn't You Say delay() Is Evil?"</h3>
+            <p>
+                Yes — for timing long waits, <code>delay()</code> blocks
+                the loop. Here we're using a tiny <code>delay(50)</code>
+                only as a simple beginner-friendly button debounce.
+            </p>
+            <p style="margin-top:10px">
+                50 ms is short enough that the control panel still feels
+                responsive. Later, you can replace this with completely
+                non-blocking debounce logic.
+            </p>
+        </div>
+
+        <div class="note">
+            <strong>Engineering precision:</strong>
+            On a single-core ESP32 loop, these tasks aren't literally
+            executing simultaneously. The program rapidly services each
+            task in sequence, creating cooperative multitasking behavior.
+        </div>
+    </section>
+
+    <!-- 07 -->
+    <section class="section">
+        <div class="section-title">
+            <div class="number">07 // DEPLOY</div>
+            <h2>Build + Upload</h2>
+            <p>Now let's send the program into the ESP32.</p>
+        </div>
+
+        <div class="flow">
+            <div class="flow-box">WRITE CODE</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-box">BUILD ✓</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-box">UPLOAD →</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-box">ESP32 RUNS</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-box">HARDWARE RESPONDS</div>
+        </div>
+
+        <div class="card">
+            <div class="step-list">
+                <div class="step">Connect the ESP32 to your computer using USB.</div>
+                <div class="step">Click the PlatformIO <strong>Build ✓</strong> button.</div>
+                <div class="step">Wait for compilation to finish successfully.</div>
+                <div class="step">Click the PlatformIO <strong>Upload →</strong> button.</div>
+                <div class="step">Wait until the upload completes.</div>
+                <div class="step">The ESP32 will automatically reboot and begin running the program.</div>
+            </div>
+        </div>
+
+        <div class="green-note">
+            <strong>Checkpoint:</strong> If Build succeeds and Upload
+            completes without an error, your software is now on the board.
+        </div>
+    </section>
+
+    <!-- 08 -->
+    <section class="section">
+        <div class="section-title">
+            <div class="number">08 // OUTPUT</div>
+            <h2>What Should Happen?</h2>
+            <p>Time to test every part of your control panel.</p>
+        </div>
+
+        <div class="card">
+            <div class="expected">
+                <div class="expected-row">
+                    <div class="expected-label">START</div>
+                    <div class="expected-value">LED 1 on D2 begins blinking slowly, roughly every 1 second.</div>
+                </div>
+
+                <div class="expected-row">
+                    <div class="expected-label">BUTTON D15</div>
+                    <div class="expected-value">Press Button 2. LED 2 on D4 toggles ON. Press again and it toggles OFF.</div>
+                </div>
+
+                <div class="expected-row">
+                    <div class="expected-label">BUTTON D14</div>
+                    <div class="expected-value">Press Button 1. LED 1 changes to the fast 150 ms interval.</div>
+                </div>
+
+                <div class="expected-row">
+                    <div class="expected-label">D14 AGAIN</div>
+                    <div class="expected-value">Press Button 1 again. LED 1 returns to the slow 1 second interval.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>🎯 The Important Test</h3>
+            <p>
+                Rapidly press Button 2 while LED 1 is blinking.
+                The toggle LED should respond without waiting for the
+                blinker to finish a long delay.
+            </p>
+        </div>
+
+        <div class="green-note">
+            <strong>You just built a control system.</strong>
+            Multiple inputs are changing multiple behaviors while one
+            timer keeps running in the background of the loop.
+        </div>
+    </section>
+
+    <!-- 09 -->
+    <section class="section">
+        <div class="section-title">
+            <div class="number">09 // EXPERIMENT</div>
+            <h2>Three-Speed State Machine</h2>
+            <p>Let's upgrade the Speed button from two gears to three.</p>
+        </div>
+
+        <div class="card">
+            <h3>🔧 Replace Task 2's Speed Logic</h3>
+            <p>
+                Find the <code>if / else</code> block inside Task 2 and
+                replace it with this:
+            </p>
+
+            <div class="code-wrap">
+                <div class="code-head">
+                    <span class="code-lang">C++ // TASK 2</span>
+                    <button class="copy-btn">Copy</button>
+                </div>
+```
+
+<pre class="code">if (blinkInterval == 1000) {
+    blinkInterval = 500;  // Medium speed
+}
+else if (blinkInterval == 500) {
+    blinkInterval = 100;  // Super fast speed
+}
+else {
+    blinkInterval = 1000; // Reset to slow
+}</pre>
+
+```
+            </div>
+        </div>
+
+        <div class="grid-3">
+            <div class="mini-card">
+                <div class="icon">🐢</div>
+                <h4>Gear 1</h4>
+                <p>1000 ms — slow</p>
+            </div>
+            <div class="mini-card">
+                <div class="icon">🚶</div>
+                <h4>Gear 2</h4>
+                <p>500 ms — medium</p>
+            </div>
+            <div class="mini-card">
+                <div class="icon">⚡</div>
+                <h4>Gear 3</h4>
+                <p>100 ms — super fast</p>
+            </div>
+        </div>
+
+        <div class="flow">
+            <div class="flow-box">1000 ms</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-box">500 ms</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-box">100 ms</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-box">1000 ms</div>
+        </div>
+
+        <div class="green-note">
+            <strong>Notice:</strong> You've now combined the state-machine
+            idea from Project 07 with the non-blocking timer from Project 08.
+        </div>
+    </section>
+
+    <!-- 10 -->
+    <section class="section">
+        <div class="section-title">
+            <div class="number">10 // CHALLENGE</div>
+            <h2>Emergency Kill Switch</h2>
+            <p>Now it's time to test your logic skills. 🔥</p>
+        </div>
+
+        <div class="card challenge">
+            <h3>🔥 Your Objective</h3>
+            <p>
+                Add an Emergency Kill Switch without adding any new
+                hardware.
+            </p>
+
+            <div class="list">
+                <div class="list-item">Press and hold <strong>BOTH</strong> buttons at the same time.</div>
+                <div class="list-item">Both LEDs must turn instantly OFF.</div>
+                <div class="list-item">Both LEDs must stay OFF while both buttons are held.</div>
+                <div class="list-item">When you release the buttons, normal behavior can resume.</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>💡 Hint</h3>
+            <p>
+                Put a new condition near the top of <code>loop()</code>.
+                Read both buttons and check whether both pins are
+                <code>LOW</code>.
+            </p>
+
+            <div class="code-wrap">
+                <div class="code-head">
+                    <span class="code-lang">LOGIC HINT</span>
+                    <button class="copy-btn">Copy</button>
+                </div>
+```
+
+<pre class="code">if (digitalRead(PIN_BTN_SPEED) == LOW &&
+    digitalRead(PIN_BTN_TOGGLE) == LOW) {
+
+    digitalWrite(PIN_LED_BLINK, LOW);
+    digitalWrite(PIN_LED_TOGGLE, LOW);
+
+    // Force the outputs OFF here.
+}</pre>
+
+```
+            </div>
+        </div>
+
+        <div class="note">
+            <strong>Think before coding:</strong>
+            If the kill switch is supposed to override everything,
+            its logic must have priority over the normal tasks.
+        </div>
+    </section>
+
+    <!-- 11 -->
+    <section class="section">
+        <div class="section-title">
+            <div class="number">11 // DEBUG</div>
+            <h2>Troubleshooting</h2>
+            <p>Something not behaving? Check these first.</p>
+        </div>
+
+        <div class="trouble">
+            <div class="trouble-item">
+                <strong>⚠ When I change the speed, LED 2 toggles accidentally.</strong>
+                <p>
+                    Check your breadboard rows and wiring. D14 should only
+                    connect to Button 1, while D15 should only connect to
+                    Button 2.
+                </p>
+            </div>
+
+            <div class="trouble-item">
+                <strong>⚠ The speed changes randomly.</strong>
+                <p>
+                    Make sure <code>lastBtnSpeedState =
+                    currentBtnSpeedState;</code> is executed after the
+                    speed-button logic. Without button-state memory,
+                    holding a button can be interpreted incorrectly.
+                </p>
+            </div>
+
+            <div class="trouble-item">
+                <strong>⚠ LED 1 does not blink.</strong>
+                <p>
+                    Check D2 wiring, LED orientation, the resistor, and
+                    whether <code>PIN_LED_BLINK</code> is configured as
+                    <code>OUTPUT</code>.
+                </p>
+            </div>
+
+            <div class="trouble-item">
+                <strong>⚠ Both LEDs behave strangely.</strong>
+                <p>
+                    Check the common GND rail and make sure each LED has
+                    its own correct GPIO connection and current-limiting
+                    resistor.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 12 -->
+    <section class="section">
+        <div class="section-title">
+            <div class="number">12 // VOCABULARY</div>
+            <h2>New Vocabulary</h2>
+            <p>These words will start appearing everywhere in embedded systems.</p>
+        </div>
+
+        <div class="card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Word</th>
+                        <th>Meaning</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Architecture</strong></td>
+                        <td>How you organize and separate your code so different responsibilities can work together without becoming a mess.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Concurrent / Multitasking</strong></td>
+                        <td>Handling multiple activities during the same overall period of execution.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Task</strong></td>
+                        <td>A logically separate job performed by the program, such as reading a button or updating a timer.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Variable Bridge</strong></td>
+                        <td>A variable whose value allows one part of a program to influence another part.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Non-blocking</strong></td>
+                        <td>Logic that does not stop the program for a long waiting period.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- 13 -->
+    <section class="section">
+        <div class="section-title">
+            <div class="number">13 // MISSION COMPLETE</div>
+            <h2>What You Just Learned</h2>
+            <p>This is a major step forward in your embedded programming journey.</p>
+        </div>
+
+        <div class="hero" style="padding:38px">
+            <div class="eyebrow">SYSTEM STATUS</div>
+            <h1 style="font-size:clamp(34px,5vw,58px)">
+                ENGINEER<br><span class="gradient">MODE: ON</span>
+            </h1>
+            <p class="hero-subtitle">
+                Epic work, my bro! ⚡
+            </p>
+        </div>
+
+        <div class="card">
+            <h3>🎯 You Combined Three Major Concepts</h3>
+
+            <div class="grid-3" style="margin-top:18px">
+                <div class="mini-card">
+                    <div class="icon">🔘</div>
+                    <h4>Button Memory</h4>
+                    <p>You detect transitions instead of blindly reacting to a held button.</p>
+                </div>
+
+                <div class="mini-card">
+                    <div class="icon">⏱️</div>
+                    <h4>millis()</h4>
+                    <p>You can manage timing without freezing the main loop for long periods.</p>
+                </div>
+
+                <div class="mini-card">
+                    <div class="icon">🧩</div>
+                    <h4>Architecture</h4>
+                    <p>You separated independent behaviors into clear tasks.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>🚀 The Bigger Lesson</h3>
+            <p>
+                The important thing isn't simply that you made two LEDs
+                work. You learned how a program can contain several
+                independent behaviors and repeatedly service each one.
+            </p>
+
+            <p style="margin-top:11px">
+                That is the beginning of thinking like an embedded
+                systems engineer.
+            </p>
+        </div>
+
+        <div class="green-note">
+            <strong>Checkpoint reached:</strong>
+            You have now moved from single-action scripts toward
+            structured multi-behavior systems.
+        </div>
+    </section>
+
+    <!-- 14 -->
+    <section class="section">
+        <div class="section-title">
+            <div class="number">14 // NEXT</div>
+            <h2>Project 10</h2>
+            <p>The next project opens the door to analog electronics.</p>
+        </div>
+
+        <div class="hero">
+            <div class="eyebrow">NEXT PROJECT // ANALOG WORLD</div>
+            <h1 style="font-size:clamp(34px,5vw,60px)">
+                POTENTIOMETER<br>
+                <span class="gradient">+ PWM + SERIAL</span>
+            </h1>
+
+            <p class="hero-subtitle">
+                So far, everything we've done has been digital:
+                ON/OFF, HIGH/LOW.
+                But the real world isn't black and white.
+            </p>
+        </div>
+
+        <div class="card">
+            <h3>🌍 The Real World Isn't Just ON or OFF</h3>
+            <div class="grid-3" style="margin-top:18px">
+                <div class="mini-card">
+                    <div class="icon">🔊</div>
+                    <h4>Sound</h4>
+                    <p>Sound has volume levels.</p>
+                </div>
+
+                <div class="mini-card">
+                    <div class="icon">🚗</div>
+                    <h4>Speed</h4>
+                    <p>Motors can move at different speeds.</p>
+                </div>
+
+                <div class="mini-card">
+                    <div class="icon">💡</div>
+                    <h4>Brightness</h4>
+                    <p>LEDs can fade instead of simply switching on or off.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>🚀 Project 10 — Potentiometer + Serial Logging + LED Brightness Control</h3>
+            <p>
+                In the next project, we'll learn how to read
+                <strong>Analog Inputs</strong> using a potentiometer,
+                use <strong>PWM</strong> to control LED brightness,
+                and make the ESP32 communicate with your computer through
+                <strong>Serial Logging</strong>.
+            </p>
+        </div>
+
+        <div class="green-note">
+            <strong>Next command:</strong> When you're ready, say
+            <strong>"next"</strong>.
+        </div>
+    </section>
+
+    <div class="bottom-nav">
+        <button class="nav-btn" id="prevBtn" disabled>
+            ←
+            <span>
+                <small>PREVIOUS</small>
+                Project Section
+            </span>
+        </button>
+
+        <button class="nav-btn" id="nextBtn">
+            <span style="text-align:right">
+                <small>NEXT</small>
+                Project Section
+            </span>
+            →
+        </button>
+    </div>
+
+</div>
+```
+
+</main>
+
+<script>
+const sections = [...document.querySelectorAll(".section")];
+const navItems = [...document.querySelectorAll(".nav-item")];
+const progressFill = document.getElementById("progressFill");
+const progressText = document.getElementById("progressText");
+const mobileProgress = document.getElementById("mobileProgress");
+const prevBtn = document.getElementById("prevBtn");
+const nextBtn = document.getElementById("nextBtn");
+
+let currentSection = 0;
+
+function updateSection(index){
+    index = Math.max(0, Math.min(index, sections.length - 1));
+    currentSection = index;
+
+    sections.forEach((section, i) => {
+        section.classList.toggle("active", i === currentSection);
+    });
+
+    navItems.forEach((item, i) => {
+        item.classList.toggle("active", i === currentSection);
+    });
+
+    const progress = ((currentSection + 1) / sections.length) * 100;
+
+    progressFill.style.width = `${progress}%`;
+    progressText.textContent = `${currentSection + 1} / ${sections.length}`;
+    mobileProgress.textContent =
+        `${String(currentSection + 1).padStart(2, "0")} / ${sections.length}`;
+
+    prevBtn.disabled = currentSection === 0;
+    nextBtn.disabled = currentSection === sections.length - 1;
+
+    window.scrollTo({
+        top:0,
+        behavior:"smooth"
+    });
+
+    localStorage.setItem(
+        "qc-esp32-project-09-section",
+        currentSection
+    );
+}
+
+navItems.forEach(item => {
+    item.addEventListener("click", () => {
+        updateSection(Number(item.dataset.section));
+    });
+});
+
+prevBtn.addEventListener("click", () => {
+    updateSection(currentSection - 1);
+});
+
+nextBtn.addEventListener("click", () => {
+    updateSection(currentSection + 1);
+});
+
+document.addEventListener("keydown", event => {
+    if (
+        event.target.tagName === "INPUT" ||
+        event.target.tagName === "TEXTAREA"
+    ) {
+        return;
+    }
+
+    if(event.key === "ArrowLeft"){
+        updateSection(currentSection - 1);
+    }
+
+    if(event.key === "ArrowRight"){
+        updateSection(currentSection + 1);
+    }
+});
+
+document.querySelectorAll(".copy-btn").forEach(button => {
+    button.addEventListener("click", async () => {
+        const code = button
+            .closest(".code-wrap")
+            .querySelector("pre.code")
+            .innerText;
+
+        try{
+            await navigator.clipboard.writeText(code);
+
+            const original = button.textContent;
+
+            button.textContent = "Copied ✓";
+            button.style.color = "var(--green)";
+
+            setTimeout(() => {
+                button.textContent = original;
+                button.style.color = "";
+            }, 1400);
+        }
+        catch{
+            button.textContent = "Copy failed";
+
+            setTimeout(() => {
+                button.textContent = "Copy";
+            }, 1400);
+        }
+    });
+});
+
+const savedSection = Number(
+    localStorage.getItem("qc-esp32-project-09-section")
+);
+
+if(
+    Number.isInteger(savedSection) &&
+    savedSection >= 0 &&
+    savedSection < sections.length
+){
+    updateSection(savedSection);
+}
+else{
+    updateSection(0);
+}
+</script>
+
+</body>
+</html>
