@@ -70,8 +70,9 @@ function Routed() {
   // Workspace mode removes max-w, padding, and the system monitor sidebar.
   // Add any new full-screen lab here; it automatically inherits the layout.
   const isWorkspace =
-    (root === 'beta' && !!segments[1]) ||     // /beta/<slug>
-    (root === 'labs' && segments[1] === 'linux'); // /labs/linux
+    (root === 'beta' && !!segments[1]) ||
+    (root === 'labs' && segments[1] === 'linux') ||
+    (root === 'library' && segments[1] === 'esp32' && !!segments[2]);
 
   const page = renderPage(segments);
   return <AppShell workspace={isWorkspace}>{page}</AppShell>;
