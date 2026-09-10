@@ -1,10 +1,10 @@
 // ===========================================================
-// WorkspaceIframe — the reusable iframe component for standalone
+// WorkspaceIframe — reusable iframe component for standalone
 // HTML labs, textbooks, ESP-32 guides, and other Quantum Core
 // content.
 //
 // Features:
-//   • fills the entire available workspace
+//   • fills the available workspace
 //   • loading spinner overlay
 //   • error overlay with retry
 //   • forwarded ref for scroll tracking
@@ -46,7 +46,7 @@ export const WorkspaceIframe = forwardRef<
     const [error, setError] = useState(false);
     const [retryKey, setRetryKey] = useState(0);
 
-    // Reset the loading/error state whenever the guide changes.
+    // Reset loading state whenever the guide changes.
     useEffect(() => {
       setLoaded(false);
       setError(false);
@@ -61,7 +61,7 @@ export const WorkspaceIframe = forwardRef<
       onLoad?.(e);
     };
 
-    // Force a fresh iframe mount when retrying.
+    // Force a fresh iframe when retrying.
     const retry = () => {
       setLoaded(false);
       setError(false);
@@ -71,13 +71,11 @@ export const WorkspaceIframe = forwardRef<
     return (
       <div
         className={cn(
-          'relative min-h-0 min-w-0 flex-1 overflow-hidden bg-ink-950',
+          'relative flex min-h-[70vh] min-w-0 flex-1 overflow-hidden bg-ink-950',
           className,
         )}
       >
-        {/* =====================================================
-            Loading overlay
-            ===================================================== */}
+        {/* Loading overlay */}
         {!loaded && !error && (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-ink-950">
             <div className="flex flex-col items-center gap-4">
@@ -90,9 +88,7 @@ export const WorkspaceIframe = forwardRef<
           </div>
         )}
 
-        {/* =====================================================
-            Error overlay
-            ===================================================== */}
+        {/* Error overlay */}
         {error && (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-ink-950">
             <GlassPanel className="max-w-md p-8 text-center">
@@ -124,13 +120,7 @@ export const WorkspaceIframe = forwardRef<
           </div>
         )}
 
-        {/* =====================================================
-            HTML document
-
-            Absolute positioning makes the iframe occupy the
-            exact dimensions of this workspace container instead
-            of relying on its intrinsic iframe height.
-            ===================================================== */}
+        {/* HTML document */}
         <iframe
           key={`${src}-${retryKey}`}
           ref={ref}
@@ -139,7 +129,7 @@ export const WorkspaceIframe = forwardRef<
           loading={loadingAttr}
           allow={allow}
           className={cn(
-            'absolute inset-0 h-full w-full border-0',
+            'h-full w-full flex-1 border-0',
             !loaded && 'invisible',
           )}
           onLoad={handleLoad}

@@ -4,10 +4,9 @@ import { Icon } from '../components/Icon';
 
 // ===========================================================
 // Esp32GuidePage — renders one ESP-32 guide file discovered from
-// public/library/ESP-32/ (see vite.config.ts esp32LibraryPlugin).
+// public/library/ESP-32/.
 //
-// The guide HTML is loaded directly by the browser through
-// WorkspaceIframe. No per-guide React component is required.
+// The guide HTML is loaded directly through WorkspaceIframe.
 // ===========================================================
 
 export function Esp32GuidePage({ slug }: { slug: string }) {
@@ -41,11 +40,11 @@ export function Esp32GuidePage({ slug }: { slug: string }) {
         </a>
       </div>
 
-      {/* Full workspace guide viewer */}
+      {/* Full workspace guide */}
       <WorkspaceIframe
         src={file}
         title={slug}
-        className="min-h-0 min-w-0 flex-1 rounded-2xl border border-white/10"
+        className="min-h-[70vh] min-w-0 flex-1 rounded-2xl border border-white/10"
         loadingLabel="Loading guide…"
       />
     </div>
