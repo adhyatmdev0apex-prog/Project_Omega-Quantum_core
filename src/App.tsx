@@ -7,6 +7,8 @@ import { AppShell } from './components/AppShell';
 import { HomePage } from './pages/HomePage';
 import { DashboardPage } from './pages/DashboardPage';
 import { LibraryPage } from './pages/LibraryPage';
+import { LibraryCategoriesPage } from './pages/LibraryCategoriesPage';
+import { Esp32LibraryPage } from './pages/Esp32LibraryPage';
 import { TextbookPage } from './pages/TextbookPage';
 import { LabsPage } from './pages/LabsPage';
 import { LabPage } from './pages/LabPage';
@@ -80,7 +82,10 @@ function renderPage(segments: string[]) {
     case 'dashboard':
       return <DashboardPage />;
     case 'library':
-      return sub ? <TextbookPage slug={sub} /> : <LibraryPage />;
+      if (!sub) return <LibraryCategoriesPage />;
+      if (sub === 'cyber') return <LibraryPage />;
+      if (sub === 'esp32') return <Esp32LibraryPage />;
+      return <TextbookPage slug={sub} />; // existing volume deep-links (e.g. /library/volume1) unchanged
     case 'labs':
       if (sub === 'linux') return <LinuxLabPage />;
       return sub ? <LabPage slug={sub} /> : <LabsPage />;

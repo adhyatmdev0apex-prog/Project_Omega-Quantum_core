@@ -92,7 +92,7 @@ export function TextbookPage({ slug }: { slug: string }) {
         icon={<Icon name="BookOpen" size={32} />}
         title="Volume not found"
         description="This volume hasn't been registered yet."
-        action={<NeonButton variant="ghost" onClick={() => navigate('/library')}>Back to Library</NeonButton>}
+        action={<NeonButton variant="ghost" onClick={() => navigate('/library/cyber')}>Back to Library</NeonButton>}
       />
     );
   }
@@ -107,7 +107,7 @@ export function TextbookPage({ slug }: { slug: string }) {
       {/* Top toolbar — always visible */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <button
-          onClick={() => navigate('/library')}
+          onClick={() => navigate('/library/cyber')}
           className="qc-focus flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider text-slate-500 hover:text-neon-300"
         >
           <Icon name="ChevronRight" size={12} className="rotate-180" /> Library
