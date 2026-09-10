@@ -1,0 +1,2621 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+```
+<title>Project 04 — LED + Button | ESP32</title>
+
+<style>
+    :root {
+        --bg: #050807;
+        --bg-soft: #08100d;
+        --panel: #0a120f;
+        --panel-2: #0d1713;
+
+        --neon: #39ff88;
+        --neon-bright: #72ffad;
+        --neon-soft: rgba(57, 255, 136, 0.14);
+        --neon-border: rgba(57, 255, 136, 0.28);
+
+        --cyan: #38d9ff;
+        --yellow: #ffd166;
+        --red: #ff5c7a;
+
+        --text: #edfdf3;
+        --text-soft: #b5c9bd;
+        --muted: #71847a;
+
+        --border: rgba(255, 255, 255, 0.08);
+        --border-soft: rgba(255, 255, 255, 0.045);
+
+        --code: #030504;
+
+        --sidebar-width: 285px;
+        --header-height: 68px;
+    }
+
+    * {
+        box-sizing: border-box;
+    }
+
+    html {
+        scroll-behavior: smooth;
+    }
+
+    body {
+        margin: 0;
+        min-height: 100vh;
+
+        background:
+            radial-gradient(
+                circle at 20% 0%,
+                rgba(57, 255, 136, 0.075),
+                transparent 32%
+            ),
+            radial-gradient(
+                circle at 90% 15%,
+                rgba(56, 217, 255, 0.045),
+                transparent 28%
+            ),
+            var(--bg);
+
+        color: var(--text);
+
+        font-family:
+            Inter,
+            ui-sans-serif,
+            system-ui,
+            -apple-system,
+            BlinkMacSystemFont,
+            "Segoe UI",
+            sans-serif;
+    }
+
+    body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+
+        background-image:
+            linear-gradient(
+                rgba(255,255,255,0.018) 1px,
+                transparent 1px
+            ),
+            linear-gradient(
+                90deg,
+                rgba(255,255,255,0.018) 1px,
+                transparent 1px
+            );
+
+        background-size: 48px 48px;
+        mask-image: linear-gradient(
+            to bottom,
+            black,
+            transparent 75%
+        );
+    }
+
+    ::selection {
+        background: rgba(57, 255, 136, 0.25);
+        color: white;
+    }
+
+    a {
+        color: inherit;
+    }
+
+    button {
+        font: inherit;
+    }
+
+    /* =====================================================
+       HEADER
+       ===================================================== */
+
+    .topbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+
+        height: var(--header-height);
+
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        padding: 0 24px;
+
+        background: rgba(5, 8, 7, 0.88);
+        backdrop-filter: blur(18px);
+
+        border-bottom: 1px solid var(--border);
+
+        z-index: 100;
+    }
+
+    .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+
+        font-family:
+            "SFMono-Regular",
+            Consolas,
+            "Liberation Mono",
+            monospace;
+
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+    }
+
+    .brand-mark {
+        width: 29px;
+        height: 29px;
+
+        display: grid;
+        place-items: center;
+
+        border: 1px solid var(--neon-border);
+        border-radius: 8px;
+
+        color: var(--neon);
+
+        background: var(--neon-soft);
+
+        box-shadow:
+            0 0 22px rgba(57, 255, 136, 0.08);
+    }
+
+    .brand-mark::before {
+        content: "◈";
+        font-size: 14px;
+    }
+
+    .top-status {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+
+        font-family:
+            "SFMono-Regular",
+            Consolas,
+            monospace;
+
+        font-size: 10px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+
+        color: var(--muted);
+    }
+
+    .status-dot {
+        width: 7px;
+        height: 7px;
+
+        border-radius: 50%;
+
+        background: var(--neon);
+
+        box-shadow:
+            0 0 10px rgba(57, 255, 136, 0.8);
+    }
+
+    /* =====================================================
+       LAYOUT
+       ===================================================== */
+
+    .app {
+        display: flex;
+        padding-top: var(--header-height);
+    }
+
+    .sidebar {
+        position: fixed;
+        top: var(--header-height);
+        bottom: 0;
+        left: 0;
+
+        width: var(--sidebar-width);
+
+        padding: 24px 16px;
+
+        overflow-y: auto;
+
+        background:
+            linear-gradient(
+                180deg,
+                rgba(10,18,15,0.94),
+                rgba(5,8,7,0.96)
+            );
+
+        border-right: 1px solid var(--border);
+
+        z-index: 50;
+    }
+
+    .sidebar-label {
+        margin: 0 10px 13px;
+
+        font-family:
+            "SFMono-Regular",
+            Consolas,
+            monospace;
+
+        font-size: 9px;
+        letter-spacing: 0.17em;
+        text-transform: uppercase;
+
+        color: var(--muted);
+    }
+
+    .progress-box {
+        margin: 0 8px 24px;
+        padding: 14px;
+
+        border: 1px solid var(--border);
+        border-radius: 12px;
+
+        background: rgba(255,255,255,0.018);
+    }
+
+    .progress-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+
+        margin-bottom: 10px;
+
+        font-family:
+            "SFMono-Regular",
+            Consolas,
+            monospace;
+
+        font-size: 9px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .progress-top span:first-child {
+        color: var(--muted);
+    }
+
+    .progress-top span:last-child {
+        color: var(--neon);
+    }
+
+    .progress-track {
+        height: 3px;
+
+        overflow: hidden;
+
+        border-radius: 999px;
+
+        background: rgba(255,255,255,0.07);
+    }
+
+    .progress-bar {
+        width: 7.14%;
+        height: 100%;
+
+        border-radius: inherit;
+
+        background: var(--neon);
+
+        box-shadow:
+            0 0 12px rgba(57,255,136,0.55);
+
+        transition: width 0.25s ease;
+    }
+
+    .steps {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+    }
+
+    .step-link {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+
+        width: 100%;
+
+        padding: 9px 10px;
+
+        border: 1px solid transparent;
+        border-radius: 9px;
+
+        background: transparent;
+
+        color: var(--muted);
+
+        cursor: pointer;
+
+        text-align: left;
+
+        transition:
+            background 0.18s ease,
+            color 0.18s ease,
+            border-color 0.18s ease;
+    }
+
+    .step-link:hover {
+        color: var(--text-soft);
+        background: rgba(255,255,255,0.025);
+    }
+
+    .step-link.active {
+        color: var(--neon);
+
+        border-color: rgba(57,255,136,0.13);
+
+        background:
+            linear-gradient(
+                90deg,
+                rgba(57,255,136,0.085),
+                transparent
+            );
+    }
+
+    .step-number {
+        width: 24px;
+        height: 24px;
+
+        display: grid;
+        place-items: center;
+
+        flex-shrink: 0;
+
+        border: 1px solid var(--border);
+        border-radius: 7px;
+
+        font-family:
+            "SFMono-Regular",
+            Consolas,
+            monospace;
+
+        font-size: 9px;
+    }
+
+    .step-link.active .step-number {
+        border-color: var(--neon-border);
+        background: rgba(57,255,136,0.08);
+    }
+
+    .step-title {
+        overflow: hidden;
+
+        font-size: 11px;
+
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    .main {
+        width: calc(100% - var(--sidebar-width));
+        margin-left: var(--sidebar-width);
+
+        min-height: calc(100vh - var(--header-height));
+    }
+
+    .content {
+        width: min(900px, calc(100% - 48px));
+
+        margin: 0 auto;
+
+        padding: 58px 0 120px;
+    }
+
+    /* =====================================================
+       HERO
+       ===================================================== */
+
+    .hero {
+        position: relative;
+
+        padding: 34px;
+
+        margin-bottom: 46px;
+
+        border: 1px solid var(--neon-border);
+        border-radius: 22px;
+
+        overflow: hidden;
+
+        background:
+            radial-gradient(
+                circle at 85% 10%,
+                rgba(57,255,136,0.11),
+                transparent 30%
+            ),
+            linear-gradient(
+                135deg,
+                rgba(57,255,136,0.055),
+                rgba(255,255,255,0.018)
+            );
+
+        box-shadow:
+            0 20px 80px rgba(0,0,0,0.3);
+    }
+
+    .hero::after {
+        content: "";
+
+        position: absolute;
+
+        width: 240px;
+        height: 240px;
+
+        right: -80px;
+        bottom: -100px;
+
+        border: 1px solid rgba(57,255,136,0.08);
+        border-radius: 50%;
+    }
+
+    .eyebrow {
+        margin-bottom: 12px;
+
+        font-family:
+            "SFMono-Regular",
+            Consolas,
+            monospace;
+
+        font-size: 10px;
+        letter-spacing: 0.17em;
+        text-transform: uppercase;
+
+        color: var(--neon);
+    }
+
+    .hero h1 {
+        margin: 0;
+
+        max-width: 700px;
+
+        font-size: clamp(30px, 5vw, 50px);
+        line-height: 1.02;
+
+        letter-spacing: -0.045em;
+    }
+
+    .hero h1 span {
+        color: var(--neon);
+    }
+
+    .hero-subtitle {
+        max-width: 670px;
+
+        margin: 19px 0 0;
+
+        color: var(--text-soft);
+
+        font-size: 15px;
+        line-height: 1.8;
+    }
+
+    .hero-subtitle strong {
+        color: white;
+    }
+
+    /* =====================================================
+       SECTIONS
+       ===================================================== */
+
+    .section {
+        margin-bottom: 54px;
+
+        scroll-margin-top: 90px;
+    }
+
+    .section-header {
+        display: flex;
+        align-items: flex-start;
+        gap: 15px;
+
+        margin-bottom: 20px;
+    }
+
+    .section-number {
+        width: 35px;
+        height: 35px;
+
+        display: grid;
+        place-items: center;
+
+        flex-shrink: 0;
+
+        border: 1px solid var(--neon-border);
+        border-radius: 10px;
+
+        color: var(--neon);
+
+        background: rgba(57,255,136,0.055);
+
+        font-family:
+            "SFMono-Regular",
+            Consolas,
+            monospace;
+
+        font-size: 10px;
+        font-weight: 700;
+    }
+
+    .section-title {
+        margin: 0;
+
+        font-size: 22px;
+        line-height: 1.25;
+
+        letter-spacing: -0.02em;
+    }
+
+    .section-content {
+        color: var(--text-soft);
+
+        font-size: 14px;
+        line-height: 1.85;
+    }
+
+    .section-content p {
+        margin: 0 0 17px;
+    }
+
+    .section-content p:last-child {
+        margin-bottom: 0;
+    }
+
+    .section-content strong {
+        color: var(--text);
+    }
+
+    .section-content code,
+    li code {
+        padding: 3px 7px;
+
+        border: 1px solid rgba(57,255,136,0.13);
+        border-radius: 5px;
+
+        background: rgba(57,255,136,0.055);
+
+        color: var(--neon-bright);
+
+        font-family:
+            "SFMono-Regular",
+            Consolas,
+            monospace;
+
+        font-size: 0.9em;
+    }
+
+    ul,
+    ol {
+        margin: 13px 0;
+        padding-left: 23px;
+    }
+
+    li {
+        margin: 8px 0;
+    }
+
+    /* =====================================================
+       CALLOUTS
+       ===================================================== */
+
+    .callout {
+        margin: 22px 0;
+        padding: 18px 20px;
+
+        border: 1px solid var(--border);
+        border-left: 3px solid var(--neon);
+
+        border-radius: 12px;
+
+        background:
+            linear-gradient(
+                90deg,
+                rgba(57,255,136,0.055),
+                rgba(255,255,255,0.012)
+            );
+    }
+
+    .callout-title {
+        margin-bottom: 7px;
+
+        color: var(--neon);
+
+        font-family:
+            "SFMono-Regular",
+            Consolas,
+            monospace;
+
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
+    }
+
+    .callout p {
+        margin: 0;
+
+        color: var(--text-soft);
+
+        line-height: 1.75;
+    }
+
+    .warning {
+        border-left-color: var(--yellow);
+
+        background:
+            linear-gradient(
+                90deg,
+                rgba(255,209,102,0.05),
+                transparent
+            );
+    }
+
+    .warning .callout-title {
+        color: var(--yellow);
+    }
+
+    .danger {
+        border-left-color: var(--red);
+    }
+
+    .danger .callout-title {
+        color: var(--red);
+    }
+
+    /* =====================================================
+       CODE
+       ===================================================== */
+
+    .code-wrap {
+        margin: 22px 0;
+
+        overflow: hidden;
+
+        border: 1px solid var(--border);
+        border-radius: 14px;
+
+        background: var(--code);
+
+        box-shadow:
+            0 14px 45px rgba(0,0,0,0.22);
+    }
+
+    .code-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        padding: 10px 14px;
+
+        border-bottom: 1px solid var(--border-soft);
+
+        background: rgba(255,255,255,0.02);
+    }
+
+    .code-language {
+        color: var(--muted);
+
+        font-family:
+            "SFMono-Regular",
+            Consolas,
+            monospace;
+
+        font-size: 9px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+    }
+
+    .copy-btn {
+        padding: 5px 9px;
+
+        border: 1px solid var(--border);
+        border-radius: 6px;
+
+        background: transparent;
+
+        color: var(--muted);
+
+        cursor: pointer;
+
+        font-family:
+            "SFMono-Regular",
+            Consolas,
+            monospace;
+
+        font-size: 9px;
+
+        transition: all 0.15s ease;
+    }
+
+    .copy-btn:hover {
+        color: var(--neon);
+        border-color: var(--neon-border);
+    }
+
+    pre {
+        margin: 0;
+
+        padding: 20px;
+
+        overflow-x: auto;
+
+        color: #d8fce5;
+
+        font-family:
+            "SFMono-Regular",
+            Consolas,
+            "Liberation Mono",
+            monospace;
+
+        font-size: 12px;
+        line-height: 1.75;
+    }
+
+    /* =====================================================
+       DIAGRAM
+       ===================================================== */
+
+    .diagram {
+        margin: 24px 0;
+        padding: 25px;
+
+        overflow-x: auto;
+
+        border: 1px solid var(--border);
+        border-radius: 14px;
+
+        background:
+            radial-gradient(
+                circle at center,
+                rgba(57,255,136,0.04),
+                transparent 60%
+            );
+    }
+
+    .diagram pre {
+        padding: 0;
+
+        color: var(--neon-bright);
+
+        text-align: center;
+    }
+
+    /* =====================================================
+       STEPS
+       ===================================================== */
+
+    .instruction-list {
+        display: flex;
+        flex-direction: column;
+
+        gap: 10px;
+
+        margin: 20px 0;
+        padding: 0;
+
+        list-style: none;
+    }
+
+    .instruction-list li {
+        display: grid;
+
+        grid-template-columns: 32px 1fr;
+
+        gap: 12px;
+
+        margin: 0;
+        padding: 13px;
+
+        border: 1px solid var(--border);
+        border-radius: 11px;
+
+        background: rgba(255,255,255,0.018);
+    }
+
+    .instruction-list .num {
+        width: 27px;
+        height: 27px;
+
+        display: grid;
+        place-items: center;
+
+        border-radius: 8px;
+
+        color: var(--neon);
+
+        background: rgba(57,255,136,0.07);
+
+        font-family:
+            "SFMono-Regular",
+            Consolas,
+            monospace;
+
+        font-size: 10px;
+    }
+
+    /* =====================================================
+       VOCAB TABLE
+       ===================================================== */
+
+    .table-wrap {
+        overflow: hidden;
+
+        border: 1px solid var(--border);
+        border-radius: 14px;
+    }
+
+    table {
+        width: 100%;
+
+        border-collapse: collapse;
+
+        font-size: 13px;
+    }
+
+    th,
+    td {
+        padding: 14px 16px;
+
+        border-bottom: 1px solid var(--border);
+
+        text-align: left;
+        vertical-align: top;
+    }
+
+    th {
+        background: rgba(255,255,255,0.025);
+
+        color: var(--neon);
+
+        font-family:
+            "SFMono-Regular",
+            Consolas,
+            monospace;
+
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    td {
+        color: var(--text-soft);
+    }
+
+    tr:last-child td {
+        border-bottom: 0;
+    }
+
+    /* =====================================================
+       NAVIGATION
+       ===================================================== */
+
+    .bottom-nav {
+        display: flex;
+        justify-content: space-between;
+        gap: 15px;
+
+        margin-top: 75px;
+        padding-top: 25px;
+
+        border-top: 1px solid var(--border);
+    }
+
+    .nav-btn {
+        min-width: 145px;
+
+        padding: 12px 17px;
+
+        border: 1px solid var(--border);
+        border-radius: 10px;
+
+        background: rgba(255,255,255,0.02);
+
+        color: var(--text-soft);
+
+        cursor: pointer;
+
+        transition:
+            border-color 0.18s ease,
+            color 0.18s ease,
+            background 0.18s ease;
+    }
+
+    .nav-btn:hover {
+        color: var(--neon);
+
+        border-color: var(--neon-border);
+
+        background: rgba(57,255,136,0.045);
+    }
+
+    .nav-btn.next {
+        border-color: var(--neon-border);
+        color: var(--neon);
+    }
+
+    .nav-label {
+        display: block;
+
+        margin-bottom: 5px;
+
+        font-family:
+            "SFMono-Regular",
+            Consolas,
+            monospace;
+
+        font-size: 8px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+
+        color: var(--muted);
+    }
+
+    /* =====================================================
+       RESPONSIVE
+       ===================================================== */
+
+    @media (max-width: 900px) {
+        :root {
+            --sidebar-width: 225px;
+        }
+
+        .content {
+            width: min(900px, calc(100% - 34px));
+        }
+    }
+
+    @media (max-width: 720px) {
+        .topbar {
+            padding: 0 15px;
+        }
+
+        .top-status {
+            display: none;
+        }
+
+        .sidebar {
+            position: fixed;
+
+            top: auto;
+            bottom: 0;
+
+            width: 100%;
+            height: 62px;
+
+            padding: 7px 10px;
+
+            border-right: 0;
+            border-top: 1px solid var(--border);
+
+            overflow-x: auto;
+            overflow-y: hidden;
+        }
+
+        .sidebar-label,
+        .progress-box {
+            display: none;
+        }
+
+        .steps {
+            flex-direction: row;
+            width: max-content;
+        }
+
+        .step-link {
+            width: auto;
+            min-width: 48px;
+
+            justify-content: center;
+
+            padding: 5px;
+        }
+
+        .step-title {
+            display: none;
+        }
+
+        .main {
+            width: 100%;
+            margin-left: 0;
+        }
+
+        .content {
+            width: calc(100% - 26px);
+
+            padding-top: 32px;
+            padding-bottom: 100px;
+        }
+
+        .hero {
+            padding: 25px;
+        }
+
+        .hero h1 {
+            font-size: 34px;
+        }
+
+        .section-title {
+            font-size: 19px;
+        }
+
+        .bottom-nav {
+            flex-direction: column;
+        }
+
+        .nav-btn {
+            width: 100%;
+        }
+    }
+</style>
+```
+
+</head>
+
+<body>
+
+<header class="topbar">
+    <div class="brand">
+        <div class="brand-mark"></div>
+        <span>QUANTUM CORE / ESP32</span>
+    </div>
+
+```
+<div class="top-status">
+    <span class="status-dot"></span>
+    PROJECT 04 / DIGITAL INPUT
+</div>
+```
+
+</header>
+
+<div class="app">
+
+```
+<!-- =====================================================
+     SIDEBAR
+     ===================================================== -->
+
+<aside class="sidebar">
+
+    <div class="sidebar-label">
+        Project navigation
+    </div>
+
+    <div class="progress-box">
+        <div class="progress-top">
+            <span>Progress</span>
+            <span id="progressText">1 / 14</span>
+        </div>
+
+        <div class="progress-track">
+            <div
+                class="progress-bar"
+                id="progressBar"
+            ></div>
+        </div>
+    </div>
+
+    <nav class="steps" id="stepNav">
+
+        <button class="step-link active" data-target="s1">
+            <span class="step-number">01</span>
+            <span class="step-title">What You Have</span>
+        </button>
+
+        <button class="step-link" data-target="s2">
+            <span class="step-number">02</span>
+            <span class="step-title">What We're Learning</span>
+        </button>
+
+        <button class="step-link" data-target="s3">
+            <span class="step-number">03</span>
+            <span class="step-title">Wiring</span>
+        </button>
+
+        <button class="step-link" data-target="s4">
+            <span class="step-number">04</span>
+            <span class="step-title">Create Project</span>
+        </button>
+
+        <button class="step-link" data-target="s5">
+            <span class="step-number">05</span>
+            <span class="step-title">Complete Code</span>
+        </button>
+
+        <button class="step-link" data-target="s6">
+            <span class="step-number">06</span>
+            <span class="step-title">Understand Code</span>
+        </button>
+
+        <button class="step-link" data-target="s7">
+            <span class="step-number">07</span>
+            <span class="step-title">Build + Upload</span>
+        </button>
+
+        <button class="step-link" data-target="s8">
+            <span class="step-number">08</span>
+            <span class="step-title">What Should Happen?</span>
+        </button>
+
+        <button class="step-link" data-target="s9">
+            <span class="step-number">09</span>
+            <span class="step-title">Experiment</span>
+        </button>
+
+        <button class="step-link" data-target="s10">
+            <span class="step-number">10</span>
+            <span class="step-title">Challenge</span>
+        </button>
+
+        <button class="step-link" data-target="s11">
+            <span class="step-number">11</span>
+            <span class="step-title">Troubleshooting</span>
+        </button>
+
+        <button class="step-link" data-target="s12">
+            <span class="step-number">12</span>
+            <span class="step-title">New Vocabulary</span>
+        </button>
+
+        <button class="step-link" data-target="s13">
+            <span class="step-number">13</span>
+            <span class="step-title">What You Learned</span>
+        </button>
+
+        <button class="step-link" data-target="s14">
+            <span class="step-number">14</span>
+            <span class="step-title">Next Project</span>
+        </button>
+
+    </nav>
+
+</aside>
+
+
+<!-- =====================================================
+     MAIN
+     ===================================================== -->
+
+<main class="main">
+
+    <div class="content">
+
+        <!-- HERO -->
+
+        <section class="hero">
+
+            <div class="eyebrow">
+                ESP32 / Hands-On Electronics / Project 04
+            </div>
+
+            <h1>
+                LED <span>+</span> BUTTON
+            </h1>
+
+            <p class="hero-subtitle">
+                Hey my broo 👋<br><br>
+
+                Welcome back! ⚡<br><br>
+
+                Up to this point, the ESP32 has only been
+                <strong>talking</strong> (Output).
+                It has been blindly running loops and flashing
+                lights without caring about what is happening
+                around it.
+                <br><br>
+
+                Today, we're going to teach the ESP32 how to
+                <strong>listen</strong> to the outside world.
+                We are going to introduce a physical push button.
+                <br><br>
+
+                We're going to go from:
+                <br>
+                <strong>"My ESP32 just runs a timer loop."</strong>
+                <br><br>
+                to:
+                <br>
+                <strong>
+                    "My ESP32 makes a decision and reacts when
+                    I press a physical button!" 😎
+                </strong>
+            </p>
+
+        </section>
+
+
+        <!-- =================================================
+             01
+             ================================================= -->
+
+        <section class="section" id="s1">
+
+            <div class="section-header">
+                <div class="section-number">01</div>
+
+                <h2 class="section-title">
+                    🧰 What You Have
+                </h2>
+            </div>
+
+            <div class="section-content">
+
+                <ul>
+                    <li>💻 Windows laptop/PC</li>
+                    <li>🔌 USB cable</li>
+                    <li>🟦 ESP32 DevKit V1</li>
+                    <li>🍞 1x Breadboard</li>
+                    <li>💡 1x LED</li>
+                    <li>🔘 1x Push button (Tactile switch)</li>
+                    <li>🔗 Jumper wires</li>
+                </ul>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             02
+             ================================================= -->
+
+        <section class="section" id="s2">
+
+            <div class="section-header">
+                <div class="section-number">02</div>
+
+                <h2 class="section-title">
+                    🧠 What Are We Learning?
+                </h2>
+            </div>
+
+            <div class="section-content">
+
+                <p>
+                    Today we are learning about
+                    <strong>Digital Input</strong>
+                    and
+                    <strong>Decision Making</strong>.
+                </p>
+
+                <div class="callout">
+
+                    <div class="callout-title">
+                        Digital Input
+                    </div>
+
+                    <p>
+                        Instead of pushing electricity
+                        <strong>out</strong> (Output), the ESP32
+                        can listen to a pin to see if electricity
+                        is coming <strong>in</strong> (Input).
+                    </p>
+
+                </div>
+
+                <p>
+                    Because it is "Digital", it only understands
+                    two answers:
+                </p>
+
+                <ul>
+                    <li>
+                        <strong>HIGH:</strong>
+                        "I detect voltage!"
+                    </li>
+
+                    <li>
+                        <strong>LOW:</strong>
+                        "I detect nothing (0 volts)!"
+                    </li>
+                </ul>
+
+
+                <div class="callout">
+
+                    <div class="callout-title">
+                        The Magic of INPUT_PULLUP
+                    </div>
+
+                    <p>
+                        If a pin is just floating in the air,
+                        the ESP32 gets confused. It might randomly
+                        read HIGH or LOW just from the static
+                        electricity in your room.
+                        <br><br>
+
+                        To fix this, the ESP32 has tiny,
+                        invisible resistors built
+                        <strong>inside the chip</strong>.
+                        By using a mode called
+                        <code>INPUT_PULLUP</code>, we turn on
+                        a tiny stream of internal power to the pin.
+                        <br><br>
+
+                        When the button is
+                        <strong>NOT pressed</strong>,
+                        the pin feels its own power and reads
+                        <strong>HIGH</strong>.
+                        <br><br>
+
+                        When you <strong>PRESS</strong> the button,
+                        the power is pulled down to Ground,
+                        and the pin reads <strong>LOW</strong>.
+                    </p>
+
+                </div>
+
+
+                <div class="callout">
+
+                    <div class="callout-title">
+                        Decision Making — if / else
+                    </div>
+
+                    <p>
+                        We are going to give the ESP32 a brain today.
+                        We will tell it:
+                        <br><br>
+
+                        <strong>
+                            "IF the button is pressed, do this.
+                            ELSE (otherwise), do that."
+                        </strong>
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             03
+             ================================================= -->
+
+        <section class="section" id="s3">
+
+            <div class="section-header">
+                <div class="section-number">03</div>
+
+                <h2 class="section-title">
+                    🔌 Wiring
+                </h2>
+            </div>
+
+            <div class="section-content">
+
+                <p>
+                    <strong>1. The LED:</strong>
+                </p>
+
+                <p>
+                    Leave your LED exactly where it was.
+                </p>
+
+                <ul>
+                    <li>
+                        Long leg to <code>D2</code>.
+                    </li>
+
+                    <li>
+                        Short leg to the
+                        <strong>Blue GND rail</strong>.
+                    </li>
+                </ul>
+
+
+                <p>
+                    <strong>2. The Button:</strong>
+                </p>
+
+                <p>
+                    Look at your tactile push button.
+                    It usually has 4 slightly bent legs.
+                </p>
+
+                <p>
+                    Push it into the breadboard so it straddles
+                    the deep trench down the middle.
+                    This ensures the left legs don't touch the
+                    right legs.
+                </p>
+
+                <ul>
+                    <li>
+                        Connect a jumper wire from
+                        <strong>D14</strong> on the ESP32
+                        to one leg of the button.
+                    </li>
+
+                    <li>
+                        Connect another jumper wire from the
+                        <strong>opposite leg</strong> of the
+                        button to the
+                        <strong>Blue GND rail</strong>.
+                    </li>
+                </ul>
+
+
+                <div class="callout">
+
+                    <div class="callout-title">
+                        Why no power wire?
+                    </div>
+
+                    <p>
+                        Nope! Remember, we are using the ESP32's
+                        hidden internal power through
+                        <code>INPUT_PULLUP</code>.
+                    </p>
+
+                </div>
+
+
+                <div class="diagram">
+```
+
+<pre>
+ ESP32                 BREADBOARD
+
+  D2 ───────────────► Long Leg (LED)
+
+
+ D14 ───────────────► Button Leg 1
+
+
+ GND ───────────────► [ Blue Power Rail ]
+                              ▲
+                              │
+                  ┌───────────┴───────────┐
+                  │                       │
+             LED Short Leg          Button Leg 2
+</pre>
+
+```
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             04
+             ================================================= -->
+
+        <section class="section" id="s4">
+
+            <div class="section-header">
+                <div class="section-number">04</div>
+
+                <h2 class="section-title">
+                    💻 Create the Project
+                </h2>
+            </div>
+
+            <div class="section-content">
+
+                <ol class="instruction-list">
+
+                    <li>
+                        <span class="num">1</span>
+                        <span>
+                            Open <strong>VS Code</strong> and go to
+                            PlatformIO 🧩.
+                        </span>
+                    </li>
+
+                    <li>
+                        <span class="num">2</span>
+                        <span>
+                            Click <strong>New Project</strong>.
+                        </span>
+                    </li>
+
+                    <li>
+                        <span class="num">3</span>
+                        <span>
+                            Name it:
+                            <code>ESP32-04-Button</code>
+                        </span>
+                    </li>
+
+                    <li>
+                        <span class="num">4</span>
+                        <span>
+                            Board:
+                            <strong>DOIT ESP32 DEVKIT V1</strong>
+                        </span>
+                    </li>
+
+                    <li>
+                        <span class="num">5</span>
+                        <span>
+                            Framework:
+                            <strong>Arduino</strong>
+                        </span>
+                    </li>
+
+                    <li>
+                        <span class="num">6</span>
+                        <span>
+                            Click <strong>Finish</strong>.
+                        </span>
+                    </li>
+
+                    <li>
+                        <span class="num">7</span>
+                        <span>
+                            Open
+                            <code>src/main.cpp</code>.
+                        </span>
+                    </li>
+
+                </ol>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             05
+             ================================================= -->
+
+        <section class="section" id="s5">
+
+            <div class="section-header">
+                <div class="section-number">05</div>
+
+                <h2 class="section-title">
+                    📄 Complete Code
+                </h2>
+            </div>
+
+            <div class="section-content">
+
+                <p>
+                    Delete the default code in
+                    <code>main.cpp</code>
+                    and paste this in:
+                </p>
+
+
+                <div class="code-wrap">
+
+                    <div class="code-head">
+
+                        <span class="code-language">
+                            C++
+                        </span>
+
+                        <button
+                            class="copy-btn"
+                            onclick="copyCode(this)"
+                        >
+                            COPY
+                        </button>
+
+                    </div>
+```
+
+<pre><code>/*
+ * ============================================================
+ * MY BRO'S FOURTH ESP32 PROGRAM: DIGITAL INPUT
+ * ============================================================
+ */
+
+// Name our pins
+const int LED_PIN = 2;
+const int BUTTON_PIN = 14;
+
+void setup()
+{
+    // LED sends power OUT
+    pinMode(LED_PIN, OUTPUT);
+
+    // Button READS power,
+    // and we turn on the internal resistor!
+    pinMode(BUTTON_PIN, INPUT_PULLUP);
+}
+
+void loop()
+{
+    // 1. READ THE BUTTON
+    // We create a variable called 'buttonState'
+    // to store what the ESP32 hears.
+    // digitalRead() returns either HIGH or LOW.
+
+    int buttonState = digitalRead(BUTTON_PIN);
+
+    // 2. MAKE A DECISION
+    // Because of INPUT_PULLUP,
+    // pressing the button connects it to GND (LOW).
+
+    if (buttonState == LOW)
+    {
+        // IF the button is PRESSED
+        // Turn the LED ON
+
+        digitalWrite(LED_PIN, HIGH);
+    }
+    else
+    {
+        // ELSE (if it is NOT pressed)
+        // Turn the LED OFF
+
+        digitalWrite(LED_PIN, LOW);
+    }
+}</code></pre>
+
+```
+                </div>
+
+                <p>
+                    Save your code with
+                    <strong>Ctrl + S</strong>!
+                </p>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             06
+             ================================================= -->
+
+        <section class="section" id="s6">
+
+            <div class="section-header">
+                <div class="section-number">06</div>
+
+                <h2 class="section-title">
+                    🧠 Understand the Code
+                </h2>
+            </div>
+
+            <div class="section-content">
+
+                <p>
+                    Let's look at the three new heavy-hitters
+                    in your programming toolbelt:
+                </p>
+
+
+                <div class="callout">
+
+                    <div class="callout-title">
+                        INPUT_PULLUP
+                    </div>
+
+                    <p>
+                        Used inside <code>setup()</code>.
+                        It tells the ESP32 to listen, and securely
+                        pulls the pin to HIGH when nobody is touching
+                        the button.
+                    </p>
+
+                </div>
+
+
+                <div class="callout">
+
+                    <div class="callout-title">
+                        digitalRead()
+                    </div>
+
+                    <p>
+                        Instead of <em>writing</em> (sending)
+                        electricity, this function
+                        <em>reads</em> (listens to) the electricity
+                        on the pin.
+                    </p>
+
+                </div>
+
+
+                <div class="callout">
+
+                    <div class="callout-title">
+                        if / else
+                    </div>
+
+                    <p>
+                        This is how all computers make decisions.
+                        The code checks the condition inside the
+                        parentheses <code>()</code>.
+                        If it is true, it runs the first block.
+                        If it is false, it skips to
+                        <code>else</code>.
+                    </p>
+
+                </div>
+
+
+                <p>
+                    Notice that we use a
+                    <strong>double equals sign</strong>
+                    <code>==</code>
+                    inside the <code>if</code> statement!
+                </p>
+
+                <div class="callout">
+
+                    <div class="callout-title">
+                        = vs ==
+                    </div>
+
+                    <p>
+                        A single <code>=</code> means
+                        "put this value in a box".
+                        <br><br>
+
+                        A double <code>==</code> means
+                        "compare these two things to see if they
+                        are the same".
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             07
+             ================================================= -->
+
+        <section class="section" id="s7">
+
+            <div class="section-header">
+                <div class="section-number">07</div>
+
+                <h2 class="section-title">
+                    🚀 Build + Upload
+                </h2>
+            </div>
+
+            <div class="section-content">
+
+                <div class="callout">
+
+                    <div class="callout-title">
+                        The Pipeline
+                    </div>
+
+                    <p>
+                        <strong>
+                            WRITE CODE
+                            →
+                            BUILD
+                            →
+                            UPLOAD
+                            →
+                            ESP32 RUNS PROGRAM
+                            →
+                            HARDWARE RESPONDS
+                        </strong>
+                    </p>
+
+                </div>
+
+                <ol>
+                    <li>
+                        Connect the USB.
+                    </li>
+
+                    <li>
+                        Click <strong>Build (✓)</strong>.
+                    </li>
+
+                    <li>
+                        Click <strong>Upload (→)</strong>.
+                    </li>
+                </ol>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             08
+             ================================================= -->
+
+        <section class="section" id="s8">
+
+            <div class="section-header">
+                <div class="section-number">08</div>
+
+                <h2 class="section-title">
+                    👀 What Should Happen?
+                </h2>
+            </div>
+
+            <div class="section-content">
+
+                <ol>
+                    <li>
+                        When you aren't touching anything,
+                        the LED should be <strong>OFF</strong>.
+                    </li>
+
+                    <li>
+                        Press and hold the button.
+                        The LED instantly turns <strong>ON</strong>.
+                    </li>
+
+                    <li>
+                        Let go of the button.
+                        The LED instantly turns <strong>OFF</strong>.
+                    </li>
+                </ol>
+
+                <div class="callout">
+
+                    <div class="callout-title">
+                        Achievement Unlocked
+                    </div>
+
+                    <p>
+                        You have built a
+                        <strong>momentary switch</strong>.
+                        The ESP32 is now responding to a physical
+                        input in real time.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             09
+             ================================================= -->
+
+        <section class="section" id="s9">
+
+            <div class="section-header">
+                <div class="section-number">09</div>
+
+                <h2 class="section-title">
+                    🧪 Experiment
+                </h2>
+            </div>
+
+            <div class="section-content">
+
+                <p>
+                    Let's flip the logic!
+                </p>
+
+                <p>
+                    Find this part of your code:
+                </p>
+
+
+                <div class="code-wrap">
+
+                    <div class="code-head">
+                        <span class="code-language">
+                            C++
+                        </span>
+
+                        <button
+                            class="copy-btn"
+                            onclick="copyCode(this)"
+                        >
+                            COPY
+                        </button>
+                    </div>
+```
+
+<pre><code>if (buttonState == LOW)
+{
+</code></pre>
+
+```
+                </div>
+
+
+                <p>
+                    Change it to:
+                </p>
+
+
+                <div class="code-wrap">
+
+                    <div class="code-head">
+                        <span class="code-language">
+                            C++
+                        </span>
+
+                        <button
+                            class="copy-btn"
+                            onclick="copyCode(this)"
+                        >
+                            COPY
+                        </button>
+                    </div>
+```
+
+<pre><code>if (buttonState == HIGH)
+{
+</code></pre>
+
+```
+                </div>
+
+
+                <p>
+                    Save and Upload.
+                </p>
+
+                <p>
+                    What happens now?
+                    Because <code>INPUT_PULLUP</code> makes the
+                    unpressed state <strong>HIGH</strong>,
+                    the LED will stay ON all the time,
+                    and pushing the button will actually turn it OFF!
+                </p>
+
+
+                <div class="callout warning">
+
+                    <div class="callout-title">
+                        Remember
+                    </div>
+
+                    <p>
+                        Don't forget to change it back to
+                        <code>LOW</code>
+                        when you are done playing!
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             10
+             ================================================= -->
+
+        <section class="section" id="s10">
+
+            <div class="section-header">
+                <div class="section-number">10</div>
+
+                <h2 class="section-title">
+                    🔥 Challenge
+                </h2>
+            </div>
+
+            <div class="section-content">
+
+                <p>
+                    You know how to use multiple LEDs from
+                    Project 03, and you know how to use an
+                    <code>if / else</code> statement.
+                </p>
+
+                <div class="callout">
+
+                    <div class="callout-title">
+                        Your Objective
+                    </div>
+
+                    <p>
+                        Add a second LED to your breadboard
+                        (maybe on pin <code>D4</code>).
+                        Make it so the two LEDs swap places
+                        when you press the button!
+                    </p>
+
+                </div>
+
+
+                <p>
+                    <strong>Requirements:</strong>
+                </p>
+
+                <ul>
+                    <li>
+                        When the button is NOT pressed:
+                        LED 1 is OFF, LED 2 is ON.
+                    </li>
+
+                    <li>
+                        When the button IS pressed:
+                        LED 1 turns ON, LED 2 turns OFF.
+                    </li>
+                </ul>
+
+
+                <div class="callout">
+
+                    <div class="callout-title">
+                        Hint
+                    </div>
+
+                    <p>
+                        Inside your <code>if</code> and
+                        <code>else</code> brackets
+                        <code>{ }</code>,
+                        you can write as many
+                        <code>digitalWrite</code>
+                        commands as you want!
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             11
+             ================================================= -->
+
+        <section class="section" id="s11">
+
+            <div class="section-header">
+                <div class="section-number">11</div>
+
+                <h2 class="section-title">
+                    🐛 Troubleshooting
+                </h2>
+            </div>
+
+            <div class="section-content">
+
+                <div class="callout warning">
+
+                    <div class="callout-title">
+                        LED always ON / acting randomly
+                    </div>
+
+                    <p>
+                        Did you write <code>INPUT</code> instead of
+                        <code>INPUT_PULLUP</code>?
+                        Without the pull-up, the pin is
+                        "floating" and can read static electricity
+                        from the air.
+                    </p>
+
+                </div>
+
+
+                <div class="callout warning">
+
+                    <div class="callout-title">
+                        Button does nothing
+                    </div>
+
+                    <p>
+                        Tactile buttons have 4 legs.
+                        If you wired into two legs that are
+                        permanently connected inside the plastic,
+                        it won't work.
+                        <br><br>
+
+                        Make sure your wires go to legs on
+                        <strong>opposite sides of the breadboard
+                        trench</strong>.
+                    </p>
+
+                </div>
+
+
+                <div class="callout danger">
+
+                    <div class="callout-title">
+                        Code error
+                    </div>
+
+                    <p>
+                        Did you use
+                        <code>=</code>
+                        instead of
+                        <code>==</code>
+                        in your <code>if</code> statement?
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             12
+             ================================================= -->
+
+        <section class="section" id="s12">
+
+            <div class="section-header">
+                <div class="section-number">12</div>
+
+                <h2 class="section-title">
+                    🧠 New Vocabulary
+                </h2>
+            </div>
+
+            <div class="section-content">
+
+                <div class="table-wrap">
+
+                    <table>
+
+                        <thead>
+                            <tr>
+                                <th>Word</th>
+                                <th>Meaning</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            <tr>
+                                <td>
+                                    <strong>Input</strong>
+                                </td>
+
+                                <td>
+                                    A pin configured to listen to
+                                    signals coming from outside
+                                    the ESP32.
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    <strong>INPUT_PULLUP</strong>
+                                </td>
+
+                                <td>
+                                    An input mode that activates
+                                    an internal resistor, keeping
+                                    the pin safely HIGH until a
+                                    button connects it to LOW.
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    <strong>digitalRead()</strong>
+                                </td>
+
+                                <td>
+                                    The code command used to check
+                                    if a pin is currently HIGH
+                                    or LOW.
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    <strong>if / else</strong>
+                                </td>
+
+                                <td>
+                                    A programming structure used
+                                    to make decisions based on
+                                    changing conditions.
+                                </td>
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             13
+             ================================================= -->
+
+        <section class="section" id="s13">
+
+            <div class="section-header">
+                <div class="section-number">13</div>
+
+                <h2 class="section-title">
+                    🎯 What You Just Learned
+                </h2>
+            </div>
+
+            <div class="section-content">
+
+                <div class="callout">
+
+                    <div class="callout-title">
+                        Huge Milestone
+                    </div>
+
+                    <p>
+                        You just taught the ESP32 how to read
+                        physical hardware and make decisions
+                        in real time.
+                        <br><br>
+
+                        You learned how to use
+                        <code>digitalRead()</code>
+                        and how to write logic using
+                        <code>if / else</code>
+                        statements.
+                        <br><br>
+
+                        Your ESP32 is no longer just following
+                        a blind timer —
+                        it is now an
+                        <strong>interactive machine.</strong>
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             14
+             ================================================= -->
+
+        <section class="section" id="s14">
+
+            <div class="section-header">
+                <div class="section-number">14</div>
+
+                <h2 class="section-title">
+                    🚀 Next Project
+                </h2>
+            </div>
+
+            <div class="section-content">
+
+                <p>
+                    Right now, you have to
+                    <em>hold</em> the button down to keep the
+                    light on.
+                </p>
+
+                <p>
+                    But the light switch in your bedroom doesn't
+                    work like that!
+                </p>
+
+                <p>
+                    You tap it once to turn it on,
+                    and tap it again to turn it off.
+                </p>
+
+                <div class="callout">
+
+                    <div class="callout-title">
+                        Project 05
+                    </div>
+
+                    <p>
+                        In
+                        <strong>
+                            Project 05 — Button Toggle
+                        </strong>,
+                        we are going to give the ESP32 a
+                        "memory" so it can remember whether the
+                        light is supposed to be ON or OFF.
+                    </p>
+
+                </div>
+
+                <p>
+                    Say <strong>"next"</strong> when you are ready
+                    to give your ESP32 a memory! ⚡
+                </p>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             BOTTOM NAV
+             ================================================= -->
+
+        <div class="bottom-nav">
+
+            <button
+                class="nav-btn"
+                id="prevBtn"
+            >
+                <span class="nav-label">
+                    Previous
+                </span>
+
+                Project 03 — 3-LED
+            </button>
+
+
+            <button
+                class="nav-btn next"
+                id="nextBtn"
+            >
+                <span class="nav-label">
+                    Next
+                </span>
+
+                Project 05 — Button Toggle
+            </button>
+
+        </div>
+
+    </div>
+
+</main>
+```
+
+</div>
+
+<script>
+    /* =========================================================
+       NAVIGATION ENGINE
+       ========================================================= */
+
+    const sections = [
+        "s1",
+        "s2",
+        "s3",
+        "s4",
+        "s5",
+        "s6",
+        "s7",
+        "s8",
+        "s9",
+        "s10",
+        "s11",
+        "s12",
+        "s13",
+        "s14"
+    ];
+
+    const stepLinks =
+        document.querySelectorAll(".step-link");
+
+    const progressBar =
+        document.getElementById("progressBar");
+
+    const progressText =
+        document.getElementById("progressText");
+
+    let currentIndex = 0;
+
+
+    function goTo(index) {
+
+        index = Math.max(
+            0,
+            Math.min(index, sections.length - 1)
+        );
+
+        currentIndex = index;
+
+        const target =
+            document.getElementById(sections[index]);
+
+        if (target) {
+
+            target.scrollIntoView({
+                behavior: "smooth",
+                block: "start"
+            });
+
+        }
+
+        updateNavigation();
+    }
+
+
+    function updateNavigation() {
+
+        stepLinks.forEach((link, index) => {
+
+            link.classList.toggle(
+                "active",
+                index === currentIndex
+            );
+
+        });
+
+
+        const progress =
+            ((currentIndex + 1) / sections.length) * 100;
+
+        progressBar.style.width =
+            progress + "%";
+
+        progressText.textContent =
+            `${currentIndex + 1} / ${sections.length}`;
+    }
+
+
+    stepLinks.forEach((link, index) => {
+
+        link.addEventListener(
+            "click",
+            () => goTo(index)
+        );
+
+    });
+
+
+    document
+        .getElementById("prevBtn")
+        .addEventListener(
+            "click",
+            () => goTo(currentIndex - 1)
+        );
+
+
+    document
+        .getElementById("nextBtn")
+        .addEventListener(
+            "click",
+            () => goTo(currentIndex + 1)
+        );
+
+
+    /* =========================================================
+       KEYBOARD NAVIGATION
+       ========================================================= */
+
+    document.addEventListener(
+        "keydown",
+        event => {
+
+            if (
+                event.key === "ArrowRight" ||
+                event.key === "ArrowDown"
+            ) {
+
+                goTo(currentIndex + 1);
+
+            }
+
+            if (
+                event.key === "ArrowLeft" ||
+                event.key === "ArrowUp"
+            ) {
+
+                goTo(currentIndex - 1);
+
+            }
+
+        }
+    );
+
+
+    /* =========================================================
+       SCROLL TRACKING
+       ========================================================= */
+
+    const observer =
+        new IntersectionObserver(
+            entries => {
+
+                entries.forEach(entry => {
+
+                    if (entry.isIntersecting) {
+
+                        const index =
+                            sections.indexOf(entry.target.id);
+
+                        if (index !== -1) {
+
+                            currentIndex = index;
+
+                            updateNavigation();
+
+                        }
+
+                    }
+
+                });
+
+            },
+            {
+                rootMargin:
+                    "-25% 0px -60% 0px"
+            }
+        );
+
+
+    sections.forEach(id => {
+
+        const section =
+            document.getElementById(id);
+
+        if (section) {
+            observer.observe(section);
+        }
+
+    });
+
+
+    /* =========================================================
+       COPY CODE
+       ========================================================= */
+
+    function copyCode(button) {
+
+        const code =
+            button
+                .closest(".code-wrap")
+                .querySelector("code");
+
+        if (!code) return;
+
+        navigator.clipboard
+            .writeText(code.innerText)
+            .then(() => {
+
+                const original =
+                    button.textContent;
+
+                button.textContent =
+                    "COPIED";
+
+                button.style.color =
+                    "var(--neon)";
+
+                setTimeout(() => {
+
+                    button.textContent =
+                        original;
+
+                    button.style.color =
+                        "";
+
+                }, 1300);
+
+            });
+
+    }
+
+
+    /* =========================================================
+       INITIAL STATE
+       ========================================================= */
+
+    updateNavigation();
+
+</script>
+
+</body>
+</html>
