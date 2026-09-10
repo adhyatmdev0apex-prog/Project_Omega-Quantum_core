@@ -1,0 +1,2768 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>ESP32 — Project 02: Blink Patterns</title>
+
+    <style>
+        :root {
+            --bg: #030806;
+            --panel: #06100c;
+            --panel-2: #08150f;
+
+            --line: rgba(80, 255, 150, 0.13);
+
+            --green: #39ff88;
+            --green-2: #12d96b;
+            --cyan: #24e7d1;
+
+            --text: #e7fff0;
+            --muted: #789487;
+            --dim: #40584a;
+
+            --danger: #ff647c;
+            --yellow: #ffd166;
+
+            --shadow: 0 0 35px rgba(20, 255, 110, 0.06);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+
+            background:
+                radial-gradient(
+                    circle at 75% 0%,
+                    rgba(25, 255, 120, 0.08),
+                    transparent 28%
+                ),
+                radial-gradient(
+                    circle at 15% 80%,
+                    rgba(0, 210, 180, 0.035),
+                    transparent 30%
+                ),
+                var(--bg);
+
+            color: var(--text);
+
+            font-family:
+                Inter,
+                ui-sans-serif,
+                system-ui,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+        }
+
+        body::before {
+            content: "";
+
+            position: fixed;
+            inset: 0;
+
+            pointer-events: none;
+
+            opacity: 0.18;
+
+            background-image:
+                linear-gradient(
+                    rgba(70, 255, 140, 0.035) 1px,
+                    transparent 1px
+                ),
+                linear-gradient(
+                    90deg,
+                    rgba(70, 255, 140, 0.035) 1px,
+                    transparent 1px
+                );
+
+            background-size: 36px 36px;
+        }
+
+        /* =====================================================
+           MAIN SHELL
+        ===================================================== */
+
+        .shell {
+            display: grid;
+            grid-template-columns: 275px 1fr;
+            min-height: 100vh;
+        }
+
+        /* =====================================================
+           SIDEBAR
+        ===================================================== */
+
+        .sidebar {
+            position: sticky;
+            top: 0;
+
+            height: 100vh;
+
+            overflow-y: auto;
+
+            border-right: 1px solid var(--line);
+
+            background:
+                linear-gradient(
+                    180deg,
+                    rgba(3, 12, 8, 0.97),
+                    rgba(2, 8, 6, 0.97)
+                );
+
+            padding: 26px 18px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+
+            gap: 12px;
+
+            padding: 4px 8px 25px;
+        }
+
+        .brand-dot {
+            width: 30px;
+            height: 30px;
+
+            display: grid;
+            place-items: center;
+
+            border: 2px solid var(--green);
+            border-radius: 50%;
+
+            box-shadow:
+                0 0 18px rgba(57, 255, 136, 0.22);
+        }
+
+        .brand-dot::after {
+            content: "";
+
+            width: 8px;
+            height: 8px;
+
+            background: var(--green);
+
+            border-radius: 50%;
+        }
+
+        .brand strong {
+            font-size: 13px;
+            letter-spacing: 0.12em;
+        }
+
+        .brand small {
+            display: block;
+
+            margin-top: 3px;
+
+            color: var(--green);
+
+            font:
+                8px ui-monospace,
+                SFMono-Regular,
+                Menlo,
+                Consolas,
+                monospace;
+
+            letter-spacing: 0.2em;
+        }
+
+        .progress-wrap {
+            padding: 15px 8px;
+
+            border-top: 1px solid var(--line);
+            border-bottom: 1px solid var(--line);
+
+            margin-bottom: 17px;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+
+            color: var(--muted);
+
+            font:
+                9px ui-monospace,
+                SFMono-Regular,
+                Menlo,
+                Consolas,
+                monospace;
+
+            text-transform: uppercase;
+
+            letter-spacing: 0.13em;
+        }
+
+        .progress {
+            height: 4px;
+
+            margin-top: 10px;
+
+            overflow: hidden;
+
+            background: #102219;
+
+            border-radius: 10px;
+        }
+
+        .progress-bar {
+            width: 7%;
+            height: 100%;
+
+            background: var(--green);
+
+            box-shadow: 0 0 12px var(--green);
+
+            transition: width 0.25s ease;
+        }
+
+        .nav-title {
+            padding: 9px 8px;
+
+            color: #315041;
+
+            font:
+                8px ui-monospace,
+                SFMono-Regular,
+                Menlo,
+                Consolas,
+                monospace;
+
+            text-transform: uppercase;
+
+            letter-spacing: 0.2em;
+        }
+
+        .nav button {
+            width: 100%;
+
+            display: flex;
+            align-items: center;
+
+            gap: 9px;
+
+            padding: 9px 10px;
+
+            border: 0;
+            border-radius: 7px;
+
+            background: transparent;
+
+            color: #728c7e;
+
+            text-align: left;
+
+            cursor: pointer;
+
+            font:
+                10px ui-monospace,
+                SFMono-Regular,
+                Menlo,
+                Consolas,
+                monospace;
+
+            transition: 0.2s;
+        }
+
+        .nav button:hover {
+            background: rgba(57, 255, 136, 0.055);
+
+            color: #b8ffd1;
+        }
+
+        .nav button.active {
+            background: rgba(57, 255, 136, 0.09);
+
+            color: var(--green);
+
+            box-shadow:
+                inset 2px 0 var(--green);
+        }
+
+        .num {
+            width: 22px;
+
+            color: #365345;
+        }
+
+        /* =====================================================
+           MAIN
+        ===================================================== */
+
+        .main {
+            min-width: 0;
+
+            padding:
+                34px
+                clamp(22px, 5vw, 75px)
+                80px;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            gap: 15px;
+
+            margin-bottom: 28px;
+        }
+
+        .eyebrow {
+            color: var(--green);
+
+            font:
+                9px ui-monospace,
+                SFMono-Regular,
+                Menlo,
+                Consolas,
+                monospace;
+
+            text-transform: uppercase;
+
+            letter-spacing: 0.22em;
+        }
+
+        .status {
+            padding: 7px 12px;
+
+            border: 1px solid var(--line);
+
+            border-radius: 999px;
+
+            color: #74a88b;
+
+            font:
+                8px ui-monospace,
+                SFMono-Regular,
+                Menlo,
+                Consolas,
+                monospace;
+
+            text-transform: uppercase;
+
+            letter-spacing: 0.12em;
+        }
+
+        .status::before {
+            content: "";
+
+            display: inline-block;
+
+            width: 5px;
+            height: 5px;
+
+            margin-right: 7px;
+
+            background: var(--green);
+
+            border-radius: 50%;
+
+            box-shadow:
+                0 0 8px var(--green);
+        }
+
+        /* =====================================================
+           STEPS
+        ===================================================== */
+
+        .step {
+            display: none;
+
+            max-width: 1000px;
+
+            margin: 0 auto;
+
+            animation: enter 0.28s ease;
+        }
+
+        .step.active {
+            display: block;
+        }
+
+        @keyframes enter {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* =====================================================
+           HERO
+        ===================================================== */
+
+        .hero {
+            position: relative;
+
+            min-height: 380px;
+
+            display: flex;
+            align-items: center;
+
+            overflow: hidden;
+
+            padding:
+                clamp(28px, 6vw, 70px);
+
+            border: 1px solid var(--line);
+
+            border-radius: 22px;
+
+            background:
+                radial-gradient(
+                    circle at 80% 20%,
+                    rgba(57, 255, 136, 0.12),
+                    transparent 28%
+                ),
+                linear-gradient(
+                    135deg,
+                    rgba(7, 23, 15, 0.96),
+                    rgba(3, 10, 7, 0.94)
+                );
+
+            box-shadow: var(--shadow);
+        }
+
+        .hero::after {
+            content: "02";
+
+            position: absolute;
+
+            right: -10px;
+            bottom: -55px;
+
+            color: rgba(57, 255, 136, 0.025);
+
+            font:
+                900 240px/1 ui-monospace,
+                SFMono-Regular,
+                Menlo,
+                Consolas,
+                monospace;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        h1 {
+            margin: 15px 0 22px;
+
+            font-size: clamp(38px, 6vw, 76px);
+
+            line-height: 0.98;
+
+            letter-spacing: -0.045em;
+        }
+
+        h1 span {
+            color: var(--green);
+
+            text-shadow:
+                0 0 25px rgba(57, 255, 136, 0.2);
+        }
+
+        h2 {
+            margin: 0 0 13px;
+
+            font-size: clamp(26px, 3vw, 40px);
+
+            letter-spacing: -0.03em;
+        }
+
+        h3 {
+            margin: 0 0 9px;
+
+            font-size: 17px;
+        }
+
+        p {
+            color: #a2b9ab;
+
+            font-size: 15px;
+
+            line-height: 1.75;
+        }
+
+        .hero p {
+            max-width: 650px;
+
+            font-size: 16px;
+        }
+
+        code,
+        .mono {
+            font-family:
+                ui-monospace,
+                SFMono-Regular,
+                Menlo,
+                Consolas,
+                monospace;
+        }
+
+        .tag {
+            display: inline-block;
+
+            padding: 6px 10px;
+
+            border: 1px solid rgba(57, 255, 136, 0.2);
+
+            border-radius: 999px;
+
+            background: rgba(57, 255, 136, 0.04);
+
+            color: #8dffb5;
+
+            font:
+                9px ui-monospace,
+                SFMono-Regular,
+                Menlo,
+                Consolas,
+                monospace;
+
+            text-transform: uppercase;
+
+            letter-spacing: 0.13em;
+        }
+
+        /* =====================================================
+           CARDS
+        ===================================================== */
+
+        .card {
+            margin-top: 20px;
+
+            padding: 24px;
+
+            border: 1px solid var(--line);
+
+            border-radius: 17px;
+
+            background: rgba(5, 15, 10, 0.84);
+
+            box-shadow: var(--shadow);
+        }
+
+        .card.green {
+            border-color: rgba(57, 255, 136, 0.25);
+        }
+
+        .grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(2, minmax(0, 1fr));
+
+            gap: 15px;
+
+            margin-top: 18px;
+        }
+
+        .item {
+            padding: 17px;
+
+            border: 1px solid var(--line);
+
+            border-radius: 12px;
+
+            background: rgba(8, 20, 14, 0.65);
+        }
+
+        .item b {
+            color: #d8ffe5;
+        }
+
+        .item p {
+            margin: 7px 0 0;
+
+            font-size: 13px;
+        }
+
+        /* =====================================================
+           FLOW
+        ===================================================== */
+
+        .flow {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+
+            gap: 10px;
+
+            margin: 24px 0;
+        }
+
+        .flow span {
+            padding: 11px 14px;
+
+            border: 1px solid rgba(57, 255, 136, 0.2);
+
+            border-radius: 9px;
+
+            background: #07140d;
+
+            color: #9fffb9;
+
+            font:
+                10px ui-monospace,
+                SFMono-Regular,
+                Menlo,
+                Consolas,
+                monospace;
+        }
+
+        .arrow {
+            color: var(--green);
+
+            font-size: 18px;
+        }
+
+        /* =====================================================
+           DIAGRAM
+        ===================================================== */
+
+        .diagram {
+            margin-top: 18px;
+
+            padding: 24px;
+
+            border: 1px solid rgba(57, 255, 136, 0.15);
+
+            border-radius: 14px;
+
+            background: #020604;
+
+            text-align: center;
+        }
+
+        .diagram pre {
+            display: inline-block;
+
+            margin: 0;
+
+            color: #75ffad;
+
+            text-align: left;
+
+            font:
+                14px/1.6 ui-monospace,
+                SFMono-Regular,
+                Menlo,
+                Consolas,
+                monospace;
+        }
+
+        /* =====================================================
+           CODE
+        ===================================================== */
+
+        .code {
+            position: relative;
+
+            margin-top: 18px;
+
+            overflow: auto;
+
+            border: 1px solid rgba(57, 255, 136, 0.17);
+
+            border-radius: 13px;
+
+            background: #020604;
+        }
+
+        .code-label {
+            padding: 9px 13px;
+
+            border-bottom: 1px solid rgba(57, 255, 136, 0.1);
+
+            color: #3d7053;
+
+            font:
+                8px ui-monospace,
+                SFMono-Regular,
+                Menlo,
+                Consolas,
+                monospace;
+
+            text-transform: uppercase;
+
+            letter-spacing: 0.16em;
+        }
+
+        pre.codebody {
+            min-width: max-content;
+
+            margin: 0;
+
+            padding: 20px;
+
+            color: #d8ffe5;
+
+            font:
+                13px/1.65 ui-monospace,
+                SFMono-Regular,
+                Menlo,
+                Consolas,
+                monospace;
+
+            white-space: pre;
+        }
+
+        /* =====================================================
+           CALLOUTS
+        ===================================================== */
+
+        .callout {
+            margin: 18px 0;
+
+            padding: 17px 19px;
+
+            border-left: 3px solid var(--green);
+
+            border-radius: 0 10px 10px 0;
+
+            background: rgba(57, 255, 136, 0.045);
+
+            color: #a9c7b4;
+        }
+
+        .callout strong {
+            color: #dcffe8;
+        }
+
+        .callout.warn {
+            border-left-color: var(--yellow);
+
+            background: rgba(255, 209, 102, 0.045);
+        }
+
+        .challenge {
+            border-color: rgba(255, 209, 102, 0.18);
+
+            background: rgba(255, 209, 102, 0.035);
+        }
+
+        .challenge strong {
+            color: var(--yellow);
+        }
+
+        /* =====================================================
+           TIMELINE
+        ===================================================== */
+
+        .timeline {
+            display: grid;
+
+            gap: 10px;
+
+            margin-top: 18px;
+        }
+
+        .time-row {
+            display: grid;
+
+            grid-template-columns: 95px 1fr;
+
+            align-items: center;
+
+            gap: 14px;
+        }
+
+        .time-label {
+            color: #82a895;
+
+            text-align: right;
+
+            font:
+                10px ui-monospace,
+                SFMono-Regular,
+                Menlo,
+                Consolas,
+                monospace;
+        }
+
+        .track {
+            display: flex;
+
+            height: 28px;
+
+            gap: 2px;
+
+            overflow: hidden;
+
+            border-radius: 6px;
+
+            background: #0b1710;
+        }
+
+        .on {
+            min-width: 18px;
+
+            height: 100%;
+
+            background: var(--green);
+
+            box-shadow:
+                0 0 14px rgba(57, 255, 136, 0.3);
+        }
+
+        .off {
+            min-width: 18px;
+
+            height: 100%;
+
+            background: #14231a;
+        }
+
+        /* =====================================================
+           TABLE
+        ===================================================== */
+
+        table {
+            width: 100%;
+
+            margin-top: 18px;
+
+            border-collapse: collapse;
+
+            font-size: 13px;
+        }
+
+        th,
+        td {
+            padding: 12px;
+
+            border-bottom: 1px solid var(--line);
+
+            text-align: left;
+        }
+
+        th {
+            color: var(--green);
+
+            font:
+                9px ui-monospace,
+                SFMono-Regular,
+                Menlo,
+                Consolas,
+                monospace;
+
+            text-transform: uppercase;
+
+            letter-spacing: 0.1em;
+        }
+
+        td {
+            color: #a8bdb0;
+        }
+
+        /* =====================================================
+           KEYBOARD
+        ===================================================== */
+
+        kbd {
+            padding: 2px 6px;
+
+            border: 1px solid rgba(255, 255, 255, 0.14);
+
+            border-bottom-width: 2px;
+
+            border-radius: 5px;
+
+            background: #09130e;
+
+            color: #d9ffe7;
+
+            font:
+                10px ui-monospace,
+                SFMono-Regular,
+                Menlo,
+                Consolas,
+                monospace;
+        }
+
+        ul,
+        ol {
+            color: #a2b9ab;
+
+            line-height: 1.9;
+        }
+
+        li::marker {
+            color: var(--green);
+        }
+
+        strong {
+            color: #d9ffe7;
+        }
+
+        /* =====================================================
+           NAVIGATION
+        ===================================================== */
+
+        .nav-footer {
+            display: flex;
+            justify-content: space-between;
+
+            max-width: 1000px;
+
+            margin: 30px auto 0;
+
+            gap: 12px;
+        }
+
+        .nav-btn {
+            padding: 11px 17px;
+
+            border: 1px solid rgba(57, 255, 136, 0.18);
+
+            border-radius: 10px;
+
+            background: #06130c;
+
+            color: #91b6a0;
+
+            cursor: pointer;
+
+            font:
+                10px ui-monospace,
+                SFMono-Regular,
+                Menlo,
+                Consolas,
+                monospace;
+
+            text-transform: uppercase;
+
+            letter-spacing: 0.1em;
+
+            transition: 0.2s;
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            border-color: var(--green);
+
+            color: var(--green);
+
+            box-shadow:
+                0 0 16px rgba(57, 255, 136, 0.08);
+        }
+
+        .nav-btn.primary {
+            background: rgba(57, 255, 136, 0.09);
+
+            color: var(--green);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.25;
+
+            cursor: not-allowed;
+        }
+
+        .counter {
+            align-self: center;
+
+            color: #41604e;
+
+            text-align: center;
+
+            font:
+                9px ui-monospace,
+                SFMono-Regular,
+                Menlo,
+                Consolas,
+                monospace;
+
+            text-transform: uppercase;
+
+            letter-spacing: 0.14em;
+        }
+
+        /* =====================================================
+           RESPONSIVE
+        ===================================================== */
+
+        @media (max-width: 850px) {
+            .shell {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: relative;
+
+                height: auto;
+
+                max-height: 300px;
+
+                border-right: 0;
+                border-bottom: 1px solid var(--line);
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .hero {
+                min-height: 330px;
+            }
+
+            .main {
+                padding:
+                    20px
+                    14px
+                    50px;
+            }
+
+            .time-row {
+                grid-template-columns: 70px 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="shell">
+
+    <!-- =====================================================
+         SIDEBAR
+    ====================================================== -->
+
+    <aside class="sidebar">
+
+        <div class="brand">
+
+            <div class="brand-dot"></div>
+
+            <div>
+                <strong>QUANTUM CORE</strong>
+
+                <small>
+                    ESP32 KNOWLEDGE BASE
+                </small>
+            </div>
+
+        </div>
+
+        <div class="progress-wrap">
+
+            <div class="progress-label">
+
+                <span>
+                    Guide Progress
+                </span>
+
+                <span id="progressText">
+                    1 / 14
+                </span>
+
+            </div>
+
+            <div class="progress">
+
+                <div
+                    class="progress-bar"
+                    id="progressBar"
+                ></div>
+
+            </div>
+
+        </div>
+
+        <div class="nav">
+
+            <div class="nav-title">
+                Project 02 / Blink Patterns
+            </div>
+
+            <div id="nav"></div>
+
+        </div>
+
+    </aside>
+
+
+    <!-- =====================================================
+         MAIN CONTENT
+    ====================================================== -->
+
+    <main class="main">
+
+        <div class="topbar">
+
+            <div class="eyebrow">
+                ESP32 / FIELD GUIDE
+            </div>
+
+            <div class="status">
+                Interactive Guide
+            </div>
+
+        </div>
+
+
+        <!-- =================================================
+             01 — PROJECT INTRO
+        ================================================== -->
+
+        <section
+            class="step active"
+            data-title="Project 02"
+        >
+
+            <div class="hero">
+
+                <div class="hero-content">
+
+                    <span class="tag">
+                        PROJECT 02 · TIMING
+                    </span>
+
+                    <h1>
+                        BLINK
+                        <span>PATTERNS</span>
+                    </h1>
+
+                    <p>
+                        Hey my broo 👋
+                        <br>
+                        <br>
+
+                        Welcome back! ⚡
+                        <br>
+                        <br>
+
+                        In our first project, we made the LED
+                        blink perfectly evenly:
+                        <strong>ON for 2 seconds, OFF for 2 seconds.</strong>
+                        <br>
+                        <br>
+
+                        But real-world electronics don't just
+                        blink evenly.
+                        <br>
+                        <br>
+
+                        A heartbeat monitor pulses quickly.
+                        An error light flashes rapidly.
+                        A standby light can breathe slowly.
+                        <br>
+                        <br>
+
+                        Today we're going from:
+                        <br>
+                        <strong>
+                            "My LED just blinks."
+                        </strong>
+                        <br>
+                        to:
+                        <br>
+                        <strong>
+                            "My LED is sending a heartbeat
+                            signal and an SOS message!" 😎
+                        </strong>
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             02 — WHAT YOU HAVE
+        ================================================== -->
+
+        <section
+            class="step"
+            data-title="What You Have"
+        >
+
+            <h2>
+                🧰 What You Have
+            </h2>
+
+            <p>
+                You don't need to change anything on your desk!
+                Keep the exact same setup from Project 01.
+            </p>
+
+            <div class="grid">
+
+                <div class="item">
+                    <b>💻 Windows laptop / PC</b>
+
+                    <p>
+                        Your development machine running
+                        VS Code.
+                    </p>
+                </div>
+
+                <div class="item">
+                    <b>🔌 USB cable</b>
+
+                    <p>
+                        Connects the ESP32 to your computer.
+                    </p>
+                </div>
+
+                <div class="item">
+                    <b>🟦 ESP32 DevKit V1</b>
+
+                    <p>
+                        The microcontroller running your
+                        program.
+                    </p>
+                </div>
+
+                <div class="item">
+                    <b>💡 1x LED</b>
+
+                    <p>
+                        The output device we'll control
+                        with timing.
+                    </p>
+                </div>
+
+                <div class="item">
+                    <b>🔗 Jumper wires</b>
+
+                    <p>
+                        Use these if you are extending the
+                        ESP32 pins.
+                    </p>
+                </div>
+
+            </div>
+
+            <div class="callout">
+
+                <strong>
+                    Hardware rule:
+                </strong>
+
+                No rewiring is needed.
+                We're changing the software,
+                not the circuit.
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             03 — WHAT WE LEARN
+        ================================================== -->
+
+        <section
+            class="step"
+            data-title="What We Learn"
+        >
+
+            <h2>
+                🧠 Timing &amp; <code>delay()</code>
+            </h2>
+
+            <p>
+                The ESP32 reads your program from top to bottom,
+                one line at a time.
+                The <code>delay()</code> function tells it
+                to wait before continuing.
+            </p>
+
+            <div class="card green">
+
+                <h3>
+                    The key idea
+                </h3>
+
+                <div class="flow">
+
+                    <span>
+                        LED ON
+                    </span>
+
+                    <b class="arrow">
+                        →
+                    </b>
+
+                    <span>
+                        SHORT DELAY
+                    </span>
+
+                    <b class="arrow">
+                        →
+                    </b>
+
+                    <span>
+                        LED OFF
+                    </span>
+
+                    <b class="arrow">
+                        →
+                    </b>
+
+                    <span>
+                        LONG DELAY
+                    </span>
+
+                </div>
+
+                <p>
+                    Change the lengths and order of those
+                    delays, and you create a
+                    <strong>pattern</strong>.
+                    Patterns let a simple light communicate
+                    information.
+                </p>
+
+            </div>
+
+            <div class="grid">
+
+                <div class="item">
+                    <b>
+                        100 ms
+                    </b>
+
+                    <p>
+                        0.1 seconds — a very short pulse.
+                    </p>
+                </div>
+
+                <div class="item">
+                    <b>
+                        150 ms
+                    </b>
+
+                    <p>
+                        0.15 seconds — slightly longer.
+                    </p>
+                </div>
+
+                <div class="item">
+                    <b>
+                        1000 ms
+                    </b>
+
+                    <p>
+                        1 second — a noticeable rest.
+                    </p>
+                </div>
+
+                <div class="item">
+                    <b>
+                        Pattern
+                    </b>
+
+                    <p>
+                        A specific sequence of ON and OFF
+                        states.
+                    </p>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             04 — WIRING
+        ================================================== -->
+
+        <section
+            class="step"
+            data-title="Wiring"
+        >
+
+            <h2>
+                🔌 Wiring
+            </h2>
+
+            <p>
+                Leave your wiring exactly as it was.
+                We are still using
+                <strong>GPIO 2 (D2)</strong>.
+            </p>
+
+            <div class="diagram">
+
+                <pre>
+ESP32
+  │
+  │ D2 / GPIO 2
+  ▼
+ 💡 LED
+  │
+  │
+ GND</pre>
+
+            </div>
+
+            <div class="grid">
+
+                <div class="item">
+
+                    <b>
+                        Long leg (+)
+                    </b>
+
+                    <p>
+                        Connect to
+                        <strong>D2 / GPIO 2</strong>.
+                    </p>
+
+                </div>
+
+                <div class="item">
+
+                    <b>
+                        Short leg (−)
+                    </b>
+
+                    <p>
+                        Connect to
+                        <strong>GND</strong>.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             05 — CREATE PROJECT
+        ================================================== -->
+
+        <section
+            class="step"
+            data-title="Create Project"
+        >
+
+            <h2>
+                💻 Create the Project
+            </h2>
+
+            <p>
+                Let's create a fresh PlatformIO project
+                for our new code.
+            </p>
+
+            <ol>
+
+                <li>
+                    Open <strong>VS Code</strong>.
+                </li>
+
+                <li>
+                    Click the
+                    <strong>PlatformIO</strong>
+                    alien/ant icon 🧩 on the left.
+                </li>
+
+                <li>
+                    Under <em>PIO Home</em>,
+                    click <strong>Open</strong>.
+                </li>
+
+                <li>
+                    Click <strong>New Project</strong>.
+                </li>
+
+                <li>
+                    Set the project name to
+                    <code>ESP32-02-Patterns</code>.
+                </li>
+
+                <li>
+                    Set the board to
+                    <code>DOIT ESP32 DEVKIT V1</code>.
+                </li>
+
+                <li>
+                    Set the framework to
+                    <code>Arduino</code>.
+                </li>
+
+                <li>
+                    Click <strong>Finish</strong>
+                    and wait for the project to load.
+                </li>
+
+            </ol>
+
+            <div class="callout">
+
+                <strong>
+                    Then:
+                </strong>
+
+                Open Explorer →
+                <code>src</code> →
+                <code>main.cpp</code>.
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             06 — COMPLETE CODE
+        ================================================== -->
+
+        <section
+            class="step"
+            data-title="Complete Code"
+        >
+
+            <h2>
+                📄 Complete Code
+            </h2>
+
+            <p>
+                Delete everything inside
+                <code>main.cpp</code>
+                and paste this program.
+                This program simulates a human heartbeat.
+            </p>
+
+            <div class="code">
+
+                <div class="code-label">
+                    C++ · main.cpp
+                </div>
+
+                <pre class="codebody">/*
+ * ============================================================
+ * MY BRO'S SECOND ESP32 PROGRAM: THE HEARTBEAT
+ * ============================================================
+ */
+
+// Tell the ESP32 that our LED is on GPIO 2
+const int LED_PIN = 2;
+
+void setup()
+{
+    // Configure the pin to push electricity OUT
+    pinMode(LED_PIN, OUTPUT);
+}
+
+void loop()
+{
+    // --------------------------------------------------------
+    // FIRST BEAT (Quick pulse)
+    // --------------------------------------------------------
+    digitalWrite(LED_PIN, HIGH);   // Turn ON
+    delay(100);                    // Wait 100 milliseconds (0.1 seconds)
+
+    digitalWrite(LED_PIN, LOW);    // Turn OFF
+    delay(100);                    // Wait 100 milliseconds (0.1 seconds)
+
+    // --------------------------------------------------------
+    // SECOND BEAT (Slightly longer pulse)
+    // --------------------------------------------------------
+    digitalWrite(LED_PIN, HIGH);   // Turn ON
+    delay(150);                    // Wait 150 milliseconds (0.15 seconds)
+
+    digitalWrite(LED_PIN, LOW);    // Turn OFF
+
+    // --------------------------------------------------------
+    // REST (Wait for the next heartbeat cycle)
+    // --------------------------------------------------------
+    delay(1000);                   // Wait a full 1000 milliseconds (1 second)
+}</pre>
+
+            </div>
+
+            <div class="callout">
+
+                Press
+                <kbd>Ctrl</kbd> +
+                <kbd>S</kbd>
+                to save.
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             07 — UNDERSTAND CODE
+        ================================================== -->
+
+        <section
+            class="step"
+            data-title="Understand Code"
+        >
+
+            <h2>
+                🧠 Understand the Code
+            </h2>
+
+            <p>
+                Look closely at how we used
+                <code>delay()</code>.
+            </p>
+
+            <div class="card">
+
+                <h3>
+                    Project 01 vs Project 02
+                </h3>
+
+                <p>
+                    In Project 01, we used
+                    <code>delay(2000)</code>
+                    to wait for 2 full seconds.
+                    Here, we use much smaller numbers
+                    to create a rhythm.
+                </p>
+
+            </div>
+
+            <table>
+
+                <thead>
+
+                    <tr>
+                        <th>
+                            Code
+                        </th>
+
+                        <th>
+                            Meaning
+                        </th>
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    <tr>
+
+                        <td>
+                            <code>delay(100)</code>
+                        </td>
+
+                        <td>
+                            100 milliseconds =
+                            1/10th of a second.
+                        </td>
+
+                    </tr>
+
+                    <tr>
+
+                        <td>
+                            <code>delay(150)</code>
+                        </td>
+
+                        <td>
+                            150 milliseconds =
+                            slightly longer than 1/10th.
+                        </td>
+
+                    </tr>
+
+                    <tr>
+
+                        <td>
+                            <code>delay(1000)</code>
+                        </td>
+
+                        <td>
+                            1000 milliseconds =
+                            1 full second.
+                        </td>
+
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+            <div class="timeline">
+
+                <div class="time-row">
+
+                    <div class="time-label">
+                        FIRST BEAT
+                    </div>
+
+                    <div class="track">
+
+                        <div
+                            class="on"
+                            style="width: 10%;"
+                        ></div>
+
+                        <div
+                            class="off"
+                            style="width: 10%;"
+                        ></div>
+
+                    </div>
+
+                </div>
+
+                <div class="time-row">
+
+                    <div class="time-label">
+                        SECOND BEAT
+                    </div>
+
+                    <div class="track">
+
+                        <div
+                            class="on"
+                            style="width: 15%;"
+                        ></div>
+
+                        <div
+                            class="off"
+                            style="width: 8%;"
+                        ></div>
+
+                    </div>
+
+                </div>
+
+                <div class="time-row">
+
+                    <div class="time-label">
+                        REST
+                    </div>
+
+                    <div class="track">
+
+                        <div
+                            class="off"
+                            style="width: 75%;"
+                        ></div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="callout">
+
+                <strong>
+                    Sequential execution:
+                </strong>
+
+                ON →
+                wait →
+                OFF →
+                wait →
+                ON →
+                wait →
+                OFF →
+                long rest →
+                repeat.
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             08 — BUILD + UPLOAD
+        ================================================== -->
+
+        <section
+            class="step"
+            data-title="Build & Upload"
+        >
+
+            <h2>
+                🚀 Build + Upload
+            </h2>
+
+            <p>
+                Let's send the program to the board.
+            </p>
+
+            <div class="flow">
+
+                <span>
+                    WRITE CODE
+                </span>
+
+                <b class="arrow">
+                    →
+                </b>
+
+                <span>
+                    BUILD ✓
+                </span>
+
+                <b class="arrow">
+                    →
+                </b>
+
+                <span>
+                    UPLOAD →
+                </span>
+
+                <b class="arrow">
+                    →
+                </b>
+
+                <span>
+                    ESP32 RUNS
+                </span>
+
+                <b class="arrow">
+                    →
+                </b>
+
+                <span>
+                    LED RESPONDS
+                </span>
+
+            </div>
+
+            <ol>
+
+                <li>
+                    Make sure the ESP32 is plugged in
+                    through USB.
+                </li>
+
+                <li>
+                    Click the
+                    <strong>Build (✓)</strong>
+                    checkmark at the bottom of VS Code.
+                </li>
+
+                <li>
+                    If the build succeeds,
+                    click the
+                    <strong>Upload (→)</strong>
+                    arrow next to it.
+                </li>
+
+                <li>
+                    Wait for PlatformIO to finish.
+                </li>
+
+            </ol>
+
+            <div class="callout">
+
+                <strong>
+                    Don't unplug during upload.
+                </strong>
+
+                Let PlatformIO finish writing the firmware
+                before disconnecting the board.
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             09 — WHAT SHOULD HAPPEN
+        ================================================== -->
+
+        <section
+            class="step"
+            data-title="What Happens"
+        >
+
+            <h2>
+                👀 What Should Happen?
+            </h2>
+
+            <p>
+                Watch your LED!
+                Instead of the boring, even blink from
+                Project 01, you should now see a rhythm.
+            </p>
+
+            <div class="card green">
+
+                <div class="flow">
+
+                    <span>
+                        💡 Quick Flash
+                    </span>
+
+                    <b class="arrow">
+                        →
+                    </b>
+
+                    <span>
+                        ⚫ Brief Pause
+                    </span>
+
+                    <b class="arrow">
+                        →
+                    </b>
+
+                    <span>
+                        💡 Quick Flash
+                    </span>
+
+                    <b class="arrow">
+                        →
+                    </b>
+
+                    <span>
+                        ⚫ Long Pause
+                    </span>
+
+                </div>
+
+                <h3
+                    style="
+                        text-align: center;
+                        color: var(--green);
+                    "
+                >
+                    THUMP — THUMP — ...
+                </h3>
+
+                <p
+                    style="
+                        text-align: center;
+                    "
+                >
+                    It looks like the
+                    <strong>
+                        thump-thump
+                    </strong>
+                    rhythm of a heartbeat monitor.
+                </p>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             10 — EXPERIMENT
+        ================================================== -->
+
+        <section
+            class="step"
+            data-title="Experiment"
+        >
+
+            <h2>
+                🧪 Experiment
+            </h2>
+
+            <p>
+                Let's make the ESP32 "run a marathon"
+                so its heart rate goes up!
+            </p>
+
+            <div class="card">
+
+                <h3>
+                    Find the rest delay
+                </h3>
+
+                <div class="code">
+
+                    <pre class="codebody">delay(1000);</pre>
+
+                </div>
+
+                <p>
+                    Change it to:
+                </p>
+
+                <div class="code">
+
+                    <pre class="codebody">delay(400);</pre>
+
+                </div>
+
+                <p>
+                    Press
+                    <kbd>Ctrl</kbd> +
+                    <kbd>S</kbd>,
+                    click <strong>Upload</strong>,
+                    and watch what happens.
+                </p>
+
+                <div class="callout">
+
+                    <strong>
+                        Why?
+                    </strong>
+
+                    The rest period is much shorter,
+                    so the heartbeat cycle repeats
+                    much faster.
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             11 — SOS CHALLENGE
+        ================================================== -->
+
+        <section
+            class="step"
+            data-title="SOS Challenge"
+        >
+
+            <h2>
+                🔥 Challenge: S.O.S.
+            </h2>
+
+            <div class="card challenge">
+
+                <h3>
+                    Your Objective
+                </h3>
+
+                <p>
+                    Modify your
+                    <code>loop()</code>
+                    so the LED broadcasts an
+                    <strong>
+                        S.O.S. distress signal
+                    </strong>
+                    using Morse Code.
+                </p>
+
+                <p>
+
+                    <strong>
+                        S
+                    </strong>
+                    =
+                    3 quick flashes
+
+                    <br>
+
+                    <strong>
+                        O
+                    </strong>
+                    =
+                    3 slow flashes
+
+                    <br>
+
+                    <strong>
+                        S
+                    </strong>
+                    =
+                    3 quick flashes
+
+                </p>
+
+            </div>
+
+            <div class="grid">
+
+                <div class="item">
+
+                    <b>
+                        Quick flash
+                    </b>
+
+                    <p>
+                        Try
+                        <code>delay(200)</code>.
+                    </p>
+
+                </div>
+
+                <div class="item">
+
+                    <b>
+                        Slow flash
+                    </b>
+
+                    <p>
+                        Try
+                        <code>delay(600)</code>.
+                    </p>
+
+                </div>
+
+                <div class="item">
+
+                    <b>
+                        Between flashes
+                    </b>
+
+                    <p>
+                        Turn the LED LOW and give it
+                        enough time to be physically OFF.
+                    </p>
+
+                </div>
+
+                <div class="item">
+
+                    <b>
+                        Repeat pause
+                    </b>
+
+                    <p>
+                        Use
+                        <code>delay(2000)</code>
+                        at the bottom.
+                    </p>
+
+                </div>
+
+            </div>
+
+            <div class="callout warn">
+
+                <strong>
+                    Hint:
+                </strong>
+
+                You will need to write many
+                <code>digitalWrite()</code>
+                and
+                <code>delay()</code>
+                calls in a row.
+
+                Don't forget the long pause at the
+                bottom of the loop.
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             12 — TROUBLESHOOTING
+        ================================================== -->
+
+        <section
+            class="step"
+            data-title="Troubleshooting"
+        >
+
+            <h2>
+                🐛 Troubleshooting
+            </h2>
+
+            <div class="grid">
+
+                <div class="item">
+
+                    <b>
+                        Code didn't change the LED
+                    </b>
+
+                    <p>
+                        Did you press
+                        <kbd>Ctrl</kbd> +
+                        <kbd>S</kbd>
+                        before clicking Upload?
+
+                        If you don't save,
+                        PlatformIO can upload your
+                        previous saved code.
+                    </p>
+
+                </div>
+
+                <div class="item">
+
+                    <b>
+                        The flashes blend together
+                    </b>
+
+                    <p>
+                        During the SOS challenge,
+                        make sure you put a
+                        <code>delay()</code>
+                        after turning the LED LOW.
+
+                        Your eyes need time to see the gap.
+                    </p>
+
+                </div>
+
+                <div class="item">
+
+                    <b>
+                        Nothing lights up
+                    </b>
+
+                    <p>
+                        Recheck the Project 01 wiring:
+
+                        long LED leg →
+                        D2
+
+                        and
+
+                        short LED leg →
+                        GND.
+                    </p>
+
+                </div>
+
+                <div class="item">
+
+                    <b>
+                        Upload fails
+                    </b>
+
+                    <p>
+                        Check the USB connection
+                        and confirm PlatformIO is targeting
+                        the correct ESP32 board and port.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             13 — VOCABULARY
+        ================================================== -->
+
+        <section
+            class="step"
+            data-title="Vocabulary"
+        >
+
+            <h2>
+                🧠 New Vocabulary
+            </h2>
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Word
+                        </th>
+
+                        <th>
+                            Meaning
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    <tr>
+
+                        <td>
+                            <strong>
+                                Millisecond (ms)
+                            </strong>
+                        </td>
+
+                        <td>
+                            1/1000th of a second.
+                            The measurement of time used
+                            by the <code>delay()</code>
+                            function.
+                        </td>
+
+                    </tr>
+
+                    <tr>
+
+                        <td>
+                            <strong>
+                                Sequential Execution
+                            </strong>
+                        </td>
+
+                        <td>
+                            The way the ESP32 reads code:
+                            line-by-line,
+                            top-to-bottom.
+                        </td>
+
+                    </tr>
+
+                    <tr>
+
+                        <td>
+                            <strong>
+                                Pattern
+                            </strong>
+                        </td>
+
+                        <td>
+                            A specific sequence of ON and
+                            OFF states designed to communicate
+                            information visually.
+                        </td>
+
+                    </tr>
+
+                    <tr>
+
+                        <td>
+                            <strong>
+                                Heartbeat Signal
+                            </strong>
+                        </td>
+
+                        <td>
+                            A repeating rhythm made from
+                            short pulses followed by a
+                            longer rest.
+                        </td>
+
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </section>
+
+
+        <!-- =================================================
+             14 — WHAT YOU LEARNED
+        ================================================== -->
+
+        <section
+            class="step"
+            data-title="What You Learned"
+        >
+
+            <h2>
+                🎯 What You Just Learned
+            </h2>
+
+            <div class="card green">
+
+                <h3>
+                    From blinking → communicating
+                </h3>
+
+                <p>
+                    Great job, my bro! 🔥
+                    <br>
+                    <br>
+
+                    You just learned that you don't need
+                    complex hardware to make a device
+                    do complex things.
+                </p>
+
+                <div class="flow">
+
+                    <span>
+                        GPIO 2
+                    </span>
+
+                    <b class="arrow">
+                        +
+                    </b>
+
+                    <span>
+                        digitalWrite()
+                    </span>
+
+                    <b class="arrow">
+                        +
+                    </b>
+
+                    <span>
+                        delay()
+                    </span>
+
+                    <b class="arrow">
+                        =
+                    </b>
+
+                    <span>
+                        BLINK PATTERN
+                    </span>
+
+                </div>
+
+                <p>
+                    By mastering
+                    <strong>Timing</strong>
+                    and understanding that the processor
+                    runs code
+                    <strong>Sequentially</strong>,
+                    you turned a simple blinking light
+                    into an expressive communicator.
+                </p>
+
+                <p>
+                    This same basic idea appears in
+                    real-world indicator systems such as
+                    printers, routers, alarms, cars,
+                    and other embedded devices.
+                </p>
+
+            </div>
+
+            <div class="callout">
+
+                <strong>
+                    Core lesson:
+                </strong>
+
+                You don't need complex hardware to make
+                a device expressive.
+
+                Master timing and sequential execution first.
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             15 — NEXT PROJECT
+        ================================================== -->
+
+        <section
+            class="step"
+            data-title="Next Project"
+        >
+
+            <h2>
+                🚀 Next Project
+            </h2>
+
+            <div
+                class="hero"
+                style="min-height: 320px;"
+            >
+
+                <div class="hero-content">
+
+                    <span class="tag">
+                        NEXT · PROJECT 03
+                    </span>
+
+                    <h2>
+                        THREE LEDs.
+                        <span style="color: var(--green);">
+                            ONE ANIMATION.
+                        </span>
+                    </h2>
+
+                    <p>
+                        One LED is cool.
+
+                        But what about
+                        <strong>THREE LEDs?</strong>
+                        😎
+                        <br>
+                        <br>
+
+                        In
+                        <strong>
+                            Project 03 — 3-LED Loading Animation
+                        </strong>,
+                        we're going to learn how to use a
+                        <strong>Breadboard</strong>
+                        so we can connect multiple components
+                        at the same time.
+                        <br>
+                        <br>
+
+                        Then we'll create a moving animation
+                        using multiple LEDs.
+                    </p>
+
+                    <div class="callout">
+
+                        <strong>
+                            Mission complete:
+                        </strong>
+
+                        Project 02 — Blink Patterns.
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             BOTTOM NAVIGATION
+        ================================================== -->
+
+        <div class="nav-footer">
+
+            <button
+                class="nav-btn"
+                id="prev"
+                onclick="go(-1)"
+            >
+                ← Previous
+            </button>
+
+            <div
+                class="counter"
+                id="counter"
+            >
+                PROJECT 02 · 01 / 15
+            </div>
+
+            <button
+                class="nav-btn primary"
+                id="next"
+                onclick="go(1)"
+            >
+                Next →
+            </button>
+
+        </div>
+
+    </main>
+
+</div>
+
+
+<script>
+    /*
+     * ============================================================
+     * QUANTUM CORE — ESP32 PROJECT GUIDE ENGINE
+     * ============================================================
+     */
+
+    const steps = [
+        ...document.querySelectorAll(".step")
+    ];
+
+    const nav = document.getElementById("nav");
+
+    let current = 0;
+
+
+    /*
+     * ============================================================
+     * BUILD SIDEBAR NAVIGATION
+     * ============================================================
+     */
+
+    steps.forEach((step, index) => {
+
+        const button = document.createElement("button");
+
+        button.innerHTML =
+            '<span class="num">' +
+            String(index + 1).padStart(2, "0") +
+            "</span>" +
+            step.dataset.title;
+
+        button.onclick = () => {
+            show(index);
+        };
+
+        nav.appendChild(button);
+
+    });
+
+
+    /*
+     * ============================================================
+     * SHOW STEP
+     * ============================================================
+     */
+
+    function show(index) {
+
+        current = Math.max(
+            0,
+            Math.min(
+                steps.length - 1,
+                index
+            )
+        );
+
+
+        /*
+         * Toggle content
+         */
+
+        steps.forEach((step, number) => {
+
+            step.classList.toggle(
+                "active",
+                number === current
+            );
+
+        });
+
+
+        /*
+         * Toggle sidebar item
+         */
+
+        [
+            ...nav.children
+        ].forEach((button, number) => {
+
+            button.classList.toggle(
+                "active",
+                number === current
+            );
+
+        });
+
+
+        /*
+         * Navigation buttons
+         */
+
+        document.getElementById("prev").disabled =
+            current === 0;
+
+        document.getElementById("next").disabled =
+            current === steps.length - 1;
+
+
+        /*
+         * Counter
+         */
+
+        document.getElementById("counter").textContent =
+            "PROJECT 02 · " +
+            String(current + 1).padStart(2, "0") +
+            " / " +
+            steps.length;
+
+
+        /*
+         * Progress text
+         */
+
+        document.getElementById("progressText").textContent =
+            (current + 1) +
+            " / " +
+            steps.length;
+
+
+        /*
+         * Progress bar
+         */
+
+        document.getElementById("progressBar").style.width =
+            (
+                ((current + 1) / steps.length) *
+                100
+            ) +
+            "%";
+
+
+        /*
+         * Return to top
+         */
+
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
+
+    }
+
+
+    /*
+     * ============================================================
+     * PREVIOUS / NEXT
+     * ============================================================
+     */
+
+    function go(direction) {
+
+        show(
+            current + direction
+        );
+
+    }
+
+
+    /*
+     * ============================================================
+     * KEYBOARD NAVIGATION
+     * ============================================================
+     *
+     * ← Previous
+     * → Next
+     *
+     * ============================================================
+     */
+
+    document.addEventListener(
+        "keydown",
+        (event) => {
+
+            if (event.key === "ArrowRight") {
+                go(1);
+            }
+
+            if (event.key === "ArrowLeft") {
+                go(-1);
+            }
+
+        }
+    );
+
+
+    /*
+     * ============================================================
+     * INITIALIZE
+     * ============================================================
+     */
+
+    show(0);
+</script>
+
+</body>
+</html>
+```
