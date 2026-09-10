@@ -71,7 +71,7 @@ export const WorkspaceIframe = forwardRef<
     return (
       <div
         className={cn(
-          'relative flex min-h-[70vh] min-w-0 flex-1 overflow-hidden bg-ink-950',
+          'relative flex min-h-[100vh] min-w-0 flex-1 overflow-hidden bg-ink-950',
           className,
         )}
       >
