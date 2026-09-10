@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ESP32 — LED + BUTTON</title>
+<style>
+:root{
+  --bg:#050807; --panel:#0a100e; --panel2:#0d1512;
+  --green:#39ff88; --green2:#19d86a; --text:#e7fff0;
+  --muted:#91a99b; --line:#173024; --danger:#ff6b6b;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:Inter,Segoe UI,Arial,sans-serif;background:radial-gradient(circle at 80% 0%,#10251a 0,#050807 38%);color:var(--text)}
+body{display:flex}
+button{font:inherit}
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:285px;background:rgba(5,10,8,.96);border-right:1px solid var(--line);padding:22px 16px;overflow:auto;z-index:5}
+.logo{font-weight:900;letter-spacing:.08em;color:var(--green);font-size:19px;margin-bottom:5px}
+.subtitle{color:var(--muted);font-size:12px;margin-bottom:18px}
+.progress-wrap{height:7px;background:#101b16;border-radius:99px;overflow:hidden;margin:10px 0 18px}
+.progress{height:100%;width:0;background:var(--green);box-shadow:0 0 14px #39ff8866;transition:.25s}
+.step-list{display:flex;flex-direction:column;gap:5px}
+.step-btn{border:1px solid transparent;background:transparent;color:#9eb5a7;text-align:left;padding:9px 10px;border-radius:8px;cursor:pointer;font-size:12px}
+.step-btn:hover{background:#0c1712;color:#d9ffe7}
+.step-btn.active{background:#102119;border-color:#24533a;color:var(--green)}
+.step-btn.done{color:#bceecb}
+.main{margin-left:285px;width:calc(100% - 285px);min-height:100vh;padding:34px 6vw 80px}
+.topline{display:flex;justify-content:space-between;gap:20px;align-items:center;color:var(--muted);font-size:12px;margin-bottom:20px}
+.badge{border:1px solid #24533a;color:var(--green);padding:6px 10px;border-radius:99px}
+.step{display:none;max-width:950px;animation:fade .22s ease}
+.step.active{display:block}
+@keyframes fade{from{opacity:.2;transform:translateY(6px)}to{opacity:1;transform:none}}
+h1{font-size:clamp(30px,5vw,54px);line-height:1.05;margin:0 0 14px;color:#f1fff6}
+h2{font-size:30px;color:var(--green);margin:0 0 16px}
+h3{color:#bfffd3;margin-top:28px}
+p,li{font-size:16px;line-height:1.7;color:#c5d8cc}
+strong{color:#effff4}
+.hero{border:1px solid #1c422d;background:linear-gradient(145deg,#0b1711,#07100c);border-radius:18px;padding:30px;box-shadow:0 0 40px #39ff8810}
+.card{background:rgba(9,17,13,.86);border:1px solid var(--line);border-radius:14px;padding:22px;margin:20px 0}
+pre{background:#030605;border:1px solid #173a28;border-radius:10px;padding:18px;overflow:auto;color:#c9ffda;line-height:1.55;font-size:13px;white-space:pre}
+code{font-family:Consolas,Monaco,monospace}
+.diagram{font-family:Consolas,monospace;white-space:pre;overflow:auto;background:#020403;border:1px solid #153523;border-radius:10px;padding:18px;color:#a9ffbf;line-height:1.5}
+.callout{border-left:4px solid var(--green);background:#0a1710;padding:16px 18px;border-radius:0 10px 10px 0;margin:20px 0}
+.warn{border-left-color:#ffb347;background:#171207}
+table{width:100%;border-collapse:collapse;margin:18px 0;background:#07100c}
+th,td{border:1px solid #193526;padding:11px;text-align:left}
+th{color:var(--green);background:#0b1811}
+td{color:#c8dacf}
+.nav{max-width:950px;display:flex;justify-content:space-between;gap:12px;margin-top:32px}
+.nav button{border:1px solid #24533a;background:#0a1710;color:var(--green);padding:12px 18px;border-radius:10px;cursor:pointer;font-weight:800}
+.nav button:hover{background:#10251a;box-shadow:0 0 18px #39ff8820}
+.nav button:disabled{opacity:.35;cursor:not-allowed}
+.kbd{color:#7e9b89;font-size:12px}
+.checklist li{margin:7px 0}
+@media(max-width:850px){
+ .sidebar{position:static;width:100%;height:auto;border-right:0;border-bottom:1px solid var(--line)}
+ body{display:block}.main{margin-left:0;width:100%;padding:25px 18px 60px}
+ .step-list{display:none}.topline{margin-top:8px}
+}
+</style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="logo">QUANTUM CORE</div>
+  <div class="subtitle">ESP32 OPEN-SOURCE LAB • LED + BUTTON</div>
+  <div class="progress-wrap"><div class="progress" id="progress"></div></div>
+  <div id="stepList" class="step-list"></div>
+</aside>
+
+<main class="main">
+  <div class="topline">
+    <span id="counter">STEP 1 / 42</span>
+    <span class="badge">ESP32 • ARDUINO • PLATFORMIO</span>
+  </div>
+
+  <section class="step active">
+    <div class="hero">
+      <h1>🚀 MY BRO'S ESP32 — LED + BUTTON</h1>
+      <p>You've already learned how to control one LED, multiple LEDs, different GPIO states, and timing with <code>delay()</code>.</p>
+      <p>Now we're going to learn something very important: <strong>reading a physical button</strong>.</p>
+      <div class="diagram">YOU
+ │
+ ▼
+PRESS BUTTON
+ │
+ ▼
+ESP32 INPUT
+ │
+ ▼
+ESP32 PROGRAM
+ │
+ ▼
+LED OUTPUT
+ │
+ ▼
+💡</div>
+      <div class="callout"><strong>Final behavior:</strong><br>BUTTON NOT PRESSED → LED OFF<br>BUTTON PRESSED → LED ON<br>BUTTON RELEASED → LED OFF</div>
+      <p>🔥 This is your first project where the ESP32 <strong>reads something</strong> instead of only controlling something.</p>
+    </div>
+  </section>
+
+  <section class="step">
+    <h2>🎯 1. WHAT WE ARE BUILDING</h2>
+    <div class="diagram">                ESP32
+
+          ┌─────────────────┐
+     D2 ●─┤──── LED ───── GND
+          │
+     D4 ●─┤──── BUTTON ── GND
+          │
+          └─────────────────┘</div>
+    <div class="callout"><strong>D2 = OUTPUT</strong><br><strong>D4 = INPUT</strong><br><br>One pin controls something, while another pin reads something.</div>
+  </section>
+
+  <section class="step">
+    <h2>🧰 2. WHAT YOU NEED</h2>
+    <ul>
+      <li>💻 Windows PC/laptop</li><li>🔌 USB cable</li><li>🟦 ESP32 DevKit V1 / ESP-32X</li>
+      <li>💡 1 LED</li><li>🔘 1 push button</li><li>🔗 Jumper wires</li><li>Breadboard if you have one</li>
+    </ul>
+    <table><tr><th>Component</th><th>ESP32 pin</th></tr><tr><td>LED</td><td><strong>D2 / GPIO 2</strong></td></tr><tr><td>Button</td><td><strong>D4 / GPIO 4</strong></td></tr><tr><td>LED ground</td><td>GND</td></tr><tr><td>Button ground</td><td>GND</td></tr></table>
+  </section>
+
+  <section class="step">
+    <h2>🧠 3. WHAT IS AN INPUT?</h2>
+    <p>So far, you've used GPIOs as <strong>outputs</strong>. With an output, the ESP32 says: “I want to control this pin.”</p>
+    <p>Now we want the opposite. We want the ESP32 to ask: <strong>“Is the button being pressed?”</strong></p>
+    <div class="diagram">OUTPUT
+
+ESP32
+  │
+  ▼
+GPIO
+  │
+  ▼
+LED
+
+
+INPUT
+
+BUTTON
+  │
+  ▼
+GPIO
+  │
+  ▼
+ESP32</div>
+    <div class="callout">This is one of the most fundamental concepts in electronics.</div>
+  </section>
+
+  <section class="step">
+    <h2>🔘 4. WHAT DOES A BUTTON ACTUALLY DO?</h2>
+    <p>A push button is basically a switch.</p>
+    <div class="diagram">NOT PRESSED
+
+────   ────
+
+connection open
+
+
+PRESSED
+
+────────────
+
+connection closed</div>
+    <p>The ESP32 can detect this change.</p>
+  </section>
+
+  <section class="step">
+    <h2>🧠 5. OUR BUTTON CIRCUIT — INPUT_PULLUP</h2>
+    <p>We're going to use the ESP32's <strong>INPUT_PULLUP</strong>. The internal pull-up resistor gives the GPIO a stable default state.</p>
+    <div class="diagram">              ESP32
+
+             D4
+              │
+              ▼
+          ┌─────────┐
+          │ BUTTON  │
+          └────┬────┘
+               │
+               ▼
+              GND</div>
+    <div class="callout warn">⚠️ This can feel backwards at first.<br><strong>Pressed = LOW</strong><br><strong>Released = HIGH</strong></div>
+  </section>
+
+  <section class="step">
+    <h2>🔌 6. CONNECT THE LED</h2>
+    <p>Connect the LED exactly like before:</p>
+    <div class="diagram">D2
+ │
+ ▼
+💡
+ │
+ ▼
+GND</div>
+    <p>Usually, the <strong>longer leg → D2 side</strong> and the <strong>shorter leg → GND side</strong>.</p>
+    <p>If the LED doesn't light later, reversing it is one of the first things to check.</p>
+  </section>
+
+  <section class="step">
+    <h2>🔘 7. CONNECT THE BUTTON</h2>
+    <div class="diagram">D4
+ │
+ ▼
+🔘
+ │
+ ▼
+GND</div>
+    <p>If you're using a breadboard button, many 4-pin tactile buttons have their pins arranged in pairs. Typically, the two pins on one side are already connected to each other, and the two pins on the other side are connected to each other.</p>
+    <div class="callout">Place the button <strong>across the center gap</strong> of the breadboard. Connect ESP32 D4 to one side and GND to the opposite side.</div>
+  </section>
+
+  <section class="step">
+    <h2>🔌 8. COMPLETE WIRING</h2>
+    <div class="diagram">                         ESP32
+                    ┌─────────────────────┐
+                    │                     │
+             D2 ●──┤────► LED ───── GND  │
+                    │                     │
+             D4 ●──┤──── BUTTON ──── GND │
+                    │                     │
+                    └─────────────────────┘
+
+
+OUTPUT                         INPUT
+  D2                            D4
+   │                             │
+   ▼                             ▼
+  💡                            🔘
+   │                             │
+   ▼                             ▼
+  GND                           GND</div>
+  </section>
+
+  <section class="step">
+    <h2>💻 9. OPEN YOUR ESP32 PROJECT</h2>
+    <p>Open VS Code and open your existing project:</p>
+    <pre><code>ESP32-first</code></pre>
+    <pre><code>ESP32-first
+│
+├── platformio.ini
+│
+└── src
+    └── main.cpp</code></pre>
+  </section>
+
+  <section class="step">
+    <h2>⚙️ 10. CHECK platformio.ini</h2>
+    <pre><code>; ============================================================
+; MY BRO'S ESP32 PROJECT
+; Board: ESP32 DevKit V1 / DOIT ESP32 DEVKIT V1
+; Framework: Arduino
+; ============================================================
+
+[env:esp32doit-devkit-v1]
+
+; ESP32 development platform
+platform = espressif32
+
+; Board definition
+board = esp32doit-devkit-v1
+
+; Arduino framework
+framework = arduino
+
+; Serial Monitor speed
+monitor_speed = 115200</code></pre>
+    <p>You don't need to change it. Save with <code>Ctrl + S</code>.</p>
+  </section>
+
+  <section class="step">
+    <h2>📄 11. OPEN main.cpp</h2>
+    <p>Go to:</p>
+    <pre><code>src
+ ↓
+main.cpp</code></pre>
+    <p>Select everything with <code>Ctrl + A</code>, delete the old program, and prepare to paste the new button program.</p>
+  </section>
+
+  <section class="step">
+    <h2>💻 12. THE COMPLETE PROGRAM</h2>
+    <p>Paste this entire program:</p>
+    <pre><code>/*
+ * ============================================================
+ * MY BRO'S ESP32 — LED + BUTTON
+ * ============================================================
+ *
+ * This program teaches the ESP32 how to:
+ *
+ *     1. CONTROL an LED
+ *     2. READ a physical button
+ *
+ * Hardware:
+ *
+ *     LED    → D2 / GPIO 2
+ *     BUTTON → D4 / GPIO 4
+ *
+ * The behavior:
+ *
+ *     Button NOT pressed → LED OFF
+ *     Button PRESSED     → LED ON
+ *
+ * Button wiring:
+ *
+ *     D4 → BUTTON → GND
+ *
+ * We use INPUT_PULLUP, which activates the ESP32's
+ * internal pull-up resistor.
+ *
+ * Therefore:
+ *
+ *     Button released → GPIO reads HIGH
+ *     Button pressed   → GPIO reads LOW
+ *
+ * ============================================================
+ */
+
+const int LED_PIN = 2;
+const int BUTTON_PIN = 4;
+
+void setup()
+{
+    pinMode(LED_PIN, OUTPUT);
+    pinMode(BUTTON_PIN, INPUT_PULLUP);
+}
+
+void loop()
+{
+    int buttonState = digitalRead(BUTTON_PIN);
+
+    if (buttonState == LOW)
+    {
+        digitalWrite(LED_PIN, HIGH);
+    }
+    else
+    {
+        digitalWrite(LED_PIN, LOW);
+    }
+}</code></pre>
+    <p>Save with <code>Ctrl + S</code>.</p>
+  </section>
+
+  <section class="step">
+    <h2>🧠 13. LET'S UNDERSTAND THE NEW CODE</h2>
+    <p>This project introduces three major new ideas:</p>
+    <ul><li><code>digitalRead()</code></li><li><code>if</code> / <code>else</code></li><li><code>INPUT_PULLUP</code></li></ul>
+    <p>These are extremely important for interactive embedded systems.</p>
+  </section>
+
+  <section class="step">
+    <h2>🔵 14. digitalRead()</h2>
+    <p>Previously you learned <code>digitalWrite()</code>, which means <strong>WRITE something to a GPIO</strong>.</p>
+    <p><code>digitalRead()</code> means <strong>READ the state of a GPIO</strong>.</p>
+    <pre><code>int buttonState = digitalRead(BUTTON_PIN);</code></pre>
+    <p>The ESP32 asks: “What is currently happening on GPIO 4?” The result will be <code>HIGH</code> or <code>LOW</code>.</p>
+  </section>
+
+  <section class="step">
+    <h2>🧠 15. digitalWrite() VS digitalRead()</h2>
+    <table><tr><th>Function</th><th>Purpose</th><th>Direction</th></tr>
+      <tr><td><code>digitalWrite()</code></td><td>Control a GPIO</td><td>Program → Output</td></tr>
+      <tr><td><code>digitalRead()</code></td><td>Read a GPIO</td><td>Input → Program</td></tr>
+    </table>
+    <pre><code>digitalWrite(LED_PIN, HIGH);</code></pre>
+    <p>Means: set the LED GPIO HIGH.</p>
+    <pre><code>digitalRead(BUTTON_PIN);</code></pre>
+    <p>Means: tell me whether the button GPIO is HIGH or LOW.</p>
+  </section>
+
+  <section class="step">
+    <h2>🔘 16. UNDERSTANDING INPUT_PULLUP</h2>
+    <pre><code>pinMode(BUTTON_PIN, INPUT_PULLUP);</code></pre>
+    <p>Normally, <code>pinMode(BUTTON_PIN, INPUT)</code> configures a pin as an input. <code>INPUT_PULLUP</code> also enables the ESP32's internal pull-up.</p>
+    <p>This gives the GPIO a stable default state.</p>
+  </section>
+
+  <section class="step">
+    <h2>⚡ 17. WHY DO WE NEED A PULL-UP?</h2>
+    <p>Without a defined pull-up or pull-down, an input can <strong>float</strong>. A floating input may randomly appear HIGH or LOW.</p>
+    <div class="diagram">             ESP32
+               │
+          internal
+          pull-up
+               │
+               ▼
+              D4
+               │
+             BUTTON
+               │
+               ▼
+              GND</div>
+    <p>When released: <strong>D4 → HIGH</strong>.</p>
+    <p>When pressed: <strong>D4 → LOW</strong>.</p>
+  </section>
+
+  <section class="step">
+    <h2>🔄 18. WHY IS PRESSED = LOW?</h2>
+    <div class="diagram">BUTTON PRESSED
+      ↓
+D4 connected to GND
+      ↓
+0V
+      ↓
+LOW</div>
+    <p>Because the button connects D4 to GND when pressed. GND is the 0 V reference, so the input reads LOW.</p>
+  </section>
+
+  <section class="step">
+    <h2>🧠 19. WHAT IS if?</h2>
+    <pre><code>if (buttonState == LOW)
+{
+    digitalWrite(LED_PIN, HIGH);
+}</code></pre>
+    <p>In simple English:</p>
+    <div class="callout"><strong>IF the button state is LOW, turn the LED ON.</strong></div>
+    <p>Programming lets the ESP32 make decisions based on input.</p>
+  </section>
+
+  <section class="step">
+    <h2>🔀 20. WHAT IS else?</h2>
+    <pre><code>else
+{
+    digitalWrite(LED_PIN, LOW);
+}</code></pre>
+    <p>That means: if the <code>if</code> condition wasn't true, do this instead.</p>
+    <div class="diagram">IF button is pressed
+        ↓
+     LED ON
+
+OTHERWISE
+        ↓
+     LED OFF</div>
+  </section>
+
+  <section class="step">
+    <h2>🧩 21. UNDERSTANDING ==</h2>
+    <p><code>==</code> means <strong>compare</strong>. It asks:</p>
+    <pre><code>Is buttonState equal to LOW?</code></pre>
+    <p>This is different from a single <code>=</code>, which is used for assignment.</p>
+    <pre><code>int buttonState = digitalRead(BUTTON_PIN);</code></pre>
+    <p>Assignment: put the result into <code>buttonState</code>.</p>
+    <pre><code>buttonState == LOW</code></pre>
+    <p>Comparison: check whether the value equals LOW.</p>
+  </section>
+
+  <section class="step">
+    <h2>🔁 22. HOW THE WHOLE PROGRAM WORKS</h2>
+    <div class="diagram">       READ BUTTON
+            ↓
+       ┌──────────┐
+       │ PRESSED? │
+       └────┬─────┘
+          YES│NO
+         ┌───┴───┐
+         ↓       ↓
+      LED ON   LED OFF
+         │       │
+         └───┬───┘
+             ↓
+         READ AGAIN
+             ↓
+            ...</div>
+    <ol>
+      <li>Read the button.</li><li>Check its state.</li><li>If pressed, turn LED ON.</li>
+      <li>If not pressed, turn LED OFF.</li><li>Start over because <code>loop()</code> repeats forever.</li>
+    </ol>
+  </section>
+
+  <section class="step">
+    <h2>🏗️ 23. BUILD THE PROGRAM</h2>
+    <p>Connect the ESP32 to your computer.</p>
+    <pre><code>PlatformIO
+ ↓
+Project Tasks
+ ↓
+esp32doit-devkit-v1
+ ↓
+General
+ ↓
+Build</code></pre>
+    <p>Or click the PlatformIO <strong>✓ Build</strong> button. Wait for the build to finish successfully.</p>
+  </section>
+
+  <section class="step">
+    <h2>🚀 24. UPLOAD THE PROGRAM</h2>
+    <p>After the build succeeds, click <strong>Upload</strong> in PlatformIO and wait for the firmware upload to finish.</p>
+  </section>
+
+  <section class="step">
+    <h2>🎉 25. TEST IT</h2>
+    <div class="card">
+      <p>🔘 <strong>NOT PRESSED</strong> → 💡 OFF</p>
+      <p>🔘 <strong>PRESSED</strong> → 💡 ON</p>
+      <p>🔘 <strong>RELEASED</strong> → 💡 OFF</p>
+    </div>
+    <p>🔥 You just made the ESP32 react to physical input.</p>
+  </section>
+
+  <section class="step">
+    <h2>🧪 26. TEST THE BUTTON REPEATEDLY</h2>
+    <pre><code>PRESS
+RELEASE
+PRESS
+RELEASE
+PRESS
+RELEASE</code></pre>
+    <p>The LED should follow the button:</p>
+    <pre><code>PRESS     → ON
+RELEASE   → OFF
+PRESS     → ON
+RELEASE   → OFF</code></pre>
+  </section>
+
+  <section class="step">
+    <h2>🧠 27. THE HARDWARE/SOFTWARE CONNECTION</h2>
+    <div class="diagram">          PHYSICAL WORLD
+                │
+                ▼
+             BUTTON
+                │
+                ▼
+             GPIO 4
+                │
+                ▼
+          digitalRead()
+                │
+                ▼
+             PROGRAM
+                │
+                ▼
+              if/else
+                │
+                ▼
+          digitalWrite()
+                │
+                ▼
+             GPIO 2
+                │
+                ▼
+               LED
+                │
+                ▼
+          PHYSICAL WORLD</div>
+    <p>You are creating a <strong>feedback loop</strong> between software and hardware.</p>
+  </section>
+
+  <section class="step">
+    <h2>🧪 28. FIRST CHALLENGE — REVERSE IT</h2>
+    <p>Can you make the LED behave like this?</p>
+    <div class="callout">BUTTON NOT PRESSED → LED ON<br>BUTTON PRESSED → LED OFF</div>
+    <p>You only need to change the two LED commands inside the <code>if</code> and <code>else</code>.</p>
+  </section>
+
+  <section class="step">
+    <h2>🧪 29. SECOND CHALLENGE — BUTTON CONTROLS THREE LEDS</h2>
+    <p>Combine this lesson with the previous 3-LED project. Because D4 is now used by the button, choose another GPIO for the third LED.</p>
+    <pre><code>LED 1 → D2
+BUTTON → D4
+LED 2 → D5
+LED 3 → D18</code></pre>
+    <div class="callout">BUTTON NOT PRESSED → all LEDs OFF<br>BUTTON PRESSED → all LEDs ON</div>
+  </section>
+
+  <section class="step">
+    <h2>🧪 30. THIRD CHALLENGE — BUTTON AS A LOADING CONTROL</h2>
+    <p>Combine the previous two lessons. Make the LEDs alternate between the left and middle OFF positions while the right LED stays ON, but only while the button is pressed.</p>
+    <pre><code>⚫ 💡 💡
+💡 ⚫ 💡
+⚫ 💡 💡
+💡 ⚫ 💡
+...</code></pre>
+    <p>When the button is released:</p>
+    <pre><code>⚫ ⚫ ⚫</code></pre>
+    <div class="callout">You're combining <code>BUTTON + if/else + multiple GPIOs + digitalWrite() + delay()</code>.</div>
+  </section>
+
+  <section class="step">
+    <h2>⚠️ 31. delay() AND BUTTONS</h2>
+    <p>Suppose you write:</p>
+    <pre><code>delay(5000);</code></pre>
+    <p>The ESP32 spends 5 seconds waiting. During that time, this simple program isn't continuously checking the button.</p>
+    <p>Later we'll learn better timing methods such as:</p>
+    <pre><code>millis()</code></pre>
+    <div class="callout warn">⚠️ <code>delay()</code> is easy, but it blocks the normal flow of your program.</div>
+  </section>
+
+  <section class="step">
+    <h2>🧪 32. FOURTH CHALLENGE — HOLD THE BUTTON</h2>
+    <p>Make the LED turn ON <strong>only while the button is physically held down</strong>.</p>
+    <p>That's already what the current program does.</p>
+    <div class="diagram">Release button
+      ↓
+D4 becomes HIGH
+      ↓
+buttonState = HIGH
+      ↓
+if(buttonState == LOW) is FALSE
+      ↓
+else runs
+      ↓
+LED = LOW
+      ↓
+LED OFF</div>
+  </section>
+
+  <section class="step">
+    <h2>🧠 33. NEW ESP32 VOCABULARY</h2>
+    <table>
+      <tr><th>Term</th><th>Meaning</th></tr>
+      <tr><td><strong>GPIO</strong></td><td>General-purpose input/output pin</td></tr>
+      <tr><td><strong>INPUT</strong></td><td>GPIO configured to read a signal</td></tr>
+      <tr><td><strong>OUTPUT</strong></td><td>GPIO configured to control a signal</td></tr>
+      <tr><td><strong>Digital input</strong></td><td>Input interpreted as HIGH or LOW</td></tr>
+      <tr><td><strong>Digital output</strong></td><td>Output set to HIGH or LOW</td></tr>
+      <tr><td><code>digitalRead()</code></td><td>Reads a GPIO</td></tr>
+      <tr><td><code>digitalWrite()</code></td><td>Sets a GPIO</td></tr>
+      <tr><td><code>INPUT_PULLUP</code></td><td>Input mode with internal pull-up enabled</td></tr>
+      <tr><td><strong>Pull-up</strong></td><td>Keeps an input at a default HIGH state</td></tr>
+      <tr><td><strong>GND</strong></td><td>Electrical ground / reference</td></tr>
+      <tr><td><strong>HIGH</strong></td><td>Logic-high GPIO state</td></tr>
+      <tr><td><strong>LOW</strong></td><td>Logic-low GPIO state</td></tr>
+      <tr><td><strong>if</strong></td><td>Executes code when a condition is true</td></tr>
+      <tr><td><strong>else</strong></td><td>Executes alternative code</td></tr>
+      <tr><td><strong>==</strong></td><td>Compares two values</td></tr>
+      <tr><td><strong>Button</strong></td><td>Physical switch used as an input</td></tr>
+    </table>
+  </section>
+
+  <section class="step">
+    <h2>🧠 34. YOUR SECOND BIG ESP32 IDEA</h2>
+    <p>Your first project was:</p>
+    <pre><code>PROGRAM
+   ↓
+GPIO
+   ↓
+LED</code></pre>
+    <p>Now you've built:</p>
+    <pre><code>BUTTON
+   ↓
+GPIO
+   ↓
+PROGRAM
+   ↓
+GPIO
+   ↓
+LED</code></pre>
+    <p>The ESP32 isn't just executing a fixed animation anymore. It's <strong>observing the outside world and making a decision based on what it observes.</strong></p>
+  </section>
+
+  <section class="step">
+    <h2>🔌 35. FINAL CIRCUIT</h2>
+    <pre><code>                         ESP32 DevKit V1
+                    ┌─────────────────────┐
+                    │                     │
+                    │ D2 ●──── LED ───┐   │
+                    │                 │   │
+                    │                 ▼   │
+                    │                GND  │
+                    │                     │
+                    │ D4 ●── BUTTON ──┐   │
+                    │                 │   │
+                    │                 ▼   │
+                    │                GND  │
+                    │                     │
+                    └─────────────────────┘
+
+D2 ───── 💡 ───── GND
+D4 ───── 🔘 ───── GND</code></pre>
+    <p>with <code>pinMode(BUTTON_PIN, INPUT_PULLUP);</code> handling the button's internal pull-up.</p>
+  </section>
+
+  <section class="step">
+    <h2>📂 36. FINAL PROJECT STRUCTURE</h2>
+    <pre><code>ESP32-first
+│
+├── platformio.ini
+│
+└── src
+    └── main.cpp</code></pre>
+  </section>
+
+  <section class="step">
+    <h2>🚨 37. IF THE LED DOESN'T WORK</h2>
+    <ol>
+      <li>Check the LED direction and try reversing it.</li>
+      <li>Make sure the LED is connected to <strong>D2</strong>.</li>
+      <li>Make sure the other side reaches <strong>GND</strong>.</li>
+      <li>Make sure PlatformIO successfully uploaded the new program.</li>
+    </ol>
+  </section>
+
+  <section class="step">
+    <h2>🚨 38. IF THE BUTTON DOESN'T WORK</h2>
+    <ol>
+      <li>Check <strong>D4 → BUTTON</strong>.</li>
+      <li>Check <strong>BUTTON → GND</strong>.</li>
+      <li>Use <code>pinMode(BUTTON_PIN, INPUT_PULLUP);</code>.</li>
+      <li>Check the breadboard button orientation. Try rotating it 90° if pressing it doesn't change anything.</li>
+    </ol>
+  </section>
+
+  <section class="step">
+    <h2>🚨 39. IF THE BUTTON ALWAYS SEEMS PRESSED</h2>
+    <p>If the LED stays ON constantly, check whether D4 is accidentally connected directly to GND without the button acting as the switch.</p>
+    <div class="callout">BUTTON PRESSED → D4 = LOW<br>BUTTON RELEASED → D4 = HIGH</div>
+  </section>
+
+  <section class="step">
+    <h2>🚨 40. IF THE BUTTON BEHAVES RANDOMLY</h2>
+    <p>Check that you are actually using:</p>
+    <pre><code>INPUT_PULLUP</code></pre>
+    <p>The internal pull-up gives the input a defined default state. Without a suitable pull-up or pull-down arrangement, a digital input can float and produce unreliable readings.</p>
+  </section>
+
+  <section class="step">
+    <h2>🏁 41. FINAL CHECKLIST</h2>
+    <ul class="checklist">
+      <li>☐ ESP32 connected</li><li>☐ LED connected to D2</li><li>☐ LED connected to GND</li>
+      <li>☐ Button connected to D4</li><li>☐ Button connected to GND</li>
+      <li>☐ platformio.ini is correct</li><li>☐ main.cpp is inside src</li>
+      <li>☐ Code builds successfully</li><li>☐ Firmware uploads successfully</li>
+      <li>☐ LED is OFF when button is released</li><li>☐ LED turns ON when button is pressed</li>
+      <li>☐ LED turns OFF when button is released</li><li>☐ You understand digitalRead()</li>
+      <li>☐ You understand digitalWrite()</li><li>☐ You understand INPUT_PULLUP</li>
+      <li>☐ You understand HIGH</li><li>☐ You understand LOW</li><li>☐ You understand if</li>
+      <li>☐ You understand else</li><li>☐ You understand ==</li>
+    </ul>
+  </section>
+
+  <section class="step">
+    <h2>🎉 42. WHAT YOU JUST LEARNED</h2>
+    <p>You've now crossed an important line.</p>
+    <pre><code>Before:
+
+ESP32
+  ↓
+"Do this."
+  ↓
+LED</code></pre>
+    <pre><code>Now:
+
+REAL WORLD
+    ↓
+BUTTON
+    ↓
+ESP32
+    ↓
+"What's happening?"
+    ↓
+digitalRead()
+    ↓
+if / else
+    ↓
+"Okay, I'll do this."
+    ↓
+digitalWrite()
+    ↓
+LED</code></pre>
+    <p>That's the basic pattern behind <strong>interactive electronics</strong>.</p>
+    <div class="callout"><strong>READ → THINK → ACT → REPEAT.</strong> 🔥</div>
+    <p>From here, things get much more interesting: buttons → multiple LEDs → sensors → buzzers → displays → Wi-Fi → web servers → phone control → ESP32 ↔ ESP32 → ESP-NOW.</p>
+  </section>
+
+  <div class="nav">
+    <button id="prev">← Previous</button>
+    <span class="kbd">Use ← / → keys</span>
+    <button id="next">Next →</button>
+  </div>
+</main>
+
+<script>
+const steps=[...document.querySelectorAll('.step')];
+const list=document.getElementById('stepList');
+const progress=document.getElementById('progress');
+const counter=document.getElementById('counter');
+let current=0;
+
+steps.forEach((s,i)=>{
+  const b=document.createElement('button');
+  b.className='step-btn';
+  b.textContent=i===0?'INTRO':`${i}. ${s.querySelector('h2')?.textContent.replace(/^.*?\\s/,'') || 'STEP'}`;
+  b.onclick=()=>show(i);
+  list.appendChild(b);
+});
+
+function show(n){
+  current=Math.max(0,Math.min(steps.length-1,n));
+  steps.forEach((s,i)=>s.classList.toggle('active',i===current));
+  [...list.children].forEach((b,i)=>{
+    b.classList.toggle('active',i===current);
+    b.classList.toggle('done',i<current);
+  });
+  progress.style.width=((current)/(steps.length-1)*100)+'%';
+  counter.textContent=`STEP ${current+1} / ${steps.length}`;
+  document.getElementById('prev').disabled=current===0;
+  document.getElementById('next').disabled=current===steps.length-1;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+document.getElementById('prev').onclick=()=>show(current-1);
+document.getElementById('next').onclick=()=>show(current+1);
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowLeft') show(current-1);
+  if(e.key==='ArrowRight') show(current+1);
+});
+show(0);
+</script>
+</body>
+</html>
