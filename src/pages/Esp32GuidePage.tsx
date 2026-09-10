@@ -1,20 +1,9 @@
-import { useRouter } from '../state/router';
-import { WorkspaceIframe } from '../components/WorkspaceIframe';
-import { Icon } from '../components/Icon';
-
-// ===========================================================
-// Esp32GuidePage — renders one ESP-32 guide file discovered from
-// public/library/ESP-32/ (see vite.config.ts esp32LibraryPlugin).
-// slug is the filename minus ".html"; the file itself is fetched
-// directly by the browser, so no per-guide React code is needed.
-// ===========================================================
-
 export function Esp32GuidePage({ slug }: { slug: string }) {
   const { navigate } = useRouter();
   const file = `/library/ESP-32/${slug}.html`;
 
   return (
-    <div className="flex h-full flex-col gap-3">
+    <div className="flex h-full min-h-0 min-w-0 flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <button
           onClick={() => navigate('/library/esp32')}
@@ -22,6 +11,7 @@ export function Esp32GuidePage({ slug }: { slug: string }) {
         >
           <Icon name="ChevronRight" size={12} className="rotate-180" /> ESP-32
         </button>
+
         <a
           href={file}
           target="_blank"
@@ -35,7 +25,7 @@ export function Esp32GuidePage({ slug }: { slug: string }) {
       <WorkspaceIframe
         src={file}
         title={slug}
-        className="min-h-[70vh] flex-1 rounded-2xl border border-white/10"
+        className="min-h-0 min-w-0 flex-1 rounded-2xl border border-white/10"
         loadingLabel="Loading guide…"
       />
     </div>

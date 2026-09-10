@@ -1,17 +1,9 @@
 // ===========================================================
-// WorkspaceIframe — the ONE reusable iframe component for every
-// standalone HTML lab in Quantum Core.
-//
-// Used by: BetaLabPage, TextbookPage.
-// Features:
-//   • fills 100% of its container (no fixed sizes)
-//   • loading spinner overlay
-//   • error overlay with retry
-//   • forwarded ref (for scroll tracking in TextbookPage)
-//   • auto-remounts when src changes
+// WorkspaceIframe — reusable iframe component for standalone
+// HTML labs, textbooks, and other Quantum Core content.
 // ===========================================================
 
-import { forwardRef, useState, useEffect } from 'react';
+import { forwardRef, useEffect, useState } from 'react';
 import { Icon } from './Icon';
 import { GlassPanel, NeonButton } from './ui';
 import { cn } from '../lib/cn';
@@ -43,7 +35,7 @@ export const WorkspaceIframe = forwardRef<HTMLIFrameElement, WorkspaceIframeProp
     const [error, setError] = useState(false);
     const [retryKey, setRetryKey] = useState(0);
 
-    // Reset loading state when the src changes (e.g. volume navigation)
+    // Reset state whenever the displayed HTML file changes.
     useEffect(() => {
       setLoaded(false);
       setError(false);
@@ -55,13 +47,18 @@ export const WorkspaceIframe = forwardRef<HTMLIFrameElement, WorkspaceIframeProp
     };
 
     const retry = () => {
-      setError(false);
       setLoaded(false);
-      setRetryKey((k) => k + 1);
+      setError(false);
+      setRetryKey((key) => key + 1);
     };
 
     return (
-      <div className={cn('relative overflow-hidden bg-ink-950', className)}>
+      <div
+        className={cn(
+          'relative h-full w-full overflow-hidden bg-ink-950',
+          className,
+        )}
+      >
         {/* Loading overlay */}
         {!loaded && !error && (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-ink-950">
@@ -78,22 +75,33 @@ export const WorkspaceIframe = forwardRef<HTMLIFrameElement, WorkspaceIframeProp
         {error && (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-ink-950">
             <GlassPanel className="max-w-md p-8 text-center">
-              <Icon name="AlertCircle" size={40} className="mx-auto text-err-400" />
-              <h3 className="mt-4 font-display text-lg text-white">Could Not Load</h3>
+              <Icon
+                name="AlertCircle"
+                size={40}
+                className="mx-auto text-err-400"
+              />
+
+              <h3 className="mt-4 font-display text-lg text-white">
+                Could Not Load
+              </h3>
+
               <p className="mt-2 text-sm text-slate-400">
                 The content at{' '}
                 <code className="text-xs text-cyan-400">{src}</code>{' '}
                 could not be loaded.
               </p>
+
               <div className="mt-6 flex justify-center">
                 <NeonButton variant="ghost" onClick={retry}>
-                  <Icon name="RefreshCw" size={14} /> Retry
+                  <Icon name="RefreshCw" size={14} />
+                  Retry
                 </NeonButton>
               </div>
             </GlassPanel>
           </div>
         )}
 
+        {/* HTML document */}
         <iframe
           key={`${src}-${retryKey}`}
           ref={ref}
