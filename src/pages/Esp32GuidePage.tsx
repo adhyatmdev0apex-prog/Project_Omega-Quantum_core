@@ -40,11 +40,11 @@ export function Esp32GuidePage({ slug }: { slug: string }) {
         </a>
       </div>
 
-      {/* Full workspace guide */}
+      {/* ESP-32 guide */}
       <WorkspaceIframe
         src={file}
         title={slug}
-        className="min-h-0 flex-1 rounded-2xl border border-white/10"
+        className="h-[75vh] w-full rounded-2xl border border-white/10"
         loadingLabel="Loading guide…"
       />
     </div>
