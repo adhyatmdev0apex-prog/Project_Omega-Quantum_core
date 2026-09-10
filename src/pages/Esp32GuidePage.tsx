@@ -6,11 +6,13 @@ import { Icon } from '../components/Icon';
 // Esp32GuidePage — renders one ESP-32 guide file discovered from
 // public/library/ESP-32/.
 //
-// The guide HTML is loaded directly through WorkspaceIframe.
+// Uses the same workspace/iframe sizing model as the working
+// textbook and volume preview pages.
 // ===========================================================
 
 export function Esp32GuidePage({ slug }: { slug: string }) {
   const { navigate } = useRouter();
+
   const file = `/library/ESP-32/${slug}.html`;
 
   return (
@@ -26,6 +28,7 @@ export function Esp32GuidePage({ slug }: { slug: string }) {
             size={12}
             className="rotate-180"
           />
+
           ESP-32
         </button>
 
@@ -40,12 +43,13 @@ export function Esp32GuidePage({ slug }: { slug: string }) {
         </a>
       </div>
 
-      {/* ESP-32 guide */}
+      {/* ESP-32 guide viewer */}
       <WorkspaceIframe
         src={file}
         title={slug}
-        className="h-[75vh] w-full rounded-2xl border border-white/10"
+        loading="eager"
         loadingLabel="Loading guide…"
+        className="min-h-0 flex-1 rounded-2xl border border-white/10"
       />
     </div>
   );
