@@ -135,7 +135,12 @@ function generateEsp32Manifest(esp32Dir: string): void {
         file: `/library/ESP-32/${e.name}`,
       };
     })
-    .sort((a, b) => a.title.localeCompare(b.title));
+    .sort((a, b) =>
+      a.title.localeCompare(b.title, undefined, {
+        numeric: true,
+        sensitivity: 'base',
+      })
+);
 
   fs.writeFileSync(manifestPath, JSON.stringify(guides, null, 2));
   console.log(`\x1b[36m[esp32-library]\x1b[0m manifest updated — ${guides.length} guide(s)`);
