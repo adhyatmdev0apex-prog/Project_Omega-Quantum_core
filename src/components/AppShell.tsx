@@ -67,7 +67,6 @@ export function AppShell({ children, workspace = false }: { children: ReactNode;
               ? 'overflow-hidden flex flex-col'
               : 'overflow-y-auto px-4 py-6 md:px-8 md:py-8',
           )}
->
         >
           {workspace
             ? children
