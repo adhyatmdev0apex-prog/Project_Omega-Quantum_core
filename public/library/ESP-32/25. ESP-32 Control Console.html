@@ -1,0 +1,4646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Project 25 — ESP32 Control Console</title>
+
+    <style>
+        :root {
+            --bg: #050807;
+            --panel: rgba(12, 18, 15, 0.92);
+            --panel-soft: rgba(16, 24, 20, 0.78);
+            --green: #39ff88;
+            --cyan: #39e7ff;
+            --yellow: #ffe66d;
+            --red: #ff5577;
+            --text: #e8f5ed;
+            --muted: #91a49a;
+            --border: rgba(57, 255, 136, 0.18);
+            --sidebar-width: 285px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background:
+                radial-gradient(
+                    circle at 15% 10%,
+                    rgba(57, 255, 136, 0.10),
+                    transparent 32%
+                ),
+                radial-gradient(
+                    circle at 85% 85%,
+                    rgba(57, 231, 255, 0.07),
+                    transparent 30%
+                ),
+                var(--bg);
+            color: var(--text);
+            font-family:
+                Inter,
+                ui-sans-serif,
+                system-ui,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0.16;
+            background-image:
+                linear-gradient(
+                    rgba(255, 255, 255, 0.025) 1px,
+                    transparent 1px
+                ),
+                linear-gradient(
+                    90deg,
+                    rgba(255, 255, 255, 0.025) 1px,
+                    transparent 1px
+                );
+            background-size: 42px 42px;
+            mask-image: linear-gradient(
+                to bottom,
+                black,
+                transparent 92%
+            );
+            z-index: -1;
+        }
+
+        button,
+        a {
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        code {
+            font-family:
+                "JetBrains Mono",
+                "Cascadia Code",
+                "Fira Code",
+                Consolas,
+                monospace;
+        }
+
+        /* =========================================================
+           SIDEBAR
+           ========================================================= */
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            padding: 28px 18px;
+            border-right: 1px solid var(--border);
+            background:
+                linear-gradient(
+                    180deg,
+                    rgba(7, 12, 9, 0.98),
+                    rgba(5, 8, 7, 0.94)
+                );
+            backdrop-filter: blur(20px);
+            z-index: 100;
+            overflow-y: auto;
+        }
+
+        .brand {
+            padding: 8px 10px 24px;
+        }
+
+        .brand-mark {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .brand-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow:
+                0 0 10px rgba(57, 255, 136, 0.8),
+                0 0 24px rgba(57, 255, 136, 0.35);
+        }
+
+        .brand-title {
+            color: var(--green);
+            font-size: 15px;
+            font-weight: 800;
+            letter-spacing: 0.14em;
+        }
+
+        .brand-subtitle {
+            color: var(--muted);
+            font-size: 11px;
+            line-height: 1.6;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+        }
+
+        .progress-area {
+            padding: 0 10px 22px;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            color: var(--muted);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.10em;
+        }
+
+        .progress-label strong {
+            color: var(--green);
+            font-weight: 700;
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 4px;
+            overflow: hidden;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.07);
+        }
+
+        .progress-fill {
+            width: 7.14%;
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(
+                90deg,
+                var(--green),
+                var(--cyan)
+            );
+            box-shadow: 0 0 12px rgba(57, 255, 136, 0.5);
+            transition: width 0.3s ease;
+        }
+
+        .nav {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .nav-item {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border: 1px solid transparent;
+            border-radius: 10px;
+            background: transparent;
+            color: var(--muted);
+            font: inherit;
+            font-size: 12px;
+            text-align: left;
+            cursor: pointer;
+            transition:
+                color 0.2s ease,
+                background 0.2s ease,
+                border-color 0.2s ease,
+                transform 0.2s ease;
+        }
+
+        .nav-item:hover {
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.025);
+            transform: translateX(2px);
+        }
+
+        .nav-item.active {
+            color: var(--green);
+            background: rgba(57, 255, 136, 0.06);
+            border-color: rgba(57, 255, 136, 0.15);
+        }
+
+        .nav-number {
+            width: 24px;
+            color: inherit;
+            font-family:
+                "JetBrains Mono",
+                "Cascadia Code",
+                monospace;
+            font-size: 10px;
+            opacity: 0.8;
+        }
+
+        /* =========================================================
+           MOBILE HEADER
+           ========================================================= */
+
+        .mobile-header {
+            display: none;
+            position: sticky;
+            top: 0;
+            z-index: 90;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(5, 8, 7, 0.94);
+            backdrop-filter: blur(16px);
+        }
+
+        .mobile-header-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .mobile-brand {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            color: var(--green);
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.10em;
+        }
+
+        .mobile-progress {
+            color: var(--muted);
+            font-family:
+                "JetBrains Mono",
+                "Cascadia Code",
+                monospace;
+            font-size: 11px;
+        }
+
+        /* =========================================================
+           MAIN
+           ========================================================= */
+
+        .main {
+            min-height: 100vh;
+            margin-left: var(--sidebar-width);
+        }
+
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            height: 62px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 34px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            background: rgba(5, 8, 7, 0.72);
+            backdrop-filter: blur(16px);
+        }
+
+        .topbar-left {
+            color: var(--muted);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+        }
+
+        .topbar-left span {
+            color: var(--green);
+        }
+
+        .topbar-right {
+            color: var(--muted);
+            font-family:
+                "JetBrains Mono",
+                "Cascadia Code",
+                monospace;
+            font-size: 10px;
+        }
+
+        .content {
+            width: min(1100px, calc(100% - 48px));
+            margin: 0 auto;
+            padding: 52px 0 80px;
+        }
+
+        /* =========================================================
+           SECTIONS
+           ========================================================= */
+
+        .section {
+            display: none;
+            animation: sectionIn 0.34s ease;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes sectionIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* =========================================================
+           HERO
+           ========================================================= */
+
+        .hero {
+            position: relative;
+            overflow: hidden;
+            padding: 42px;
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            background:
+                radial-gradient(
+                    circle at 80% 20%,
+                    rgba(57, 255, 136, 0.10),
+                    transparent 32%
+                ),
+                linear-gradient(
+                    145deg,
+                    rgba(16, 27, 20, 0.94),
+                    rgba(8, 13, 10, 0.94)
+                );
+            box-shadow:
+                0 25px 70px rgba(0, 0, 0, 0.28),
+                inset 0 1px rgba(255, 255, 255, 0.035);
+        }
+
+        .hero::after {
+            content: "25";
+            position: absolute;
+            right: 36px;
+            bottom: -30px;
+            color: rgba(57, 255, 136, 0.045);
+            font-size: 180px;
+            font-weight: 900;
+            line-height: 1;
+            pointer-events: none;
+        }
+
+        .eyebrow {
+            margin-bottom: 12px;
+            color: var(--green);
+            font-family:
+                "JetBrains Mono",
+                "Cascadia Code",
+                monospace;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            max-width: 800px;
+            margin: 0 0 16px;
+            color: #f1fff6;
+            font-size: clamp(36px, 5vw, 64px);
+            line-height: 0.98;
+            letter-spacing: -0.045em;
+        }
+
+        .hero-subtitle {
+            max-width: 760px;
+            margin: 0;
+            color: var(--muted);
+            font-size: 16px;
+            line-height: 1.75;
+        }
+
+        .terminal {
+            position: relative;
+            z-index: 1;
+            margin-top: 30px;
+            padding: 18px 20px;
+            border: 1px solid rgba(57, 255, 136, 0.15);
+            border-radius: 13px;
+            background: rgba(0, 0, 0, 0.32);
+            color: var(--green);
+            font-family:
+                "JetBrains Mono",
+                "Cascadia Code",
+                monospace;
+            font-size: 12px;
+            line-height: 1.8;
+        }
+
+        .terminal-muted {
+            color: var(--muted);
+        }
+
+        /* =========================================================
+           SECTION HEADER
+           ========================================================= */
+
+        .section-header {
+            margin-bottom: 28px;
+        }
+
+        .section-number {
+            margin-bottom: 8px;
+            color: var(--green);
+            font-family:
+                "JetBrains Mono",
+                "Cascadia Code",
+                monospace;
+            font-size: 11px;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+        }
+
+        h2 {
+            margin: 0 0 12px;
+            color: #effff4;
+            font-size: clamp(28px, 4vw, 42px);
+            line-height: 1.08;
+            letter-spacing: -0.035em;
+        }
+
+        .section-description {
+            max-width: 800px;
+            margin: 0;
+            color: var(--muted);
+            font-size: 15px;
+            line-height: 1.75;
+        }
+
+        /* =========================================================
+           CARDS
+           ========================================================= */
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .card {
+            padding: 22px;
+            border: 1px solid rgba(255, 255, 255, 0.075);
+            border-radius: 16px;
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(18, 26, 22, 0.88),
+                    rgba(10, 15, 12, 0.82)
+                );
+        }
+
+        .card-green {
+            border-color: rgba(57, 255, 136, 0.18);
+        }
+
+        .card-cyan {
+            border-color: rgba(57, 231, 255, 0.18);
+        }
+
+        .card-yellow {
+            border-color: rgba(255, 230, 109, 0.18);
+        }
+
+        .card-red {
+            border-color: rgba(255, 85, 119, 0.18);
+        }
+
+        .card-icon {
+            margin-bottom: 14px;
+            font-size: 25px;
+        }
+
+        .card h3 {
+            margin: 0 0 8px;
+            color: #effff4;
+            font-size: 17px;
+        }
+
+        .card p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.7;
+        }
+
+        .card strong {
+            color: var(--text);
+        }
+
+        /* =========================================================
+           LISTS
+           ========================================================= */
+
+        .checklist {
+            display: grid;
+            gap: 10px;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .checklist li {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 13px 15px;
+            border: 1px solid rgba(255, 255, 255, 0.055);
+            border-radius: 11px;
+            background: rgba(255, 255, 255, 0.018);
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.55;
+        }
+
+        .check {
+            flex: 0 0 auto;
+            color: var(--green);
+            font-weight: 800;
+        }
+
+        .step-list {
+            display: grid;
+            gap: 12px;
+            counter-reset: step;
+        }
+
+        .step {
+            position: relative;
+            display: grid;
+            grid-template-columns: 42px 1fr;
+            gap: 14px;
+            align-items: start;
+            padding: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.065);
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.018);
+        }
+
+        .step-number {
+            width: 34px;
+            height: 34px;
+            display: grid;
+            place-items: center;
+            border: 1px solid rgba(57, 255, 136, 0.2);
+            border-radius: 10px;
+            background: rgba(57, 255, 136, 0.06);
+            color: var(--green);
+            font-family:
+                "JetBrains Mono",
+                "Cascadia Code",
+                monospace;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .step h3 {
+            margin: 0 0 6px;
+            color: var(--text);
+            font-size: 15px;
+        }
+
+        .step p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.7;
+        }
+
+        /* =========================================================
+           CALLOUTS
+           ========================================================= */
+
+        .callout {
+            margin: 18px 0;
+            padding: 18px 20px;
+            border-left: 3px solid var(--green);
+            border-radius: 0 12px 12px 0;
+            background: rgba(57, 255, 136, 0.045);
+        }
+
+        .callout.warning {
+            border-left-color: var(--yellow);
+            background: rgba(255, 230, 109, 0.045);
+        }
+
+        .callout.danger {
+            border-left-color: var(--red);
+            background: rgba(255, 85, 119, 0.045);
+        }
+
+        .callout.cyan {
+            border-left-color: var(--cyan);
+            background: rgba(57, 231, 255, 0.045);
+        }
+
+        .callout-title {
+            margin-bottom: 6px;
+            color: var(--green);
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .callout.warning .callout-title {
+            color: var(--yellow);
+        }
+
+        .callout.danger .callout-title {
+            color: var(--red);
+        }
+
+        .callout.cyan .callout-title {
+            color: var(--cyan);
+        }
+
+        .callout p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.7;
+        }
+
+        /* =========================================================
+           CODE
+           ========================================================= */
+
+        .code-wrap {
+            position: relative;
+            margin: 18px 0;
+            border: 1px solid rgba(57, 255, 136, 0.12);
+            border-radius: 14px;
+            overflow: hidden;
+            background: #030504;
+        }
+
+        .code-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 10px 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+            background: rgba(255, 255, 255, 0.025);
+        }
+
+        .code-language {
+            color: var(--green);
+            font-family:
+                "JetBrains Mono",
+                "Cascadia Code",
+                monospace;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .copy-btn {
+            border: 1px solid rgba(57, 255, 136, 0.15);
+            border-radius: 7px;
+            padding: 5px 9px;
+            background: rgba(57, 255, 136, 0.04);
+            color: var(--muted);
+            font-family:
+                "JetBrains Mono",
+                "Cascadia Code",
+                monospace;
+            font-size: 10px;
+            cursor: pointer;
+            transition:
+                color 0.2s ease,
+                border-color 0.2s ease,
+                background 0.2s ease;
+        }
+
+        .copy-btn:hover {
+            color: var(--green);
+            border-color: rgba(57, 255, 136, 0.35);
+            background: rgba(57, 255, 136, 0.08);
+        }
+
+        pre.code {
+            margin: 0;
+            padding: 20px;
+            overflow-x: auto;
+            color: #d8e9df;
+            font-family:
+                "JetBrains Mono",
+                "Cascadia Code",
+                "Fira Code",
+                Consolas,
+                monospace;
+            font-size: 12px;
+            line-height: 1.72;
+            tab-size: 4;
+            white-space: pre;
+        }
+
+        .inline-code {
+            padding: 2px 6px;
+            border: 1px solid rgba(57, 255, 136, 0.13);
+            border-radius: 5px;
+            background: rgba(57, 255, 136, 0.045);
+            color: var(--green);
+            font-family:
+                "JetBrains Mono",
+                "Cascadia Code",
+                monospace;
+            font-size: 0.92em;
+        }
+
+        /* =========================================================
+           WIRING
+           ========================================================= */
+
+        .wiring {
+            padding: 24px;
+            border: 1px solid rgba(57, 231, 255, 0.14);
+            border-radius: 16px;
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(57, 231, 255, 0.035),
+                    rgba(255, 255, 255, 0.012)
+                );
+        }
+
+        .wiring-title {
+            margin-bottom: 14px;
+            color: var(--cyan);
+            font-size: 13px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .wire-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .wire-table th,
+        .wire-table td {
+            padding: 12px 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+            text-align: left;
+            font-size: 12px;
+        }
+
+        .wire-table th {
+            color: var(--muted);
+            font-size: 10px;
+            letter-spacing: 0.10em;
+            text-transform: uppercase;
+        }
+
+        .wire-table td {
+            color: var(--text);
+        }
+
+        .wire-table td:first-child {
+            color: var(--green);
+            font-family:
+                "JetBrains Mono",
+                "Cascadia Code",
+                monospace;
+        }
+
+        .diagram {
+            margin-top: 20px;
+            padding: 20px;
+            overflow-x: auto;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            background: #030504;
+        }
+
+        .diagram pre {
+            margin: 0;
+            color: #a9c9b5;
+            font-family:
+                "JetBrains Mono",
+                "Cascadia Code",
+                monospace;
+            font-size: 11px;
+            line-height: 1.65;
+        }
+
+        /* =========================================================
+           FLOW
+           ========================================================= */
+
+        .flow {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 24px 0;
+        }
+
+        .flow-node {
+            padding: 12px 15px;
+            border: 1px solid rgba(57, 255, 136, 0.16);
+            border-radius: 10px;
+            background: rgba(57, 255, 136, 0.045);
+            color: var(--green);
+            font-family:
+                "JetBrains Mono",
+                "Cascadia Code",
+                monospace;
+            font-size: 10px;
+            text-align: center;
+        }
+
+        .flow-arrow {
+            color: var(--muted);
+            font-family:
+                "JetBrains Mono",
+                "Cascadia Code",
+                monospace;
+        }
+
+        /* =========================================================
+           MODE VISUAL
+           ========================================================= */
+
+        .mode-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+            margin: 22px 0;
+        }
+
+        .mode-card {
+            padding: 22px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 15px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.018);
+        }
+
+        .mode-number {
+            margin-bottom: 8px;
+            color: var(--muted);
+            font-family:
+                "JetBrains Mono",
+                "Cascadia Code",
+                monospace;
+            font-size: 10px;
+        }
+
+        .mode-name {
+            margin-bottom: 10px;
+            color: var(--text);
+            font-size: 16px;
+            font-weight: 800;
+        }
+
+        .mode-screen {
+            min-height: 72px;
+            display: grid;
+            place-items: center;
+            border: 1px solid rgba(57, 255, 136, 0.20);
+            border-radius: 10px;
+            background: #020403;
+            color: var(--green);
+            font-family:
+                "JetBrains Mono",
+                "Cascadia Code",
+                monospace;
+            font-size: 13px;
+            box-shadow:
+                inset 0 0 20px rgba(57, 255, 136, 0.035);
+        }
+
+        /* =========================================================
+           TABLE
+           ========================================================= */
+
+        .table-wrap {
+            overflow-x: auto;
+            margin: 20px 0;
+            border: 1px solid rgba(255, 255, 255, 0.065);
+            border-radius: 14px;
+        }
+
+        .data-table {
+            width: 100%;
+            min-width: 650px;
+            border-collapse: collapse;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+            text-align: left;
+            vertical-align: top;
+            font-size: 12px;
+        }
+
+        .data-table th {
+            color: var(--green);
+            background: rgba(57, 255, 136, 0.035);
+            font-size: 10px;
+            letter-spacing: 0.10em;
+            text-transform: uppercase;
+        }
+
+        .data-table td {
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        .data-table td:first-child {
+            color: var(--text);
+            font-weight: 700;
+        }
+
+        /* =========================================================
+           NAVIGATION FOOTER
+           ========================================================= */
+
+        .navigation {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-top: 48px;
+            padding-top: 22px;
+            border-top: 1px solid rgba(255, 255, 255, 0.065);
+        }
+
+        .nav-control {
+            min-width: 130px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 11px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.025);
+            color: var(--muted);
+            font: inherit;
+            font-size: 12px;
+            cursor: pointer;
+            transition:
+                color 0.2s ease,
+                border-color 0.2s ease,
+                background 0.2s ease,
+                transform 0.2s ease;
+        }
+
+        .nav-control:hover:not(:disabled) {
+            color: var(--green);
+            border-color: rgba(57, 255, 136, 0.25);
+            background: rgba(57, 255, 136, 0.05);
+            transform: translateY(-1px);
+        }
+
+        .nav-control:disabled {
+            cursor: not-allowed;
+            opacity: 0.28;
+        }
+
+        .nav-status {
+            color: var(--muted);
+            font-family:
+                "JetBrains Mono",
+                "Cascadia Code",
+                monospace;
+            font-size: 10px;
+        }
+
+        /* =========================================================
+           NEXT PROJECT
+           ========================================================= */
+
+        .next-project {
+            position: relative;
+            overflow: hidden;
+            padding: 34px;
+            border: 1px solid rgba(57, 255, 136, 0.20);
+            border-radius: 20px;
+            background:
+                radial-gradient(
+                    circle at 85% 40%,
+                    rgba(57, 255, 136, 0.08),
+                    transparent 35%
+                ),
+                rgba(57, 255, 136, 0.025);
+        }
+
+        .next-project::after {
+            content: "26";
+            position: absolute;
+            right: 24px;
+            bottom: -40px;
+            color: rgba(57, 255, 136, 0.04);
+            font-size: 170px;
+            font-weight: 900;
+            line-height: 1;
+        }
+
+        .next-label {
+            margin-bottom: 8px;
+            color: var(--green);
+            font-family:
+                "JetBrains Mono",
+                "Cascadia Code",
+                monospace;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.13em;
+            text-transform: uppercase;
+        }
+
+        .next-project h3 {
+            position: relative;
+            z-index: 1;
+            margin: 0 0 10px;
+            color: var(--text);
+            font-size: 25px;
+        }
+
+        .next-project p {
+            position: relative;
+            z-index: 1;
+            max-width: 760px;
+            margin: 0;
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.75;
+        }
+
+        /* =========================================================
+           UTILITY
+           ========================================================= */
+
+        .spacer {
+            height: 18px;
+        }
+
+        .mt {
+            margin-top: 26px;
+        }
+
+        .center {
+            text-align: center;
+        }
+
+        .big-green {
+            color: var(--green);
+            font-size: 20px;
+            font-weight: 800;
+        }
+
+        .muted {
+            color: var(--muted);
+        }
+
+        /* =========================================================
+           RESPONSIVE
+           ========================================================= */
+
+        @media (max-width: 900px) {
+            .sidebar {
+                display: none;
+            }
+
+            .mobile-header {
+                display: block;
+            }
+
+            .main {
+                margin-left: 0;
+            }
+
+            .topbar {
+                display: none;
+            }
+
+            .content {
+                width: min(100% - 28px, 760px);
+                padding: 28px 0 60px;
+            }
+
+            .hero {
+                padding: 30px 24px;
+            }
+
+            .hero::after {
+                right: 18px;
+                bottom: -20px;
+                font-size: 110px;
+            }
+
+            .grid,
+            .grid-3 {
+                grid-template-columns: 1fr;
+            }
+
+            .mode-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .navigation {
+                margin-top: 34px;
+            }
+
+            .nav-control {
+                min-width: 105px;
+            }
+        }
+
+        @media (max-width: 560px) {
+            h1 {
+                font-size: 38px;
+            }
+
+            h2 {
+                font-size: 30px;
+            }
+
+            .hero {
+                padding: 25px 19px;
+                border-radius: 17px;
+            }
+
+            .section-description,
+            .hero-subtitle {
+                font-size: 14px;
+            }
+
+            .card,
+            .wiring,
+            .next-project {
+                padding: 18px;
+            }
+
+            .step {
+                grid-template-columns: 34px 1fr;
+                padding: 15px;
+            }
+
+            .step-number {
+                width: 30px;
+                height: 30px;
+            }
+
+            pre.code {
+                padding: 16px;
+                font-size: 10.5px;
+            }
+
+            .navigation {
+                gap: 8px;
+            }
+
+            .nav-control {
+                min-width: 0;
+                flex: 1;
+                padding: 10px;
+            }
+
+            .nav-status {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- =========================================================
+         SIDEBAR
+         ========================================================= -->
+
+    <aside class="sidebar">
+
+        <div class="brand">
+
+            <div class="brand-mark">
+                <span class="brand-dot"></span>
+
+                <div class="brand-title">
+                    QUANTUM CORE
+                </div>
+            </div>
+
+            <div class="brand-subtitle">
+                ESP32 Engineering Library
+            </div>
+
+        </div>
+
+        <div class="progress-area">
+
+            <div class="progress-label">
+                <span>Mission Progress</span>
+                <strong id="progressText">01 / 14</strong>
+            </div>
+
+            <div class="progress-track">
+                <div
+                    class="progress-fill"
+                    id="progressFill"
+                ></div>
+            </div>
+
+        </div>
+
+        <nav class="nav">
+
+            <button
+                class="nav-item active"
+                data-section="0"
+            >
+                <span class="nav-number">01</span>
+                <span>Mission</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="1"
+            >
+                <span class="nav-number">02</span>
+                <span>What You Have</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="2"
+            >
+                <span class="nav-number">03</span>
+                <span>What We're Learning</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="3"
+            >
+                <span class="nav-number">04</span>
+                <span>Wiring</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="4"
+            >
+                <span class="nav-number">05</span>
+                <span>Create Project</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="5"
+            >
+                <span class="nav-number">06</span>
+                <span>Complete Code</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="6"
+            >
+                <span class="nav-number">07</span>
+                <span>Understand Code</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="7"
+            >
+                <span class="nav-number">08</span>
+                <span>Build + Upload</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="8"
+            >
+                <span class="nav-number">09</span>
+                <span>What Should Happen</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="9"
+            >
+                <span class="nav-number">10</span>
+                <span>Experiment</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="10"
+            >
+                <span class="nav-number">11</span>
+                <span>Challenge</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="11"
+            >
+                <span class="nav-number">12</span>
+                <span>Troubleshooting</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="12"
+            >
+                <span class="nav-number">13</span>
+                <span>Vocabulary</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="13"
+            >
+                <span class="nav-number">14</span>
+                <span>Next Project</span>
+            </button>
+
+        </nav>
+
+    </aside>
+
+    <!-- =========================================================
+         MOBILE HEADER
+         ========================================================= -->
+
+    <header class="mobile-header">
+
+        <div class="mobile-header-inner">
+
+            <div class="mobile-brand">
+                <span class="brand-dot"></span>
+                QUANTUM CORE
+            </div>
+
+            <div
+                class="mobile-progress"
+                id="mobileProgress"
+            >
+                01 / 14
+            </div>
+
+        </div>
+
+    </header>
+
+    <!-- =========================================================
+         MAIN
+         ========================================================= -->
+
+    <main class="main">
+
+        <div class="topbar">
+
+            <div class="topbar-left">
+                ESP32 LIBRARY
+                <span>/ PROJECT 25</span>
+            </div>
+
+            <div class="topbar-right">
+                CONTROL_CONSOLE.exe
+            </div>
+
+        </div>
+
+        <div class="content">
+
+            <!-- =================================================
+                 SECTION 01 — MISSION
+                 ================================================= -->
+
+            <section class="section active">
+
+                <div class="hero">
+
+                    <div class="eyebrow">
+                        PROJECT 25 // SYSTEMS INTEGRATION
+                    </div>
+
+                    <h1>
+                        ESP32
+                        <br>
+                        Control Console
+                    </h1>
+
+                    <p class="hero-subtitle">
+                        Build a physical control interface for your OLED
+                        while keeping the web dashboard alive.
+                        One ESP32. One master state. Two interfaces.
+                    </p>
+
+                    <div class="terminal">
+                        <span class="terminal-muted">
+                            MY BRO'S ESP32 ::
+                        </span>
+                        <br>
+                        <span>
+                            physical_button + OLED + WiFi_dashboard
+                        </span>
+                        <br>
+                        <span>
+                            &gt; synchronized_system_ready
+                        </span>
+                    </div>
+
+                </div>
+
+                <div class="spacer"></div>
+
+                <div class="callout cyan">
+
+                    <div class="callout-title">
+                        Mission Brief
+                    </div>
+
+                    <p>
+                        In Project 24, the OLED could be controlled from
+                        your smartphone. Now we're removing the dependency
+                        on the phone for local interaction. A physical
+                        button will cycle the OLED through its modes while
+                        the web dashboard remains active at the same time.
+                    </p>
+
+                </div>
+
+                <div class="grid mt">
+
+                    <div class="card card-green">
+
+                        <div class="card-icon">
+                            🔘
+                        </div>
+
+                        <h3>
+                            Physical Interface
+                        </h3>
+
+                        <p>
+                            Press one real button and the ESP32 changes
+                            the current mode. No browser required.
+                        </p>
+
+                    </div>
+
+                    <div class="card card-cyan">
+
+                        <div class="card-icon">
+                            🌐
+                        </div>
+
+                        <h3>
+                            Web Interface
+                        </h3>
+
+                        <p>
+                            Your phone can still directly select Gaming,
+                            Study, or Sleep through HTTP routes.
+                        </p>
+
+                    </div>
+
+                    <div class="card card-yellow">
+
+                        <div class="card-icon">
+                            🧠
+                        </div>
+
+                        <h3>
+                            One Master State
+                        </h3>
+
+                        <p>
+                            Both interfaces operate on the same
+                            <span class="inline-code">currentMode</span>
+                            variable.
+                        </p>
+
+                    </div>
+
+                    <div class="card card-green">
+
+                        <div class="card-icon">
+                            ⚡
+                        </div>
+
+                        <h3>
+                            The Goal
+                        </h3>
+
+                        <p>
+                            Turn an ordinary ESP32 OLED project into a
+                            small synchronized physical + digital UI.
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <div class="navigation">
+                    <button
+                        class="nav-control"
+                        id="prevBtn"
+                        disabled
+                    >
+                        ← Previous
+                    </button>
+
+                    <div class="nav-status">
+                        PROJECT 25
+                    </div>
+
+                    <button
+                        class="nav-control"
+                        id="nextBtn"
+                    >
+                        Next →
+                    </button>
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 02 — WHAT YOU HAVE
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="section-header">
+
+                    <div class="section-number">
+                        02 // HARDWARE
+                    </div>
+
+                    <h2>
+                        What You Have
+                    </h2>
+
+                    <p class="section-description">
+                        Keep the OLED from Project 24 connected.
+                        We only need to add one physical input.
+                    </p>
+
+                </div>
+
+                <div class="grid">
+
+                    <div class="card">
+                        <div class="card-icon">💻</div>
+                        <h3>Windows Laptop / PC</h3>
+                        <p>
+                            Used for VS Code, PlatformIO, compiling,
+                            uploading, and Serial Monitor.
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-icon">🔌</div>
+                        <h3>USB Cable</h3>
+                        <p>
+                            Connects the computer to your ESP32.
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-icon">🟦</div>
+                        <h3>ESP32 DevKit V1</h3>
+                        <p>
+                            The central controller running the entire
+                            physical and web system.
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-icon">🍞</div>
+                        <h3>Breadboard</h3>
+                        <p>
+                            Makes the OLED and push-button wiring easy
+                            to assemble and modify.
+                        </p>
+                    </div>
+
+                    <div class="card card-cyan">
+                        <div class="card-icon">📺</div>
+                        <h3>0.96" OLED Display</h3>
+                        <p>
+                            I2C OLED display used as the physical
+                            output screen.
+                        </p>
+                    </div>
+
+                    <div class="card card-green">
+                        <div class="card-icon">🔘</div>
+                        <h3>Push Button</h3>
+                        <p>
+                            The new physical input used to cycle through
+                            the three console modes.
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-icon">🔗</div>
+                        <h3>Jumper Wires</h3>
+                        <p>
+                            Used to connect the ESP32, OLED, button,
+                            power, and ground.
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-icon">📱</div>
+                        <h3>Smartphone</h3>
+                        <p>
+                            Used to access the ESP32 web dashboard
+                            over the same Wi-Fi network.
+                        </p>
+                    </div>
+
+                </div>
+
+                <div class="callout mt">
+
+                    <div class="callout-title">
+                        Hardware Reuse
+                    </div>
+
+                    <p>
+                        This project intentionally builds on Project 24.
+                        Your OLED stays on D21/D22. The new button uses
+                        D14 with
+                        <span class="inline-code">INPUT_PULLUP</span>,
+                        so no external pull-up resistor is required.
+                    </p>
+
+                </div>
+
+                <div class="navigation">
+                    <button class="nav-control" id="prevBtn2">
+                        ← Previous
+                    </button>
+
+                    <div class="nav-status">
+                        02 / 14
+                    </div>
+
+                    <button class="nav-control" id="nextBtn2">
+                        Next →
+                    </button>
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 03 — LEARNING
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="section-header">
+
+                    <div class="section-number">
+                        03 // CORE CONCEPTS
+                    </div>
+
+                    <h2>
+                        What Are We Learning?
+                    </h2>
+
+                    <p class="section-description">
+                        This project introduces a major idea in IoT:
+                        multiple interfaces controlling one underlying
+                        system state.
+                    </p>
+
+                </div>
+
+                <div class="grid">
+
+                    <div class="card card-green">
+
+                        <div class="card-icon">
+                            🔘
+                        </div>
+
+                        <h3>
+                            Hardware UI
+                        </h3>
+
+                        <p>
+                            A User Interface does not have to be a webpage.
+                            Buttons, knobs, switches, displays, and LEDs
+                            can all form a hardware interface.
+                        </p>
+
+                        <div class="callout">
+                            <div class="callout-title">
+                                The Idea
+                            </div>
+
+                            <p>
+                                Press button →
+                                change software state →
+                                redraw OLED.
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <div class="card card-cyan">
+
+                        <div class="card-icon">
+                            🔄
+                        </div>
+
+                        <h3>
+                            State Synchronization
+                        </h3>
+
+                        <p>
+                            The physical button and the web dashboard
+                            must agree about what the ESP32 is currently
+                            doing.
+                        </p>
+
+                        <div class="callout cyan">
+                            <div class="callout-title">
+                                The Solution
+                            </div>
+
+                            <p>
+                                Both interfaces use one master variable:
+                                <span class="inline-code">
+                                    currentMode
+                                </span>
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <div class="card card-yellow">
+
+                        <div class="card-icon">
+                            🧠
+                        </div>
+
+                        <h3>
+                            State Machine
+                        </h3>
+
+                        <p>
+                            The button cycles through a fixed set of
+                            states rather than performing a completely
+                            different action every time.
+                        </p>
+
+                        <div class="mode-grid">
+
+                            <div class="mode-card">
+                                <div class="mode-number">0</div>
+                                <div class="mode-name">Gaming</div>
+                            </div>
+
+                            <div class="mode-card">
+                                <div class="mode-number">1</div>
+                                <div class="mode-name">Study</div>
+                            </div>
+
+                            <div class="mode-card">
+                                <div class="mode-number">2</div>
+                                <div class="mode-name">Sleep</div>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="card">
+
+                        <div class="card-icon">
+                            🧩
+                        </div>
+
+                        <h3>
+                            Helper Functions
+                        </h3>
+
+                        <p>
+                            Instead of repeating OLED drawing commands
+                            everywhere, we create
+                            <span class="inline-code">
+                                refreshSystem()
+                            </span>
+                            and call it whenever the state changes.
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <div class="flow">
+
+                    <div class="flow-node">
+                        PHYSICAL BUTTON
+                    </div>
+
+                    <div class="flow-arrow">
+                        →
+                    </div>
+
+                    <div class="flow-node">
+                        currentMode
+                    </div>
+
+                    <div class="flow-arrow">
+                        →
+                    </div>
+
+                    <div class="flow-node">
+                        refreshSystem()
+                    </div>
+
+                    <div class="flow-arrow">
+                        →
+                    </div>
+
+                    <div class="flow-node">
+                        OLED
+                    </div>
+
+                    <div class="flow-arrow">
+                        +
+                    </div>
+
+                    <div class="flow-node">
+                        WEB STATUS
+                    </div>
+
+                </div>
+
+                <div class="navigation">
+                    <button class="nav-control" id="prevBtn3">
+                        ← Previous
+                    </button>
+
+                    <div class="nav-status">
+                        03 / 14
+                    </div>
+
+                    <button class="nav-control" id="nextBtn3">
+                        Next →
+                    </button>
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 04 — WIRING
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="section-header">
+
+                    <div class="section-number">
+                        04 // CIRCUIT
+                    </div>
+
+                    <h2>
+                        Wiring
+                    </h2>
+
+                    <p class="section-description">
+                        Keep the OLED wiring from Project 24 exactly
+                        the same. Add the new button to D14.
+                    </p>
+
+                </div>
+
+                <div class="wiring">
+
+                    <div class="wiring-title">
+                        OLED + Physical Mode Button
+                    </div>
+
+                    <div class="table-wrap">
+
+                        <table class="wire-table">
+
+                            <thead>
+                                <tr>
+                                    <th>ESP32</th>
+                                    <th>Component</th>
+                                    <th>Connection</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+
+                                <tr>
+                                    <td>3V3</td>
+                                    <td>OLED</td>
+                                    <td>VCC</td>
+                                </tr>
+
+                                <tr>
+                                    <td>GND</td>
+                                    <td>OLED</td>
+                                    <td>GND</td>
+                                </tr>
+
+                                <tr>
+                                    <td>D22</td>
+                                    <td>OLED</td>
+                                    <td>SCL</td>
+                                </tr>
+
+                                <tr>
+                                    <td>D21</td>
+                                    <td>OLED</td>
+                                    <td>SDA</td>
+                                </tr>
+
+                                <tr>
+                                    <td>D14</td>
+                                    <td>Push Button</td>
+                                    <td>One leg</td>
+                                </tr>
+
+                                <tr>
+                                    <td>GND</td>
+                                    <td>Push Button</td>
+                                    <td>Opposite leg</td>
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                    <div class="diagram">
+
+<pre>
+ ESP32                     BREADBOARD
+ ─────                     ──────────
+
+ 3V3 ───────────────────► OLED VCC
+
+ GND ───────────────────► OLED GND
+
+
+ D22 ───────────────────► OLED SCL
+
+ D21 ───────────────────► OLED SDA
+
+
+ D14 ───────────────────► BUTTON LEG
+                           │
+                           │
+                           │
+ GND ───────────────────► [BLUE GND RAIL]
+                           ▲
+                           │
+                     OPPOSITE BUTTON LEG
+
+
+        OLED = I2C
+        D21  = SDA
+        D22  = SCL
+        D14  = MODE BUTTON
+</pre>
+
+                    </div>
+
+                </div>
+
+                <div class="callout warning mt">
+
+                    <div class="callout-title">
+                        INPUT_PULLUP Logic
+                    </div>
+
+                    <p>
+                        Because the code uses
+                        <span class="inline-code">
+                            INPUT_PULLUP
+                        </span>,
+                        the button reads
+                        <strong>HIGH when released</strong>
+                        and
+                        <strong>LOW when pressed</strong>.
+                        The button is therefore connected directly
+                        between D14 and GND.
+                    </p>
+
+                </div>
+
+                <div class="callout danger">
+
+                    <div class="callout-title">
+                        Check Your OLED Labels
+                    </div>
+
+                    <p>
+                        OLED modules are not all physically arranged
+                        identically. Check the printed labels on your
+                        exact module before powering it. Some modules
+                        may place VCC/GND in a different order.
+                    </p>
+
+                </div>
+
+                <div class="navigation">
+                    <button class="nav-control" id="prevBtn4">
+                        ← Previous
+                    </button>
+
+                    <div class="nav-status">
+                        04 / 14
+                    </div>
+
+                    <button class="nav-control" id="nextBtn4">
+                        Next →
+                    </button>
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 05 — CREATE PROJECT
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="section-header">
+
+                    <div class="section-number">
+                        05 // PLATFORMIO
+                    </div>
+
+                    <h2>
+                        Create the Project
+                    </h2>
+
+                    <p class="section-description">
+                        We are using PlatformIO again because the OLED
+                        libraries need to be downloaded and managed
+                        automatically.
+                    </p>
+
+                </div>
+
+                <div class="step-list">
+
+                    <div class="step">
+
+                        <div class="step-number">
+                            01
+                        </div>
+
+                        <div>
+                            <h3>
+                                Open VS Code
+                            </h3>
+
+                            <p>
+                                Open Visual Studio Code and launch the
+                                PlatformIO extension.
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <div class="step">
+
+                        <div class="step-number">
+                            02
+                        </div>
+
+                        <div>
+                            <h3>
+                                Create New Project
+                            </h3>
+
+                            <p>
+                                Choose
+                                <strong>New Project</strong>
+                                from PlatformIO.
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <div class="step">
+
+                        <div class="step-number">
+                            03
+                        </div>
+
+                        <div>
+                            <h3>
+                                Name It
+                            </h3>
+
+                            <p>
+                                Use:
+                                <span class="inline-code">
+                                    ESP32-25-Console
+                                </span>
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <div class="step">
+
+                        <div class="step-number">
+                            04
+                        </div>
+
+                        <div>
+                            <h3>
+                                Select the Board
+                            </h3>
+
+                            <p>
+                                Choose:
+                                <strong>
+                                    DOIT ESP32 DEVKIT V1
+                                </strong>
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <div class="step">
+
+                        <div class="step-number">
+                            05
+                        </div>
+
+                        <div>
+                            <h3>
+                                Select Arduino
+                            </h3>
+
+                            <p>
+                                Framework:
+                                <strong>Arduino</strong>
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <div class="step">
+
+                        <div class="step-number">
+                            06
+                        </div>
+
+                        <div>
+                            <h3>
+                                Finish
+                            </h3>
+
+                            <p>
+                                Let PlatformIO create the project
+                                structure.
+                            </p>
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="callout danger mt">
+
+                    <div class="callout-title">
+                        STOP — Add the OLED Libraries
+                    </div>
+
+                    <p>
+                        Open
+                        <span class="inline-code">
+                            platformio.ini
+                        </span>
+                        and add the following dependencies.
+                    </p>
+
+                </div>
+
+                <div class="code-wrap">
+
+                    <div class="code-header">
+
+                        <span class="code-language">
+                            INI / TOML
+                        </span>
+
+                        <button class="copy-btn">
+                            Copy
+                        </button>
+
+                    </div>
+
+                    <pre class="code">[env:esp32doit-devkit-v1]
+platform = espressif32
+board = esp32doit-devkit-v1
+framework = arduino
+monitor_speed = 115200
+
+lib_deps =
+    adafruit/Adafruit SSD1306
+    adafruit/Adafruit GFX Library</pre>
+
+                </div>
+
+                <div class="callout">
+
+                    <div class="callout-title">
+                        Then
+                    </div>
+
+                    <p>
+                        Save the file with
+                        <strong>Ctrl + S</strong>.
+                        Then open:
+                        <span class="inline-code">
+                            src/main.cpp
+                        </span>
+                    </p>
+
+                </div>
+
+                <div class="navigation">
+                    <button class="nav-control" id="prevBtn5">
+                        ← Previous
+                    </button>
+
+                    <div class="nav-status">
+                        05 / 14
+                    </div>
+
+                    <button class="nav-control" id="nextBtn5">
+                        Next →
+                    </button>
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 06 — COMPLETE CODE
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="section-header">
+
+                    <div class="section-number">
+                        06 // SOURCE CODE
+                    </div>
+
+                    <h2>
+                        Complete Code
+                    </h2>
+
+                    <p class="section-description">
+                        This is the complete control console. The most
+                        important architectural idea is the master
+                        <span class="inline-code">currentMode</span>
+                        variable and the shared
+                        <span class="inline-code">
+                            refreshSystem()
+                        </span>
+                        function.
+                    </p>
+
+                </div>
+
+                <div class="callout danger">
+
+                    <div class="callout-title">
+                        Wi-Fi Credentials
+                    </div>
+
+                    <p>
+                        Replace
+                        <span class="inline-code">
+                            YOUR_WIFI_NAME
+                        </span>
+                        and
+                        <span class="inline-code">
+                            YOUR_PASSWORD
+                        </span>
+                        with your actual Wi-Fi credentials.
+                        Do not commit real credentials to a public
+                        repository.
+                    </p>
+
+                </div>
+
+                <div class="code-wrap">
+
+                    <div class="code-header">
+
+                        <span class="code-language">
+                            C++
+                        </span>
+
+                        <button class="copy-btn">
+                            Copy
+                        </button>
+
+                    </div>
+
+                    <pre class="code">/*
+ * ============================================================
+ * MY BRO'S TWENTY-FIFTH ESP32 PROGRAM: CONTROL CONSOLE
+ * ============================================================
+ */
+
+#include &lt;WiFi.h&gt;
+#include &lt;WebServer.h&gt;
+#include &lt;Wire.h&gt;
+#include &lt;Adafruit_GFX.h&gt;
+#include &lt;Adafruit_SSD1306.h&gt;
+
+const char* ssid = "YOUR_WIFI_NAME";
+const char* password = "YOUR_PASSWORD";
+
+WebServer server(80);
+
+Adafruit_SSD1306 display(128, 64, &amp;Wire, -1);
+
+const int BUTTON_PIN = 14;
+
+// 1. OUR MASTER STATE VARIABLES
+int currentMode = 0; // 0 = Gaming, 1 = Study, 2 = Sleep
+int lastButtonState = HIGH;
+
+
+// ============================================================
+// HELPER FUNCTION: REFRESH THE ENTIRE SYSTEM!
+// Both the Web and the Physical Button will call this function.
+// ============================================================
+void refreshSystem() {
+    display.clearDisplay();
+    display.setTextSize(2);
+    display.setTextColor(WHITE);
+    display.setCursor(0, 20);
+
+    if (currentMode == 0) {
+        display.println("GAMING!");
+        Serial.println("Mode changed to: GAMING");
+    }
+    else if (currentMode == 1) {
+        display.println("STUDYING!");
+        Serial.println("Mode changed to: STUDY");
+    }
+    else if (currentMode == 2) {
+        display.println("Zzz...");
+        Serial.println("Mode changed to: SLEEP");
+    }
+
+    display.display(); // Push to the OLED
+}
+
+
+// ============================================================
+// WEB ROUTES
+// ============================================================
+void handle_Homepage() {
+    String html = "&lt;!DOCTYPE html&gt;&lt;html&gt;&lt;head&gt;&lt;meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"&gt;";
+
+    // Auto-refresh so the web dashboard tracks physical button presses!
+    html += "&lt;meta http-equiv=\"refresh\" content=\"3\"&gt;";
+
+    html += "&lt;style&gt;body { font-family: sans-serif; text-align: center; margin-top: 50px; background-color: #222; color: #fff; }";
+    html += "button { font-size: 20px; padding: 15px; margin: 10px; width: 80%; border-radius: 10px; border: none; font-weight: bold; }&lt;/style&gt;&lt;/head&gt;&lt;body&gt;";
+
+    html += "&lt;h1&gt;🖥️ Console Dashboard&lt;/h1&gt;";
+
+    // Show the dynamic status based on the master variable
+    html += "&lt;h2&gt;Current: &lt;span style=\"color:orange;\"&gt;";
+
+    if (currentMode == 0) html += "GAMING";
+    else if (currentMode == 1) html += "STUDY";
+    else if (currentMode == 2) html += "SLEEP";
+
+    html += "&lt;/span&gt;&lt;/h2&gt;";
+
+    html += "&lt;p&gt;Change mode from web:&lt;/p&gt;";
+
+    html += "&lt;a href=\"/set/0\"&gt;&lt;button style=\"background: #ff3333; color: white;\"&gt;GAMING&lt;/button&gt;&lt;/a&gt;&lt;br&gt;";
+    html += "&lt;a href=\"/set/1\"&gt;&lt;button style=\"background: #33cc33; color: white;\"&gt;STUDY&lt;/button&gt;&lt;/a&gt;&lt;br&gt;";
+    html += "&lt;a href=\"/set/2\"&gt;&lt;button style=\"background: #3333ff; color: white;\"&gt;SLEEP&lt;/button&gt;&lt;/a&gt;&lt;br&gt;";
+
+    html += "&lt;/body&gt;&lt;/html&gt;";
+
+    server.send(200, "text/html", html);
+}
+
+
+// Web direct-set routes
+void handle_SetGaming() {
+    currentMode = 0;
+    refreshSystem();
+    server.sendHeader("Location", "/");
+    server.send(303);
+}
+
+void handle_SetStudy() {
+    currentMode = 1;
+    refreshSystem();
+    server.sendHeader("Location", "/");
+    server.send(303);
+}
+
+void handle_SetSleep() {
+    currentMode = 2;
+    refreshSystem();
+    server.sendHeader("Location", "/");
+    server.send(303);
+}
+
+
+// ============================================================
+// SETUP
+// ============================================================
+void setup() {
+    Serial.begin(115200);
+
+    pinMode(BUTTON_PIN, INPUT_PULLUP);
+
+    if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+        for (;;) {
+            // Freeze if OLED fails
+        }
+    }
+
+    display.clearDisplay();
+    display.setTextSize(2);
+    display.setCursor(0, 20);
+    display.println("WIFI...");
+    display.display();
+
+    WiFi.begin(ssid, password);
+
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(500);
+    }
+
+    // Start with the default screen
+    refreshSystem();
+
+    server.on("/", handle_Homepage);
+    server.on("/set/0", handle_SetGaming);
+    server.on("/set/1", handle_SetStudy);
+    server.on("/set/2", handle_SetSleep);
+
+    server.begin();
+}
+
+
+// ============================================================
+// LOOP
+// ============================================================
+void loop() {
+
+    // 1. Listen to the web!
+    server.handleClient();
+
+    // 2. Listen to the physical button!
+    int currentButtonState = digitalRead(BUTTON_PIN);
+
+    if (lastButtonState == HIGH && currentButtonState == LOW) {
+
+        // Button clicked! Cycle the mode forward
+        currentMode = currentMode + 1;
+
+        // Wrap around back to 0 if we go past 2
+        if (currentMode > 2) {
+            currentMode = 0;
+        }
+
+        // Force the screen to update with the new mode
+        refreshSystem();
+
+        delay(50); // Debounce
+    }
+
+    lastButtonState = currentButtonState;
+}</pre>
+
+                </div>
+
+                <div class="callout warning">
+
+                    <div class="callout-title">
+                        Important Code Note
+                    </div>
+
+                    <p>
+                        The HTML shown inside the C++ source is escaped
+                        because it is a C++ string. That is why you see
+                        things like
+                        <span class="inline-code">&amp;lt;</span>
+                        and
+                        <span class="inline-code">&amp;quot;</span>
+                        in this guide's code display. When copying the
+                        code from this page, the browser's
+                        <strong>Copy</strong>
+                        button retrieves the correct underlying text.
+                    </p>
+
+                </div>
+
+                <div class="navigation">
+                    <button class="nav-control" id="prevBtn6">
+                        ← Previous
+                    </button>
+
+                    <div class="nav-status">
+                        06 / 14
+                    </div>
+
+                    <button class="nav-control" id="nextBtn6">
+                        Next →
+                    </button>
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 07 — UNDERSTAND CODE
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="section-header">
+
+                    <div class="section-number">
+                        07 // ARCHITECTURE
+                    </div>
+
+                    <h2>
+                        Understand the Code
+                    </h2>
+
+                    <p class="section-description">
+                        This is where the project becomes more than
+                        "button makes screen change." We are building
+                        a small synchronized system.
+                    </p>
+
+                </div>
+
+                <div class="grid">
+
+                    <div class="card card-green">
+
+                        <div class="card-icon">
+                            🧠
+                        </div>
+
+                        <h3>
+                            The Master Variable
+                        </h3>
+
+                        <p>
+                            <span class="inline-code">
+                                currentMode
+                            </span>
+                            is the single source of truth.
+                            It stores which mode the system is currently
+                            in.
+                        </p>
+
+                        <div class="callout">
+
+                            <div class="callout-title">
+                                The Three States
+                            </div>
+
+                            <p>
+                                0 = Gaming<br>
+                                1 = Study<br>
+                                2 = Sleep
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                    <div class="card card-cyan">
+
+                        <div class="card-icon">
+                            🔄
+                        </div>
+
+                        <h3>
+                            refreshSystem()
+                        </h3>
+
+                        <p>
+                            This helper function redraws the OLED
+                            according to the current state.
+                            It also prints the mode to Serial Monitor.
+                        </p>
+
+                        <div class="callout cyan">
+
+                            <div class="callout-title">
+                                Why?
+                            </div>
+
+                            <p>
+                                We avoid copying the same OLED drawing
+                                code into every button and web handler.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                    <div class="card card-yellow">
+
+                        <div class="card-icon">
+                            🔘
+                        </div>
+
+                        <h3>
+                            Physical Button
+                        </h3>
+
+                        <p>
+                            The button detects a HIGH → LOW transition,
+                            increments
+                            <span class="inline-code">
+                                currentMode
+                            </span>,
+                            wraps after 2, then calls
+                            <span class="inline-code">
+                                refreshSystem()
+                            </span>.
+                        </p>
+
+                    </div>
+
+                    <div class="card">
+
+                        <div class="card-icon">
+                            🌐
+                        </div>
+
+                        <h3>
+                            Web Routes
+                        </h3>
+
+                        <p>
+                            The web interface does not create another
+                            state. It directly changes the same
+                            <span class="inline-code">
+                                currentMode
+                            </span>
+                            variable.
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <div class="table-wrap mt">
+
+                    <table class="data-table">
+
+                        <thead>
+
+                            <tr>
+                                <th>Interface</th>
+                                <th>Action</th>
+                                <th>Shared State</th>
+                                <th>Result</th>
+                            </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                            <tr>
+                                <td>Physical Button</td>
+                                <td>Increment mode</td>
+                                <td>currentMode</td>
+                                <td>OLED redraws</td>
+                            </tr>
+
+                            <tr>
+                                <td>Web Gaming</td>
+                                <td>Set 0</td>
+                                <td>currentMode</td>
+                                <td>OLED shows GAMING!</td>
+                            </tr>
+
+                            <tr>
+                                <td>Web Study</td>
+                                <td>Set 1</td>
+                                <td>currentMode</td>
+                                <td>OLED shows STUDYING!</td>
+                            </tr>
+
+                            <tr>
+                                <td>Web Sleep</td>
+                                <td>Set 2</td>
+                                <td>currentMode</td>
+                                <td>OLED shows Zzz...</td>
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+                <div class="callout cyan">
+
+                    <div class="callout-title">
+                        Important Systems Idea
+                    </div>
+
+                    <p>
+                        There are two interfaces, but there is only one
+                        state. That's the key to synchronization.
+                        The browser and physical button are not maintaining
+                        separate copies of the mode.
+                    </p>
+
+                </div>
+
+                <div class="callout warning">
+
+                    <div class="callout-title">
+                        About "Multitasking"
+                    </div>
+
+                    <p>
+                        The ESP32 is checking the web server and the
+                        physical button repeatedly inside its main loop.
+                        These tasks are interleaved rather than being
+                        literally executed simultaneously by this code.
+                    </p>
+
+                </div>
+
+                <div class="navigation">
+                    <button class="nav-control" id="prevBtn7">
+                        ← Previous
+                    </button>
+
+                    <div class="nav-status">
+                        07 / 14
+                    </div>
+
+                    <button class="nav-control" id="nextBtn7">
+                        Next →
+                    </button>
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 08 — BUILD UPLOAD
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="section-header">
+
+                    <div class="section-number">
+                        08 // DEPLOY
+                    </div>
+
+                    <h2>
+                        Build + Upload + Serial Monitor
+                    </h2>
+
+                    <p class="section-description">
+                        Time to compile the system, flash it onto the
+                        ESP32, and find its IP address.
+                    </p>
+
+                </div>
+
+                <div class="step-list">
+
+                    <div class="step">
+
+                        <div class="step-number">
+                            01
+                        </div>
+
+                        <div>
+
+                            <h3>
+                                Save Everything
+                            </h3>
+
+                            <p>
+                                Save
+                                <span class="inline-code">
+                                    platformio.ini
+                                </span>
+                                and
+                                <span class="inline-code">
+                                    src/main.cpp
+                                </span>.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                    <div class="step">
+
+                        <div class="step-number">
+                            02
+                        </div>
+
+                        <div>
+
+                            <h3>
+                                Connect the ESP32
+                            </h3>
+
+                            <p>
+                                Connect the board to your computer using
+                                USB.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                    <div class="step">
+
+                        <div class="step-number">
+                            03
+                        </div>
+
+                        <div>
+
+                            <h3>
+                                Build
+                            </h3>
+
+                            <p>
+                                Click the PlatformIO
+                                <strong>Build ✓</strong>
+                                button.
+                                PlatformIO should download the OLED
+                                libraries if necessary.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                    <div class="step">
+
+                        <div class="step-number">
+                            04
+                        </div>
+
+                        <div>
+
+                            <h3>
+                                Upload
+                            </h3>
+
+                            <p>
+                                Click
+                                <strong>Upload →</strong>
+                                and wait for the firmware to flash.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                    <div class="step">
+
+                        <div class="step-number">
+                            05
+                        </div>
+
+                        <div>
+
+                            <h3>
+                                Open Serial Monitor
+                            </h3>
+
+                            <p>
+                                Open the Serial Monitor at
+                                <strong>115200 baud</strong>.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                    <div class="step">
+
+                        <div class="step-number">
+                            06
+                        </div>
+
+                        <div>
+
+                            <h3>
+                                Find the IP
+                            </h3>
+
+                            <p>
+                                After connecting to Wi-Fi, the ESP32
+                                will print its local IP address.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="callout mt">
+
+                    <div class="callout-title">
+                        Expected Boot Sequence
+                    </div>
+
+                    <p>
+                        The OLED first shows
+                        <strong>WIFI...</strong>.
+                        After Wi-Fi connects, the system calls
+                        <span class="inline-code">
+                            refreshSystem()
+                        </span>
+                        and starts in Gaming mode.
+                    </p>
+
+                </div>
+
+                <div class="code-wrap">
+
+                    <div class="code-header">
+
+                        <span class="code-language">
+                            SERIAL MONITOR
+                        </span>
+
+                        <button class="copy-btn">
+                            Copy
+                        </button>
+
+                    </div>
+
+                    <pre class="code">Mode changed to: GAMING</pre>
+
+                </div>
+
+                <div class="callout warning">
+
+                    <div class="callout-title">
+                        Wi-Fi Troubleshooting
+                    </div>
+
+                    <p>
+                        If the ESP32 stays on
+                        <strong>WIFI...</strong>,
+                        check your SSID and password. Remember that
+                        standard ESP32 Wi-Fi connectivity here uses
+                        <strong>2.4 GHz</strong>, not 5 GHz.
+                    </p>
+
+                </div>
+
+                <div class="navigation">
+                    <button class="nav-control" id="prevBtn8">
+                        ← Previous
+                    </button>
+
+                    <div class="nav-status">
+                        08 / 14
+                    </div>
+
+                    <button class="nav-control" id="nextBtn8">
+                        Next →
+                    </button>
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 09 — EXPECTED RESULT
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="section-header">
+
+                    <div class="section-number">
+                        09 // TEST
+                    </div>
+
+                    <h2>
+                        What Should Happen?
+                    </h2>
+
+                    <p class="section-description">
+                        Now we test both interfaces and watch them
+                        manipulate the same system state.
+                    </p>
+
+                </div>
+
+                <div class="mode-grid">
+
+                    <div class="mode-card">
+
+                        <div class="mode-number">
+                            MODE 0
+                        </div>
+
+                        <div class="mode-name">
+                            GAMING
+                        </div>
+
+                        <div class="mode-screen">
+                            GAMING!
+                        </div>
+
+                    </div>
+
+                    <div class="mode-card">
+
+                        <div class="mode-number">
+                            MODE 1
+                        </div>
+
+                        <div class="mode-name">
+                            STUDY
+                        </div>
+
+                        <div class="mode-screen">
+                            STUDYING!
+                        </div>
+
+                    </div>
+
+                    <div class="mode-card">
+
+                        <div class="mode-number">
+                            MODE 2
+                        </div>
+
+                        <div class="mode-name">
+                            SLEEP
+                        </div>
+
+                        <div class="mode-screen">
+                            Zzz...
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="step-list mt">
+
+                    <div class="step">
+
+                        <div class="step-number">
+                            01
+                        </div>
+
+                        <div>
+
+                            <h3>
+                                Boot
+                            </h3>
+
+                            <p>
+                                The OLED briefly displays
+                                <strong>WIFI...</strong>,
+                                then switches to
+                                <strong>GAMING!</strong>
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                    <div class="step">
+
+                        <div class="step-number">
+                            02
+                        </div>
+
+                        <div>
+
+                            <h3>
+                                Press the Physical Button
+                            </h3>
+
+                            <p>
+                                The OLED changes from
+                                <strong>GAMING!</strong>
+                                to
+                                <strong>STUDYING!</strong>.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                    <div class="step">
+
+                        <div class="step-number">
+                            03
+                        </div>
+
+                        <div>
+
+                            <h3>
+                                Press Again
+                            </h3>
+
+                            <p>
+                                The OLED changes to
+                                <strong>Zzz...</strong>.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                    <div class="step">
+
+                        <div class="step-number">
+                            04
+                        </div>
+
+                        <div>
+
+                            <h3>
+                                Press Again
+                            </h3>
+
+                            <p>
+                                The state wraps around from 2 back to
+                                0 and the OLED shows
+                                <strong>GAMING!</strong>.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                    <div class="step">
+
+                        <div class="step-number">
+                            05
+                        </div>
+
+                        <div>
+
+                            <h3>
+                                Open the Web Dashboard
+                            </h3>
+
+                            <p>
+                                Enter the ESP32 IP address on your phone
+                                while the phone is connected to the same
+                                Wi-Fi network.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                    <div class="step">
+
+                        <div class="step-number">
+                            06
+                        </div>
+
+                        <div>
+
+                            <h3>
+                                Select a Web Mode
+                            </h3>
+
+                            <p>
+                                Tap
+                                <strong>GAMING</strong>,
+                                <strong>STUDY</strong>,
+                                or
+                                <strong>SLEEP</strong>.
+                                The physical OLED changes immediately
+                                after the ESP32 handles the request.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                    <div class="step">
+
+                        <div class="step-number">
+                            07
+                        </div>
+
+                        <div>
+
+                            <h3>
+                                Test Synchronization
+                            </h3>
+
+                            <p>
+                                Press the physical button again.
+                                The OLED changes immediately, and the
+                                web page catches up on its next
+                                automatic refresh.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="callout cyan mt">
+
+                    <div class="callout-title">
+                        What "Synchronized" Means Here
+                    </div>
+
+                    <p>
+                        The OLED reacts immediately when the ESP32
+                        changes
+                        <span class="inline-code">
+                            currentMode
+                        </span>.
+                        The webpage uses a 3-second HTML auto-refresh,
+                        so its displayed status can take up to roughly
+                        that refresh interval to catch up after a
+                        physical button press.
+                    </p>
+
+                </div>
+
+                <div class="navigation">
+                    <button class="nav-control" id="prevBtn9">
+                        ← Previous
+                    </button>
+
+                    <div class="nav-status">
+                        09 / 14
+                    </div>
+
+                    <button class="nav-control" id="nextBtn9">
+                        Next →
+                    </button>
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 10 — EXPERIMENT
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="section-header">
+
+                    <div class="section-number">
+                        10 // EXPERIMENT
+                    </div>
+
+                    <h2>
+                        OLED Invert Mode
+                    </h2>
+
+                    <p class="section-description">
+                        Let's make Sleep mode visually different.
+                        The SSD1306 library can invert the OLED display.
+                    </p>
+
+                </div>
+
+                <div class="grid">
+
+                    <div class="card">
+
+                        <div class="card-icon">
+                            🖥️
+                        </div>
+
+                        <h3>
+                            Normal Display
+                        </h3>
+
+                        <p>
+                            White pixels appear on the normal dark OLED
+                            background.
+                        </p>
+
+                        <div class="mode-screen mt">
+                            GAMING!
+                        </div>
+
+                    </div>
+
+                    <div class="card card-cyan">
+
+                        <div class="card-icon">
+                            🌙
+                        </div>
+
+                        <h3>
+                            Sleep Display
+                        </h3>
+
+                        <p>
+                            Inverting the display produces a bright
+                            background with dark pixels.
+                        </p>
+
+                        <div class="mode-screen mt">
+                            Zzz...
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="callout mt">
+
+                    <div class="callout-title">
+                        Step 1 — Sleep Mode
+                    </div>
+
+                    <p>
+                        Inside the
+                        <strong>Sleep</strong>
+                        block of
+                        <span class="inline-code">
+                            refreshSystem()
+                        </span>,
+                        place
+                        <span class="inline-code">
+                            display.invertDisplay(true);
+                        </span>
+                        after drawing the text.
+                    </p>
+
+                </div>
+
+                <div class="code-wrap">
+
+                    <div class="code-header">
+
+                        <span class="code-language">
+                            C++
+                        </span>
+
+                        <button class="copy-btn">
+                            Copy
+                        </button>
+
+                    </div>
+
+                    <pre class="code">else if (currentMode == 2) {
+    display.println("Zzz...");
+    display.invertDisplay(true);
+    Serial.println("Mode changed to: SLEEP");
+}</pre>
+
+                </div>
+
+                <div class="callout cyan">
+
+                    <div class="callout-title">
+                        Step 2 — Restore Normal Mode
+                    </div>
+
+                    <p>
+                        Add
+                        <span class="inline-code">
+                            display.invertDisplay(false);
+                        </span>
+                        to the Gaming and Study blocks.
+                    </p>
+
+                </div>
+
+                <div class="code-wrap">
+
+                    <div class="code-header">
+
+                        <span class="code-language">
+                            C++
+                        </span>
+
+                        <button class="copy-btn">
+                            Copy
+                        </button>
+
+                    </div>
+
+                    <pre class="code">if (currentMode == 0) {
+    display.println("GAMING!");
+    display.invertDisplay(false);
+}
+
+else if (currentMode == 1) {
+    display.println("STUDYING!");
+    display.invertDisplay(false);
+}</pre>
+
+                </div>
+
+                <div class="callout warning">
+
+                    <div class="callout-title">
+                        Why This Works
+                    </div>
+
+                    <p>
+                        The OLED keeps its inversion setting until you
+                        change it again. That is why Gaming and Study
+                        explicitly restore normal display mode.
+                    </p>
+
+                </div>
+
+                <div class="navigation">
+                    <button class="nav-control" id="prevBtn10">
+                        ← Previous
+                    </button>
+
+                    <div class="nav-status">
+                        10 / 14
+                    </div>
+
+                    <button class="nav-control" id="nextBtn10">
+                        Next →
+                    </button>
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 11 — CHALLENGE
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="section-header">
+
+                    <div class="section-number">
+                        11 // CHALLENGE
+                    </div>
+
+                    <h2>
+                        Build a Back Button
+                    </h2>
+
+                    <p class="section-description">
+                        One button moves forward through the menu.
+                        Now build another button that moves backward.
+                    </p>
+
+                </div>
+
+                <div class="next-project">
+
+                    <div class="next-label">
+                        Challenge Objective
+                    </div>
+
+                    <h3>
+                        Add a second physical button
+                    </h3>
+
+                    <p>
+                        Connect a second push button to D15.
+                        Configure it with
+                        <span class="inline-code">
+                            INPUT_PULLUP
+                        </span>.
+                        When pressed, it should decrement
+                        <span class="inline-code">
+                            currentMode
+                        </span>
+                        instead of incrementing it.
+                    </p>
+
+                </div>
+
+                <div class="grid mt">
+
+                    <div class="card card-green">
+
+                        <div class="card-icon">
+                            ➡️
+                        </div>
+
+                        <h3>
+                            Existing Button — D14
+                        </h3>
+
+                        <p>
+                            Current behavior:
+                            <br><br>
+                            <span class="inline-code">
+                                currentMode = currentMode + 1;
+                            </span>
+                        </p>
+
+                    </div>
+
+                    <div class="card card-cyan">
+
+                        <div class="card-icon">
+                            ⬅️
+                        </div>
+
+                        <h3>
+                            New Button — D15
+                        </h3>
+
+                        <p>
+                            Desired behavior:
+                            <br><br>
+                            <span class="inline-code">
+                                currentMode = currentMode - 1;
+                            </span>
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <div class="callout warning mt">
+
+                    <div class="callout-title">
+                        The Logic Puzzle
+                    </div>
+
+                    <p>
+                        What happens when
+                        <span class="inline-code">
+                            currentMode
+                        </span>
+                        is 0 and you subtract 1?
+                        The answer is
+                        <strong>-1</strong>.
+                        But our valid modes are only 0, 1, and 2.
+                        You therefore need to wrap the value back to 2.
+                    </p>
+
+                </div>
+
+                <div class="code-wrap">
+
+                    <div class="code-header">
+
+                        <span class="code-language">
+                            C++
+                        </span>
+
+                        <button class="copy-btn">
+                            Copy
+                        </button>
+
+                    </div>
+
+                    <pre class="code">if (currentMode &lt; 0) {
+    currentMode = 2;
+}</pre>
+
+                </div>
+
+                <div class="callout">
+
+                    <div class="callout-title">
+                        Challenge Checklist
+                    </div>
+
+                    <p>
+                        Add D15 as an
+                        <span class="inline-code">
+                            INPUT_PULLUP
+                        </span>
+                        input → track its previous state → detect a
+                        HIGH-to-LOW press → subtract 1 → wrap
+                        negative values to 2 → call
+                        <span class="inline-code">
+                            refreshSystem()
+                        </span>.
+                    </p>
+
+                </div>
+
+                <div class="card card-yellow mt">
+
+                    <div class="card-icon">
+                        🧠
+                    </div>
+
+                    <h3>
+                        Bonus Question
+                    </h3>
+
+                    <p>
+                        Can you make D14 and D15 act like a complete
+                        menu navigation system?
+                        D14 = next.
+                        D15 = previous.
+                        The OLED = display.
+                        The web dashboard = remote controller.
+                    </p>
+
+                </div>
+
+                <div class="navigation">
+                    <button class="nav-control" id="prevBtn11">
+                        ← Previous
+                    </button>
+
+                    <div class="nav-status">
+                        11 / 14
+                    </div>
+
+                    <button class="nav-control" id="nextBtn11">
+                        Next →
+                    </button>
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 12 — TROUBLESHOOTING
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="section-header">
+
+                    <div class="section-number">
+                        12 // DEBUG
+                    </div>
+
+                    <h2>
+                        Troubleshooting
+                    </h2>
+
+                    <p class="section-description">
+                        Most problems in this project fall into three
+                        areas: state changes, OLED redraws, or web
+                        synchronization.
+                    </p>
+
+                </div>
+
+                <div class="grid">
+
+                    <div class="card card-red">
+
+                        <div class="card-icon">
+                            📺
+                        </div>
+
+                        <h3>
+                            OLED Doesn't Update
+                        </h3>
+
+                        <p>
+                            Check that the physical button block calls
+                            <span class="inline-code">
+                                refreshSystem();
+                            </span>
+                            after changing
+                            <span class="inline-code">
+                                currentMode
+                            </span>.
+                            Changing the variable alone does not redraw
+                            the physical screen.
+                        </p>
+
+                    </div>
+
+                    <div class="card card-yellow">
+
+                        <div class="card-icon">
+                            🌐
+                        </div>
+
+                        <h3>
+                            Phone Doesn't Update
+                        </h3>
+
+                        <p>
+                            This project uses a
+                            <span class="inline-code">
+                                3-second
+                            </span>
+                            HTML auto-refresh. The browser is not receiving
+                            a live push notification. It reloads the page
+                            periodically.
+                        </p>
+
+                    </div>
+
+                    <div class="card card-red">
+
+                        <div class="card-icon">
+                            🔘
+                        </div>
+
+                        <h3>
+                            Button Skips Modes
+                        </h3>
+
+                        <p>
+                            Mechanical buttons can bounce electrically.
+                            Keep the
+                            <span class="inline-code">
+                                delay(50);
+                            </span>
+                            debounce inside the press-detection block.
+                        </p>
+
+                    </div>
+
+                    <div class="card card-cyan">
+
+                        <div class="card-icon">
+                            🔌
+                        </div>
+
+                        <h3>
+                            Button Always Reads Pressed
+                        </h3>
+
+                        <p>
+                            Verify that one button leg reaches D14 and
+                            the opposite leg reaches GND. Also verify
+                            that the code uses
+                            <span class="inline-code">
+                                INPUT_PULLUP
+                            </span>.
+                        </p>
+
+                    </div>
+
+                    <div class="card">
+
+                        <div class="card-icon">
+                            📡
+                        </div>
+
+                        <h3>
+                            Wi-Fi Doesn't Connect
+                        </h3>
+
+                        <p>
+                            Verify SSID/password, ensure the ESP32 can
+                            reach the router, and remember that this
+                            project expects a compatible 2.4 GHz network.
+                        </p>
+
+                    </div>
+
+                    <div class="card">
+
+                        <div class="card-icon">
+                            ⚠️
+                        </div>
+
+                        <h3>
+                            OLED Connection Failed
+                        </h3>
+
+                        <p>
+                            Check VCC, GND, SDA, and SCL. The code uses
+                            I2C address
+                            <span class="inline-code">
+                                0x3C
+                            </span>.
+                            Some OLED modules instead use
+                            <span class="inline-code">
+                                0x3D
+                            </span>.
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <div class="callout warning mt">
+
+                    <div class="callout-title">
+                        OLED Text Looks Wrong
+                    </div>
+
+                    <p>
+                        If previous text remains on the screen, make sure
+                        <span class="inline-code">
+                            display.clearDisplay();
+                        </span>
+                        happens before drawing the new mode.
+                        The Adafruit SSD1306 display uses a memory buffer,
+                        so drawing new text does not automatically erase
+                        everything that was previously there.
+                    </p>
+
+                </div>
+
+                <div class="callout cyan">
+
+                    <div class="callout-title">
+                        Debugging Strategy
+                    </div>
+
+                    <p>
+                        When something breaks, ask three questions:
+                        <strong>
+                            Did the state change?
+                        </strong>
+                        <strong>
+                            Did refreshSystem() run?
+                        </strong>
+                        <strong>
+                            Did the interface display the new state?
+                        </strong>
+                        This separates software-state bugs from display
+                        and networking bugs.
+                    </p>
+
+                </div>
+
+                <div class="navigation">
+                    <button class="nav-control" id="prevBtn12">
+                        ← Previous
+                    </button>
+
+                    <div class="nav-status">
+                        12 / 14
+                    </div>
+
+                    <button class="nav-control" id="nextBtn12">
+                        Next →
+                    </button>
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 13 — VOCABULARY
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="section-header">
+
+                    <div class="section-number">
+                        13 // KNOWLEDGE
+                    </div>
+
+                    <h2>
+                        New Vocabulary
+                    </h2>
+
+                    <p class="section-description">
+                        These three terms describe the architecture
+                        you just built.
+                    </p>
+
+                </div>
+
+                <div class="table-wrap">
+
+                    <table class="data-table">
+
+                        <thead>
+
+                            <tr>
+                                <th>Word</th>
+                                <th>Meaning</th>
+                                <th>Where You Used It</th>
+                            </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                            <tr>
+                                <td>
+                                    State Synchronization
+                                </td>
+
+                                <td>
+                                    Keeping multiple interfaces aligned
+                                    with the same underlying system state.
+                                </td>
+
+                                <td>
+                                    OLED + physical button + web dashboard
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    Hardware UI
+                                </td>
+
+                                <td>
+                                    A physical interface used to control
+                                    or navigate digital software.
+                                </td>
+
+                                <td>
+                                    The D14 push button
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    Helper Function
+                                </td>
+
+                                <td>
+                                    A reusable function that packages
+                                    a repeated operation.
+                                </td>
+
+                                <td>
+                                    refreshSystem()
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    State Machine
+                                </td>
+
+                                <td>
+                                    A system that moves between a defined
+                                    collection of states according to
+                                    events.
+                                </td>
+
+                                <td>
+                                    Gaming → Study → Sleep → Gaming
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    Master State Variable
+                                </td>
+
+                                <td>
+                                    The central variable representing
+                                    the current state of the system.
+                                </td>
+
+                                <td>
+                                    currentMode
+                                </td>
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+                <div class="callout mt">
+
+                    <div class="callout-title">
+                        What You Just Built
+                    </div>
+
+                    <p>
+                        You merged
+                        <strong>
+                            physical input
+                        </strong>,
+                        <strong>
+                            physical output
+                        </strong>,
+                        <strong>
+                            HTTP input
+                        </strong>,
+                        and
+                        <strong>
+                            web output
+                        </strong>
+                        around one centralized state variable.
+                    </p>
+
+                </div>
+
+                <div class="grid mt">
+
+                    <div class="card card-green">
+
+                        <div class="card-icon">
+                            🔘
+                        </div>
+
+                        <h3>
+                            Physical Input
+                        </h3>
+
+                        <p>
+                            D14 button changes the mode.
+                        </p>
+
+                    </div>
+
+                    <div class="card card-cyan">
+
+                        <div class="card-icon">
+                            📺
+                        </div>
+
+                        <h3>
+                            Physical Output
+                        </h3>
+
+                        <p>
+                            OLED displays the current mode.
+                        </p>
+
+                    </div>
+
+                    <div class="card card-yellow">
+
+                        <div class="card-icon">
+                            📱
+                        </div>
+
+                        <h3>
+                            Digital Input
+                        </h3>
+
+                        <p>
+                            Smartphone web buttons set the mode.
+                        </p>
+
+                    </div>
+
+                    <div class="card">
+
+                        <div class="card-icon">
+                            🧠
+                        </div>
+
+                        <h3>
+                            Central Brain
+                        </h3>
+
+                        <p>
+                            currentMode keeps the system's state unified.
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <div class="navigation">
+                    <button class="nav-control" id="prevBtn13">
+                        ← Previous
+                    </button>
+
+                    <div class="nav-status">
+                        13 / 14
+                    </div>
+
+                    <button class="nav-control" id="nextBtn13">
+                        Next →
+                    </button>
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 14 — NEXT PROJECT
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="section-header">
+
+                    <div class="section-number">
+                        14 // NEXT.EXE
+                    </div>
+
+                    <h2>
+                        What Comes Next?
+                    </h2>
+
+                    <p class="section-description">
+                        We've reached the point where the ESP32 can
+                        communicate through a Wi-Fi network. Now we're
+                        going to remove that middleman.
+                    </p>
+
+                </div>
+
+                <div class="next-project">
+
+                    <div class="next-label">
+                        PROJECT 26
+                    </div>
+
+                    <h3>
+                        ESP-NOW Introduction
+                    </h3>
+
+                    <p>
+                        What if two ESP32 boards need to communicate
+                        somewhere there is no Wi-Fi router?
+                        What if you're building two robots in the middle
+                        of a field, a lab, or even a desert?
+                        In Project 26, we're going to make two ESP32
+                        devices communicate directly through the air
+                        using ESP-NOW — without requiring a traditional
+                        Wi-Fi network.
+                    </p>
+
+                </div>
+
+                <div class="flow mt">
+
+                    <div class="flow-node">
+                        PROJECT 15
+                        <br>
+                        Wi-Fi
+                    </div>
+
+                    <div class="flow-arrow">
+                        →
+                    </div>
+
+                    <div class="flow-node">
+                        PROJECT 17–25
+                        <br>
+                        Web Systems
+                    </div>
+
+                    <div class="flow-arrow">
+                        →
+                    </div>
+
+                    <div class="flow-node">
+                        PROJECT 26
+                        <br>
+                        ESP-NOW
+                    </div>
+
+                    <div class="flow-arrow">
+                        →
+                    </div>
+
+                    <div class="flow-node">
+                        DEVICE ↔ DEVICE
+                    </div>
+
+                </div>
+
+                <div class="grid mt">
+
+                    <div class="card card-green">
+
+                        <div class="card-icon">
+                            📡
+                        </div>
+
+                        <h3>
+                            No Router Required
+                        </h3>
+
+                        <p>
+                            ESP-NOW allows ESP32 devices to exchange
+                            packets directly rather than relying on a
+                            normal Wi-Fi access point.
+                        </p>
+
+                    </div>
+
+                    <div class="card card-cyan">
+
+                        <div class="card-icon">
+                            🤖
+                        </div>
+
+                        <h3>
+                            Device-to-Device
+                        </h3>
+
+                        <p>
+                            One ESP32 can send commands or data directly
+                            to another ESP32.
+                        </p>
+
+                    </div>
+
+                    <div class="card card-yellow">
+
+                        <div class="card-icon">
+                            ⚡
+                        </div>
+
+                        <h3>
+                            The Next Level
+                        </h3>
+
+                        <p>
+                            This is the foundation for remote controllers,
+                            sensor nodes, robot communication, and
+                            distributed ESP32 systems.
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <div class="callout mt">
+
+                    <div class="callout-title">
+                        Mission Complete
+                    </div>
+
+                    <p>
+                        You started with an OLED controlled from a phone.
+                        Now you have a synchronized physical and digital
+                        control console. The ESP32 has one state, multiple
+                        interfaces, and a reusable system-refresh
+                        architecture.
+                    </p>
+
+                </div>
+
+                <div class="next-project mt">
+
+                    <div class="next-label">
+                        NEXT.EXE
+                    </div>
+
+                    <h3>
+                        Ready for Device-to-Device Networking?
+                    </h3>
+
+                    <p>
+                        Project 26 is where the ESP32 stops depending
+                        entirely on a router and starts talking directly
+                        to another ESP32.
+                        <strong>
+                            ESP-NOW is next.
+                        </strong>
+                    </p>
+
+                </div>
+
+                <div class="navigation">
+                    <button class="nav-control" id="prevBtn14">
+                        ← Previous
+                    </button>
+
+                    <div class="nav-status">
+                        14 / 14
+                    </div>
+
+                    <button
+                        class="nav-control"
+                        id="nextBtn14"
+                        disabled
+                    >
+                        Next →
+                    </button>
+                </div>
+
+            </section>
+
+        </div>
+
+    </main>
+
+    <!-- =========================================================
+         JAVASCRIPT
+         ========================================================= -->
+
+    <script>
+        const sections = [
+            ...document.querySelectorAll(".section")
+        ];
+
+        const navItems = [
+            ...document.querySelectorAll(".nav-item")
+        ];
+
+        const progressFill =
+            document.getElementById("progressFill");
+
+        const progressText =
+            document.getElementById("progressText");
+
+        const mobileProgress =
+            document.getElementById("mobileProgress");
+
+        const prevBtn =
+            document.getElementById("prevBtn");
+
+        const nextBtn =
+            document.getElementById("nextBtn");
+
+        let currentSection = 0;
+
+        function updateSection(index) {
+            index = Math.max(
+                0,
+                Math.min(index, sections.length - 1)
+            );
+
+            currentSection = index;
+
+            sections.forEach((section, i) => {
+                section.classList.toggle(
+                    "active",
+                    i === currentSection
+                );
+            });
+
+            navItems.forEach((item, i) => {
+                item.classList.toggle(
+                    "active",
+                    i === currentSection
+                );
+            });
+
+            const progress =
+                ((currentSection + 1) / sections.length) * 100;
+
+            progressFill.style.width =
+                `${progress}%`;
+
+            progressText.textContent =
+                `${String(currentSection + 1).padStart(2, "0")} / ${sections.length}`;
+
+            mobileProgress.textContent =
+                `${String(currentSection + 1).padStart(2, "0")} / ${sections.length}`;
+
+            prevBtn.disabled =
+                currentSection === 0;
+
+            nextBtn.disabled =
+                currentSection === sections.length - 1;
+
+            window.scrollTo({
+                top: 0,
+                behavior: "smooth"
+            });
+
+            localStorage.setItem(
+                "qc-esp32-project-25-section",
+                currentSection
+            );
+        }
+
+        navItems.forEach((item) => {
+
+            item.addEventListener("click", () => {
+
+                updateSection(
+                    Number(item.dataset.section)
+                );
+
+            });
+
+        });
+
+        prevBtn.addEventListener(
+            "click",
+            () => {
+                updateSection(
+                    currentSection - 1
+                );
+            }
+        );
+
+        nextBtn.addEventListener(
+            "click",
+            () => {
+                updateSection(
+                    currentSection + 1
+                );
+            }
+        );
+
+        const sectionButtons = [
+            ["prevBtn2", "nextBtn2"],
+            ["prevBtn3", "nextBtn3"],
+            ["prevBtn4", "nextBtn4"],
+            ["prevBtn5", "nextBtn5"],
+            ["prevBtn6", "nextBtn6"],
+            ["prevBtn7", "nextBtn7"],
+            ["prevBtn8", "nextBtn8"],
+            ["prevBtn9", "nextBtn9"],
+            ["prevBtn10", "nextBtn10"],
+            ["prevBtn11", "nextBtn11"],
+            ["prevBtn12", "nextBtn12"],
+            ["prevBtn13", "nextBtn13"],
+            ["prevBtn14", "nextBtn14"]
+        ];
+
+        sectionButtons.forEach(
+            ([previousId, nextId], sectionIndex) => {
+
+                const previous =
+                    document.getElementById(previousId);
+
+                const next =
+                    document.getElementById(nextId);
+
+                if (previous) {
+                    previous.addEventListener(
+                        "click",
+                        () => {
+                            updateSection(
+                                sectionIndex
+                            );
+                        }
+                    );
+                }
+
+                if (next) {
+                    next.addEventListener(
+                        "click",
+                        () => {
+                            updateSection(
+                                sectionIndex + 1
+                            );
+                        }
+                    );
+                }
+
+            }
+        );
+
+        document.addEventListener(
+            "keydown",
+            (event) => {
+
+                if (
+                    event.target.tagName === "INPUT" ||
+                    event.target.tagName === "TEXTAREA"
+                ) {
+                    return;
+                }
+
+                if (event.key === "ArrowLeft") {
+                    updateSection(
+                        currentSection - 1
+                    );
+                }
+
+                if (event.key === "ArrowRight") {
+                    updateSection(
+                        currentSection + 1
+                    );
+                }
+
+            }
+        );
+
+        document
+            .querySelectorAll(".copy-btn")
+            .forEach((button) => {
+
+                button.addEventListener(
+                    "click",
+                    async () => {
+
+                        const code =
+                            button
+                                .closest(".code-wrap")
+                                .querySelector("pre.code")
+                                .innerText;
+
+                        try {
+
+                            await navigator.clipboard.writeText(
+                                code
+                            );
+
+                            const original =
+                                button.textContent;
+
+                            button.textContent =
+                                "Copied ✓";
+
+                            button.style.color =
+                                "var(--green)";
+
+                            setTimeout(() => {
+
+                                button.textContent =
+                                    original;
+
+                                button.style.color =
+                                    "";
+
+                            }, 1400);
+
+                        } catch {
+
+                            button.textContent =
+                                "Copy failed";
+
+                            setTimeout(() => {
+
+                                button.textContent =
+                                    "Copy";
+
+                            }, 1400);
+
+                        }
+
+                    }
+                );
+
+            });
+
+        const savedSection =
+            Number(
+                localStorage.getItem(
+                    "qc-esp32-project-25-section"
+                )
+            );
+
+        if (
+            Number.isInteger(savedSection) &&
+            savedSection >= 0 &&
+            savedSection < sections.length
+        ) {
+
+            updateSection(savedSection);
+
+        } else {
+
+            updateSection(0);
+
+        }
+    </script>
+
+</body>
+</html>

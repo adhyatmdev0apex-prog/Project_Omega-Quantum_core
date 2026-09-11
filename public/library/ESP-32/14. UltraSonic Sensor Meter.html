@@ -1,0 +1,3825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Project 14 — Ultrasonic Distance Meter | Quantum Core</title>
+
+    <style>
+        :root {
+            --bg: #050807;
+            --panel: #0b110f;
+            --panel-2: #0e1613;
+            --green: #39ff88;
+            --green-dim: #1f9d57;
+            --cyan: #39d9ff;
+            --yellow: #ffe66d;
+            --red: #ff5f6d;
+            --text: #e9fff1;
+            --muted: #8aa394;
+            --border: rgba(57, 255, 136, 0.18);
+            --border-strong: rgba(57, 255, 136, 0.38);
+            --sidebar-width: 285px;
+            --code-bg: #050a08;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background:
+                radial-gradient(
+                    circle at 15% 10%,
+                    rgba(57, 255, 136, 0.08),
+                    transparent 28%
+                ),
+                radial-gradient(
+                    circle at 85% 20%,
+                    rgba(57, 217, 255, 0.06),
+                    transparent 24%
+                ),
+                radial-gradient(
+                    circle at 50% 90%,
+                    rgba(57, 255, 136, 0.04),
+                    transparent 30%
+                ),
+                var(--bg);
+            color: var(--text);
+            font-family:
+                Inter,
+                ui-sans-serif,
+                system-ui,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0.16;
+            background-image:
+                linear-gradient(
+                    rgba(57, 255, 136, 0.045) 1px,
+                    transparent 1px
+                ),
+                linear-gradient(
+                    90deg,
+                    rgba(57, 255, 136, 0.045) 1px,
+                    transparent 1px
+                );
+            background-size: 42px 42px;
+            mask-image: linear-gradient(
+                to bottom,
+                black,
+                transparent 85%
+            );
+            z-index: -1;
+        }
+
+        ::selection {
+            background: rgba(57, 255, 136, 0.25);
+            color: #ffffff;
+        }
+
+        button {
+            font: inherit;
+        }
+
+        /* =========================================================
+           SIDEBAR
+           ========================================================= */
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            padding: 26px 18px;
+            background:
+                linear-gradient(
+                    180deg,
+                    rgba(11, 17, 15, 0.98),
+                    rgba(5, 8, 7, 0.98)
+                );
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            z-index: 50;
+            backdrop-filter: blur(16px);
+        }
+
+        .brand {
+            padding: 8px 12px 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .brand-small {
+            color: var(--green);
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+        }
+
+        .brand-title {
+            margin-top: 7px;
+            color: var(--text);
+            font-size: 20px;
+            font-weight: 900;
+            letter-spacing: -0.03em;
+        }
+
+        .brand-subtitle {
+            margin-top: 4px;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .progress-area {
+            padding: 18px 12px 16px;
+        }
+
+        .progress-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 9px;
+        }
+
+        .progress-label {
+            color: var(--muted);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .progress-text {
+            color: var(--green);
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 4px;
+            overflow: hidden;
+            border-radius: 99px;
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .progress-fill {
+            width: 7.14%;
+            height: 100%;
+            border-radius: inherit;
+            background: var(--green);
+            box-shadow: 0 0 12px rgba(57, 255, 136, 0.7);
+            transition: width 0.3s ease;
+        }
+
+        .nav {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2px 0;
+        }
+
+        .nav::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .nav::-webkit-scrollbar-thumb {
+            background: rgba(57, 255, 136, 0.15);
+            border-radius: 99px;
+        }
+
+        .nav-item {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 3px 0;
+            padding: 10px 12px;
+            border: 1px solid transparent;
+            border-radius: 10px;
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+            text-align: left;
+            transition:
+                background 0.2s ease,
+                color 0.2s ease,
+                border-color 0.2s ease,
+                transform 0.2s ease;
+        }
+
+        .nav-item:hover {
+            color: var(--text);
+            background: rgba(57, 255, 136, 0.045);
+            border-color: var(--border);
+            transform: translateX(2px);
+        }
+
+        .nav-item.active {
+            color: var(--green);
+            background: rgba(57, 255, 136, 0.07);
+            border-color: var(--border);
+            box-shadow:
+                inset 3px 0 0 var(--green),
+                0 0 22px rgba(57, 255, 136, 0.04);
+        }
+
+        .nav-number {
+            min-width: 26px;
+            color: inherit;
+            font-family: "Courier New", monospace;
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .nav-name {
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .sidebar-footer {
+            padding: 15px 12px 4px;
+            border-top: 1px solid var(--border);
+            color: #50645a;
+            font-size: 10px;
+            line-height: 1.5;
+        }
+
+        /* =========================================================
+           MOBILE HEADER
+           ========================================================= */
+
+        .mobile-header {
+            display: none;
+            position: sticky;
+            top: 0;
+            z-index: 40;
+            padding: 13px 16px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(5, 8, 7, 0.92);
+            backdrop-filter: blur(14px);
+        }
+
+        .mobile-header-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .mobile-brand {
+            color: var(--green);
+            font-size: 13px;
+            font-weight: 900;
+            letter-spacing: 0.08em;
+        }
+
+        .mobile-progress {
+            color: var(--muted);
+            font-family: "Courier New", monospace;
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        /* =========================================================
+           MAIN
+           ========================================================= */
+
+        .main {
+            min-height: 100vh;
+            margin-left: var(--sidebar-width);
+        }
+
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 30;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            padding: 13px 30px;
+            border-bottom: 1px solid rgba(57, 255, 136, 0.08);
+            background: rgba(5, 8, 7, 0.74);
+            backdrop-filter: blur(14px);
+        }
+
+        .topbar-path {
+            color: var(--muted);
+            font-family: "Courier New", monospace;
+            font-size: 11px;
+        }
+
+        .topbar-path strong {
+            color: var(--green);
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--muted);
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 10px var(--green);
+        }
+
+        .content {
+            width: min(1100px, calc(100% - 48px));
+            margin: 0 auto;
+            padding: 42px 0 80px;
+        }
+
+        /* =========================================================
+           SECTIONS
+           ========================================================= */
+
+        .section {
+            display: none;
+            animation: sectionIn 0.35s ease both;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes sectionIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .eyebrow {
+            margin-bottom: 10px;
+            color: var(--green);
+            font-family: "Courier New", monospace;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            margin: 0;
+            max-width: 850px;
+            color: #f0fff5;
+            font-size: clamp(38px, 6vw, 68px);
+            line-height: 0.98;
+            letter-spacing: -0.055em;
+        }
+
+        h2 {
+            margin: 0 0 12px;
+            color: #f0fff5;
+            font-size: clamp(28px, 4vw, 42px);
+            line-height: 1.04;
+            letter-spacing: -0.04em;
+        }
+
+        h3 {
+            margin: 0 0 8px;
+            color: var(--text);
+            font-size: 18px;
+        }
+
+        p {
+            color: #b9cfc2;
+            font-size: 15px;
+            line-height: 1.8;
+        }
+
+        strong {
+            color: #eafff1;
+        }
+
+        .hero {
+            position: relative;
+            overflow: hidden;
+            padding: 38px;
+            border: 1px solid var(--border-strong);
+            border-radius: 22px;
+            background:
+                radial-gradient(
+                    circle at 80% 20%,
+                    rgba(57, 255, 136, 0.09),
+                    transparent 30%
+                ),
+                linear-gradient(
+                    145deg,
+                    rgba(11, 17, 15, 0.98),
+                    rgba(7, 12, 10, 0.98)
+                );
+            box-shadow:
+                0 25px 70px rgba(0, 0, 0, 0.34),
+                inset 0 1px 0 rgba(255, 255, 255, 0.025);
+        }
+
+        .hero::after {
+            content: "14";
+            position: absolute;
+            right: 25px;
+            bottom: -28px;
+            color: rgba(57, 255, 136, 0.035);
+            font-family: "Courier New", monospace;
+            font-size: 180px;
+            font-weight: 900;
+            line-height: 1;
+            pointer-events: none;
+        }
+
+        .hero-subtitle {
+            margin: 17px 0 0;
+            max-width: 780px;
+            color: var(--muted);
+            font-size: 17px;
+            line-height: 1.7;
+        }
+
+        .terminal {
+            position: relative;
+            z-index: 2;
+            margin-top: 28px;
+            padding: 18px 20px;
+            border: 1px solid rgba(57, 255, 136, 0.16);
+            border-radius: 13px;
+            background: #030605;
+            color: #c7e8d3;
+            font-family: "Courier New", monospace;
+            font-size: 12px;
+            line-height: 1.75;
+        }
+
+        .prompt {
+            color: var(--green);
+        }
+
+        .terminal .dim {
+            color: #587165;
+        }
+
+        .callout {
+            margin-top: 22px;
+            padding: 18px 20px;
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--green);
+            border-radius: 12px;
+            background: rgba(57, 255, 136, 0.035);
+        }
+
+        .callout.warning {
+            border-color: rgba(255, 230, 109, 0.24);
+            border-left-color: var(--yellow);
+            background: rgba(255, 230, 109, 0.035);
+        }
+
+        .callout.danger {
+            border-color: rgba(255, 95, 109, 0.26);
+            border-left-color: var(--red);
+            background: rgba(255, 95, 109, 0.035);
+        }
+
+        .callout-title {
+            margin-bottom: 7px;
+            color: var(--green);
+            font-size: 12px;
+            font-weight: 900;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .warning .callout-title {
+            color: var(--yellow);
+        }
+
+        .danger .callout-title {
+            color: var(--red);
+        }
+
+        .callout p {
+            margin: 0;
+            font-size: 13px;
+        }
+
+        /* =========================================================
+           CARDS
+           ========================================================= */
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+            margin-top: 24px;
+        }
+
+        .grid.three {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .card {
+            padding: 22px;
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(13, 21, 17, 0.92),
+                    rgba(8, 13, 11, 0.92)
+                );
+        }
+
+        .card-number {
+            margin-bottom: 10px;
+            color: var(--green);
+            font-family: "Courier New", monospace;
+            font-size: 11px;
+            font-weight: 900;
+        }
+
+        .card p {
+            margin: 0;
+            font-size: 13px;
+        }
+
+        .feature-list {
+            display: grid;
+            gap: 10px;
+            margin: 22px 0 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .feature-list li {
+            position: relative;
+            padding: 12px 14px 12px 34px;
+            border: 1px solid rgba(57, 255, 136, 0.09);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.015);
+            color: #b8cfc2;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .feature-list li::before {
+            content: "→";
+            position: absolute;
+            left: 13px;
+            color: var(--green);
+            font-family: "Courier New", monospace;
+            font-weight: 900;
+        }
+
+        /* =========================================================
+           FLOW
+           ========================================================= */
+
+        .flow {
+            display: flex;
+            align-items: stretch;
+            gap: 8px;
+            margin-top: 25px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+
+        .flow-step {
+            flex: 1;
+            min-width: 145px;
+            padding: 17px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: rgba(57, 255, 136, 0.025);
+        }
+
+        .flow-step strong {
+            display: block;
+            color: var(--green);
+            font-size: 12px;
+        }
+
+        .flow-step span {
+            display: block;
+            margin-top: 6px;
+            color: var(--muted);
+            font-size: 11px;
+            line-height: 1.5;
+        }
+
+        .flow-arrow {
+            display: flex;
+            align-items: center;
+            color: var(--green);
+            font-size: 18px;
+        }
+
+        /* =========================================================
+           MATERIALS
+           ========================================================= */
+
+        .materials {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+            margin-top: 23px;
+        }
+
+        .material {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 13px 15px;
+            border: 1px solid var(--border);
+            border-radius: 11px;
+            background: rgba(255, 255, 255, 0.015);
+        }
+
+        .material-icon {
+            width: 32px;
+            text-align: center;
+            font-size: 19px;
+        }
+
+        .material-name {
+            color: #cce0d3;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        /* =========================================================
+           CODE
+           ========================================================= */
+
+        .code-wrap {
+            position: relative;
+            margin: 20px 0;
+            border: 1px solid rgba(57, 255, 136, 0.14);
+            border-radius: 13px;
+            background: var(--code-bg);
+            overflow: hidden;
+        }
+
+        .code-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            padding: 10px 13px;
+            border-bottom: 1px solid rgba(57, 255, 136, 0.1);
+            background: rgba(57, 255, 136, 0.025);
+        }
+
+        .code-language {
+            color: var(--muted);
+            font-family: "Courier New", monospace;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .copy-btn {
+            padding: 6px 10px;
+            border: 1px solid rgba(57, 255, 136, 0.15);
+            border-radius: 7px;
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+            font-family: "Courier New", monospace;
+            font-size: 10px;
+            transition:
+                color 0.2s ease,
+                border-color 0.2s ease,
+                background 0.2s ease;
+        }
+
+        .copy-btn:hover {
+            color: var(--green);
+            border-color: var(--border-strong);
+            background: rgba(57, 255, 136, 0.05);
+        }
+
+        pre.code {
+            margin: 0;
+            padding: 20px;
+            overflow-x: auto;
+            color: #d1f7dd;
+            font-family:
+                "Cascadia Code",
+                "SFMono-Regular",
+                Consolas,
+                "Liberation Mono",
+                monospace;
+            font-size: 12px;
+            line-height: 1.7;
+            tab-size: 4;
+        }
+
+        pre.code::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        pre.code::-webkit-scrollbar-thumb {
+            background: rgba(57, 255, 136, 0.16);
+            border-radius: 99px;
+        }
+
+        code.inline {
+            padding: 2px 6px;
+            border: 1px solid rgba(57, 255, 136, 0.14);
+            border-radius: 5px;
+            background: rgba(57, 255, 136, 0.05);
+            color: var(--green);
+            font-family: "Courier New", monospace;
+            font-size: 0.9em;
+        }
+
+        /* =========================================================
+           WIRING
+           ========================================================= */
+
+        .wiring-box {
+            margin-top: 22px;
+            padding: 22px;
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            background: #040806;
+        }
+
+        .wiring-title {
+            margin-bottom: 15px;
+            color: var(--green);
+            font-family: "Courier New", monospace;
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .wiring-diagram {
+            margin: 0;
+            overflow-x: auto;
+            color: #bde7ca;
+            font-family: "Cascadia Code", "Courier New", monospace;
+            font-size: 12px;
+            line-height: 1.65;
+            white-space: pre;
+        }
+
+        .pin-table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+
+        .pin-table th,
+        .pin-table td {
+            padding: 12px 13px;
+            border-bottom: 1px solid rgba(57, 255, 136, 0.08);
+            text-align: left;
+            font-size: 12px;
+        }
+
+        .pin-table th {
+            color: var(--green);
+            background: rgba(57, 255, 136, 0.045);
+            font-size: 10px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .pin-table td {
+            color: #b8cfc2;
+        }
+
+        .pin-table tr:last-child td {
+            border-bottom: 0;
+        }
+
+        /* =========================================================
+           STEP BOXES
+           ========================================================= */
+
+        .steps {
+            display: grid;
+            gap: 12px;
+            margin-top: 23px;
+        }
+
+        .step {
+            display: flex;
+            gap: 15px;
+            padding: 17px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.015);
+        }
+
+        .step-num {
+            display: grid;
+            place-items: center;
+            flex: 0 0 32px;
+            height: 32px;
+            border: 1px solid var(--border-strong);
+            border-radius: 9px;
+            background: rgba(57, 255, 136, 0.055);
+            color: var(--green);
+            font-family: "Courier New", monospace;
+            font-size: 11px;
+            font-weight: 900;
+        }
+
+        .step-content strong {
+            display: block;
+            margin-bottom: 4px;
+            color: #dff8e7;
+            font-size: 13px;
+        }
+
+        .step-content span {
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        /* =========================================================
+           CONCEPT DIAGRAM
+           ========================================================= */
+
+        .radar {
+            display: grid;
+            place-items: center;
+            min-height: 330px;
+            margin-top: 23px;
+            padding: 25px;
+            border: 1px solid var(--border);
+            border-radius: 17px;
+            background:
+                radial-gradient(
+                    circle,
+                    rgba(57, 255, 136, 0.06),
+                    transparent 28%
+                ),
+                #030605;
+        }
+
+        .radar-scene {
+            position: relative;
+            width: min(720px, 100%);
+            height: 250px;
+        }
+
+        .sensor-box {
+            position: absolute;
+            left: 4%;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 120px;
+            padding: 17px;
+            border: 1px solid var(--border-strong);
+            border-radius: 13px;
+            background: #07100c;
+            text-align: center;
+            box-shadow: 0 0 35px rgba(57, 255, 136, 0.07);
+        }
+
+        .sensor-eyes {
+            display: flex;
+            justify-content: center;
+            gap: 13px;
+            margin-bottom: 9px;
+        }
+
+        .eye {
+            width: 30px;
+            height: 30px;
+            border: 2px solid #aeb9b3;
+            border-radius: 50%;
+            background:
+                radial-gradient(
+                    circle at 50% 50%,
+                    #18231e 0 25%,
+                    #9aa7a0 27% 36%,
+                    #313b36 38% 100%
+                );
+        }
+
+        .sensor-label {
+            color: var(--green);
+            font-family: "Courier New", monospace;
+            font-size: 10px;
+            font-weight: 900;
+        }
+
+        .wave {
+            position: absolute;
+            left: 20%;
+            top: 50%;
+            width: 55%;
+            height: 1px;
+            background: linear-gradient(
+                90deg,
+                var(--green),
+                rgba(57, 255, 136, 0.05)
+            );
+            box-shadow: 0 0 10px rgba(57, 255, 136, 0.5);
+        }
+
+        .wave::before,
+        .wave::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            border: 1px solid rgba(57, 255, 136, 0.5);
+            border-radius: 50%;
+            transform: translateY(-50%);
+        }
+
+        .wave::before {
+            left: 15%;
+            width: 55px;
+            height: 55px;
+        }
+
+        .wave::after {
+            left: 43%;
+            width: 95px;
+            height: 95px;
+        }
+
+        .object {
+            position: absolute;
+            right: 5%;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 90px;
+            height: 145px;
+            border: 2px solid rgba(57, 217, 255, 0.6);
+            border-radius: 9px;
+            background: rgba(57, 217, 255, 0.035);
+            box-shadow: 0 0 30px rgba(57, 217, 255, 0.05);
+        }
+
+        .object::before {
+            content: "OBJECT";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--cyan);
+            font-family: "Courier New", monospace;
+            font-size: 10px;
+            font-weight: 900;
+        }
+
+        .distance-label {
+            position: absolute;
+            left: 50%;
+            top: 58%;
+            transform: translate(-50%, 0);
+            padding: 5px 9px;
+            border: 1px solid rgba(57, 255, 136, 0.15);
+            border-radius: 6px;
+            background: #030605;
+            color: var(--green);
+            font-family: "Courier New", monospace;
+            font-size: 10px;
+        }
+
+        /* =========================================================
+           LED STATES
+           ========================================================= */
+
+        .led-states {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 13px;
+            margin-top: 23px;
+        }
+
+        .led-state {
+            padding: 19px;
+            border: 1px solid var(--border);
+            border-radius: 13px;
+            background: rgba(255, 255, 255, 0.015);
+        }
+
+        .led-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 13px;
+        }
+
+        .led {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            box-shadow: 0 0 12px currentColor;
+        }
+
+        .led.green {
+            color: var(--green);
+            background: var(--green);
+        }
+
+        .led.yellow {
+            color: var(--yellow);
+            background: var(--yellow);
+        }
+
+        .led.red {
+            color: var(--red);
+            background: var(--red);
+        }
+
+        .led.off {
+            opacity: 0.12;
+            box-shadow: none;
+        }
+
+        .state-title {
+            color: #d9eee0;
+            font-size: 13px;
+            font-weight: 900;
+        }
+
+        .state-range {
+            margin-bottom: 7px;
+            color: var(--green);
+            font-family: "Courier New", monospace;
+            font-size: 11px;
+            font-weight: 900;
+        }
+
+        .state-description {
+            color: var(--muted);
+            font-size: 11px;
+            line-height: 1.55;
+        }
+
+        /* =========================================================
+           TERMINAL OUTPUT
+           ========================================================= */
+
+        .output {
+            margin-top: 20px;
+            padding: 18px;
+            border: 1px solid rgba(57, 255, 136, 0.12);
+            border-radius: 12px;
+            background: #020504;
+            color: #bfe9cb;
+            font-family: "Courier New", monospace;
+            font-size: 12px;
+            line-height: 1.7;
+        }
+
+        .output .green {
+            color: var(--green);
+        }
+
+        .output .yellow {
+            color: var(--yellow);
+        }
+
+        .output .red {
+            color: var(--red);
+        }
+
+        /* =========================================================
+           CHALLENGE
+           ========================================================= */
+
+        .challenge {
+            margin-top: 24px;
+            padding: 26px;
+            border: 1px solid rgba(255, 95, 109, 0.22);
+            border-radius: 17px;
+            background:
+                radial-gradient(
+                    circle at 85% 20%,
+                    rgba(255, 95, 109, 0.06),
+                    transparent 25%
+                ),
+                rgba(255, 95, 109, 0.025);
+        }
+
+        .challenge-badge {
+            display: inline-block;
+            margin-bottom: 12px;
+            padding: 5px 8px;
+            border: 1px solid rgba(255, 95, 109, 0.28);
+            border-radius: 6px;
+            color: var(--red);
+            font-family: "Courier New", monospace;
+            font-size: 9px;
+            font-weight: 900;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .challenge h3 {
+            color: #ffe9eb;
+        }
+
+        .challenge p {
+            font-size: 13px;
+        }
+
+        /* =========================================================
+           TROUBLESHOOTING
+           ========================================================= */
+
+        .troubleshooting {
+            display: grid;
+            gap: 11px;
+            margin-top: 23px;
+        }
+
+        .bug {
+            padding: 17px 18px;
+            border: 1px solid rgba(255, 95, 109, 0.12);
+            border-radius: 11px;
+            background: rgba(255, 95, 109, 0.02);
+        }
+
+        .bug-title {
+            margin-bottom: 5px;
+            color: #ffdadd;
+            font-size: 13px;
+            font-weight: 900;
+        }
+
+        .bug-answer {
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.65;
+        }
+
+        /* =========================================================
+           VOCABULARY
+           ========================================================= */
+
+        .vocab {
+            width: 100%;
+            margin-top: 22px;
+            border-collapse: collapse;
+            border: 1px solid var(--border);
+            border-radius: 13px;
+            overflow: hidden;
+        }
+
+        .vocab th,
+        .vocab td {
+            padding: 14px;
+            border-bottom: 1px solid rgba(57, 255, 136, 0.08);
+            text-align: left;
+            vertical-align: top;
+        }
+
+        .vocab th {
+            color: var(--green);
+            background: rgba(57, 255, 136, 0.045);
+            font-size: 10px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .vocab td {
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .vocab td:first-child {
+            width: 30%;
+            color: #d9eee0;
+            font-family: "Courier New", monospace;
+            font-weight: 800;
+        }
+
+        .vocab tr:last-child td {
+            border-bottom: 0;
+        }
+
+        /* =========================================================
+           NEXT PROJECT
+           ========================================================= */
+
+        .next-card {
+            position: relative;
+            overflow: hidden;
+            margin-top: 25px;
+            padding: 32px;
+            border: 1px solid var(--border-strong);
+            border-radius: 19px;
+            background:
+                radial-gradient(
+                    circle at 85% 50%,
+                    rgba(57, 217, 255, 0.08),
+                    transparent 25%
+                ),
+                rgba(57, 255, 136, 0.025);
+        }
+
+        .next-label {
+            color: var(--cyan);
+            font-family: "Courier New", monospace;
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+        }
+
+        .next-title {
+            margin-top: 8px;
+            color: #effff4;
+            font-size: 28px;
+            font-weight: 900;
+            letter-spacing: -0.035em;
+        }
+
+        .next-card p {
+            max-width: 760px;
+            margin-bottom: 0;
+            font-size: 13px;
+        }
+
+        /* =========================================================
+           BOTTOM NAVIGATION
+           ========================================================= */
+
+        .section-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .nav-button {
+            min-width: 130px;
+            padding: 11px 15px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: rgba(57, 255, 136, 0.025);
+            color: var(--muted);
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 800;
+            transition:
+                border-color 0.2s ease,
+                background 0.2s ease,
+                color 0.2s ease,
+                transform 0.2s ease;
+        }
+
+        .nav-button:hover:not(:disabled) {
+            border-color: var(--border-strong);
+            background: rgba(57, 255, 136, 0.06);
+            color: var(--green);
+            transform: translateY(-1px);
+        }
+
+        .nav-button:disabled {
+            opacity: 0.25;
+            cursor: not-allowed;
+        }
+
+        .nav-hint {
+            color: #50645a;
+            font-family: "Courier New", monospace;
+            font-size: 9px;
+            text-align: center;
+        }
+
+        /* =========================================================
+           RESPONSIVE
+           ========================================================= */
+
+        @media (max-width: 1100px) {
+            .sidebar {
+                width: 245px;
+            }
+
+            .main {
+                margin-left: 245px;
+            }
+
+            .grid.three {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .sidebar {
+                display: none;
+            }
+
+            .mobile-header {
+                display: block;
+            }
+
+            .main {
+                margin-left: 0;
+            }
+
+            .topbar {
+                display: none;
+            }
+
+            .content {
+                width: min(100% - 28px, 760px);
+                padding-top: 28px;
+            }
+
+            .hero {
+                padding: 27px 22px;
+                border-radius: 17px;
+            }
+
+            .grid,
+            .materials,
+            .led-states {
+                grid-template-columns: 1fr;
+            }
+
+            .radar-scene {
+                transform: scale(0.88);
+                transform-origin: center;
+            }
+        }
+
+        @media (max-width: 560px) {
+            h1 {
+                font-size: 40px;
+            }
+
+            h2 {
+                font-size: 30px;
+            }
+
+            .hero {
+                padding: 24px 18px;
+            }
+
+            .hero-subtitle {
+                font-size: 14px;
+            }
+
+            .content {
+                width: calc(100% - 20px);
+            }
+
+            .card,
+            .wiring-box,
+            .challenge,
+            .next-card {
+                padding: 18px;
+            }
+
+            .flow {
+                display: grid;
+                grid-template-columns: 1fr;
+            }
+
+            .flow-arrow {
+                justify-content: center;
+                transform: rotate(90deg);
+            }
+
+            .section-nav {
+                gap: 8px;
+            }
+
+            .nav-button {
+                min-width: 0;
+                flex: 1;
+            }
+
+            .nav-hint {
+                display: none;
+            }
+
+            .radar {
+                min-height: 280px;
+                overflow: hidden;
+            }
+
+            .radar-scene {
+                width: 650px;
+                transform: scale(0.55);
+            }
+
+            .pin-table,
+            .vocab {
+                display: block;
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- =========================================================
+         SIDEBAR
+         ========================================================= -->
+
+    <aside class="sidebar">
+
+        <div class="brand">
+            <div class="brand-small">Quantum Core</div>
+            <div class="brand-title">ESP-32 Library</div>
+            <div class="brand-subtitle">
+                Project 14 · Sensor Systems
+            </div>
+        </div>
+
+        <div class="progress-area">
+            <div class="progress-row">
+                <span class="progress-label">Progress</span>
+                <span
+                    class="progress-text"
+                    id="progressText"
+                >
+                    1 / 14
+                </span>
+            </div>
+
+            <div class="progress-track">
+                <div
+                    class="progress-fill"
+                    id="progressFill"
+                ></div>
+            </div>
+        </div>
+
+        <nav class="nav">
+
+            <button
+                class="nav-item active"
+                data-section="0"
+            >
+                <span class="nav-number">01</span>
+                <span class="nav-name">Welcome</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="1"
+            >
+                <span class="nav-number">02</span>
+                <span class="nav-name">What We Learn</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="2"
+            >
+                <span class="nav-number">03</span>
+                <span class="nav-name">Wiring</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="3"
+            >
+                <span class="nav-number">04</span>
+                <span class="nav-name">Create Project</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="4"
+            >
+                <span class="nav-number">05</span>
+                <span class="nav-name">Complete Code</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="5"
+            >
+                <span class="nav-number">06</span>
+                <span class="nav-name">Understand Code</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="6"
+            >
+                <span class="nav-number">07</span>
+                <span class="nav-name">Build + Upload</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="7"
+            >
+                <span class="nav-number">08</span>
+                <span class="nav-name">Expected Result</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="8"
+            >
+                <span class="nav-number">09</span>
+                <span class="nav-name">Experiment</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="9"
+            >
+                <span class="nav-number">10</span>
+                <span class="nav-name">Challenge</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="10"
+            >
+                <span class="nav-number">11</span>
+                <span class="nav-name">Troubleshooting</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="11"
+            >
+                <span class="nav-number">12</span>
+                <span class="nav-name">Vocabulary</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="12"
+            >
+                <span class="nav-number">13</span>
+                <span class="nav-name">What You Learned</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="13"
+            >
+                <span class="nav-number">14</span>
+                <span class="nav-name">Next Project</span>
+            </button>
+
+        </nav>
+
+        <div class="sidebar-footer">
+            QUANTUM CORE · ESP32<br>
+            Learn → Build → Break → Understand
+        </div>
+
+    </aside>
+
+    <!-- =========================================================
+         MOBILE HEADER
+         ========================================================= -->
+
+    <header class="mobile-header">
+        <div class="mobile-header-inner">
+            <div class="mobile-brand">
+                QC / ESP32 / P14
+            </div>
+
+            <div
+                class="mobile-progress"
+                id="mobileProgress"
+            >
+                01 / 14
+            </div>
+        </div>
+    </header>
+
+    <!-- =========================================================
+         MAIN
+         ========================================================= -->
+
+    <main class="main">
+
+        <div class="topbar">
+
+            <div class="topbar-path">
+                <span>library</span>
+                <span> / </span>
+                <strong>ESP-32</strong>
+                <span> / </span>
+                <span>project-14</span>
+            </div>
+
+            <div class="status">
+                <span class="status-dot"></span>
+                Guide Online
+            </div>
+
+        </div>
+
+        <div class="content">
+
+            <!-- =================================================
+                 SECTION 01 — WELCOME
+                 ================================================= -->
+
+            <section class="section active">
+
+                <div class="hero">
+
+                    <div class="eyebrow">
+                        Project 14 · Sensor Systems
+                    </div>
+
+                    <h1>
+                        Ultrasonic<br>
+                        Distance Meter
+                    </h1>
+
+                    <p class="hero-subtitle">
+                        Hey my broo 👋<br><br>
+
+                        Welcome back! ⚡<br><br>
+
+                        We've measured light, and we've measured
+                        temperature. But what if we want to measure
+                        <em>space</em>? What if we want the ESP32 to know
+                        if a person or an object is standing right in
+                        front of it?
+                    </p>
+
+                    <p class="hero-subtitle">
+                        Today, we are going to use an
+                        <strong>Ultrasonic Sensor</strong>.
+                        This sensor works like a bat's echolocation or
+                        a submarine's sonar. It sends an invisible
+                        high-frequency sound wave, listens for the echo,
+                        and uses the timing to calculate how far away an
+                        object is!
+                    </p>
+
+                    <p class="hero-subtitle">
+                        We are going to use this data to build a visual
+                        warning system, exactly like the parking sensors
+                        on the back of a fancy car. 🚗
+                    </p>
+
+                    <div class="terminal">
+                        <div>
+                            <span class="prompt">
+                                my-bro@quantum-core:~$
+                            </span>
+                            esp32-guide --project 14
+                        </div>
+
+                        <div class="dim">
+                            initializing ultrasonic radar...
+                        </div>
+
+                        <div>
+                            <span class="prompt">MODE:</span>
+                            TIME-OF-FLIGHT
+                        </div>
+
+                        <div>
+                            <span class="prompt">SENSOR:</span>
+                            HC-SR04
+                        </div>
+
+                        <div>
+                            <span class="prompt">OUTPUT:</span>
+                            DISTANCE + LED WARNING
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="callout">
+
+                    <div class="callout-title">
+                        Mission
+                    </div>
+
+                    <p>
+                        We're going from
+                        <strong>
+                            "My ESP32 knows how hot the room is."
+                        </strong>
+                        to
+                        <strong>
+                            "My ESP32 can measure physical distance and
+                            visually warn me when an object gets too close!"
+                        </strong>
+                        😎
+                    </p>
+
+                </div>
+
+                <div class="grid">
+
+                    <div class="card">
+                        <div class="card-number">INPUT</div>
+                        <h3>Ultrasonic Echo</h3>
+                        <p>
+                            The HC-SR04 sends a sound pulse and reports
+                            how long the returning echo takes.
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-number">OUTPUT</div>
+                        <h3>Distance + LEDs</h3>
+                        <p>
+                            The ESP32 converts the measured time into
+                            centimeters and creates escalating warning
+                            states.
+                        </p>
+                    </div>
+
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 02 — WHAT WE LEARN
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="eyebrow">
+                    02 · Concepts
+                </div>
+
+                <h2>
+                    What Are We Learning?
+                </h2>
+
+                <p>
+                    Today we are learning about
+                    <strong>Time-of-Flight</strong> and the
+                    <code class="inline">pulseIn()</code> function.
+                </p>
+
+                <div class="grid">
+
+                    <div class="card">
+
+                        <div class="card-number">
+                            01 · TIME-OF-FLIGHT
+                        </div>
+
+                        <h3>
+                            Echolocation
+                        </h3>
+
+                        <p>
+                            The HC-SR04 has two silver cylinders.
+                            One is used to transmit the ultrasonic wave,
+                            while the other receives the returning echo.
+                        </p>
+
+                        <p>
+                            We tell the ESP32 to send a tiny electrical
+                            pulse to the Trigger pin. The sensor sends
+                            an ultrasonic sound wave. The wave travels
+                            through the air, hits an object, bounces back,
+                            and reaches the Echo receiver.
+                        </p>
+
+                        <p>
+                            If we know how long the round trip took and
+                            approximately how fast sound travels, we can
+                            calculate the distance.
+                        </p>
+
+                    </div>
+
+                    <div class="card">
+
+                        <div class="card-number">
+                            02 · pulseIn()
+                        </div>
+
+                        <h3>
+                            The Microsecond Stopwatch
+                        </h3>
+
+                        <p>
+                            <code class="inline">pulseIn()</code>
+                            measures how long a digital pulse stays in a
+                            particular state.
+                        </p>
+
+                        <p>
+                            For our HC-SR04, the Echo pin goes
+                            <strong>HIGH</strong> while the sound is
+                            travelling to the object and back.
+                            The function measures that HIGH duration
+                            in microseconds.
+                        </p>
+
+                        <p>
+                            That time becomes the raw measurement that
+                            our physics math converts into centimeters.
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <div class="flow">
+
+                    <div class="flow-step">
+                        <strong>01 · Trigger</strong>
+                        <span>
+                            Send a short electrical pulse.
+                        </span>
+                    </div>
+
+                    <div class="flow-arrow">➜</div>
+
+                    <div class="flow-step">
+                        <strong>02 · Sound</strong>
+                        <span>
+                            Ultrasonic wave travels outward.
+                        </span>
+                    </div>
+
+                    <div class="flow-arrow">➜</div>
+
+                    <div class="flow-step">
+                        <strong>03 · Echo</strong>
+                        <span>
+                            Wave bounces back from object.
+                        </span>
+                    </div>
+
+                    <div class="flow-arrow">➜</div>
+
+                    <div class="flow-step">
+                        <strong>04 · Time</strong>
+                        <span>
+                            ESP32 measures the echo duration.
+                        </span>
+                    </div>
+
+                    <div class="flow-arrow">➜</div>
+
+                    <div class="flow-step">
+                        <strong>05 · Math</strong>
+                        <span>
+                            Convert time into distance.
+                        </span>
+                    </div>
+
+                    <div class="flow-arrow">➜</div>
+
+                    <div class="flow-step">
+                        <strong>06 · Warning</strong>
+                        <span>
+                            Update the LEDs.
+                        </span>
+                    </div>
+
+                </div>
+
+                <div class="radar">
+
+                    <div class="radar-scene">
+
+                        <div class="sensor-box">
+
+                            <div class="sensor-eyes">
+                                <div class="eye"></div>
+                                <div class="eye"></div>
+                            </div>
+
+                            <div class="sensor-label">
+                                HC-SR04
+                            </div>
+
+                        </div>
+
+                        <div class="wave"></div>
+
+                        <div class="object"></div>
+
+                        <div class="distance-label">
+                            ROUND-TRIP TIME
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 03 — WIRING
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="eyebrow">
+                    03 · Hardware
+                </div>
+
+                <h2>
+                    Wiring
+                </h2>
+
+                <p>
+                    The HC-SR04 has four pins:
+                    <strong>VCC, TRIG, ECHO, and GND</strong>.
+                </p>
+
+                <p>
+                    For this project, the sensor is powered from the
+                    ESP32's <strong>VIN / 5V</strong> supply when the
+                    board is powered from USB.
+                </p>
+
+                <div class="callout warning">
+
+                    <div class="callout-title">
+                        ⚠️ Important ESP32 Logic-Level Warning
+                    </div>
+
+                    <p>
+                        A standard HC-SR04 can drive its
+                        <strong>ECHO pin at about 5 V</strong>.
+                        ESP32 GPIO pins use 3.3 V logic and are
+                        <strong>not 5 V tolerant</strong>.
+                        Do <strong>not</strong> connect a standard
+                        5 V ECHO signal directly to D18.
+                        Use a simple resistor voltage divider or a
+                        suitable 3.3 V logic-level shifter between
+                        <strong>HC-SR04 ECHO</strong> and
+                        <strong>ESP32 D18</strong>.
+                    </p>
+
+                </div>
+
+                <div class="grid">
+
+                    <div class="card">
+
+                        <div class="card-number">
+                            SENSOR
+                        </div>
+
+                        <h3>
+                            HC-SR04
+                        </h3>
+
+                        <ul class="feature-list">
+
+                            <li>
+                                <strong>VCC</strong>
+                                → VIN / 5V
+                            </li>
+
+                            <li>
+                                <strong>TRIG</strong>
+                                → D5
+                            </li>
+
+                            <li>
+                                <strong>ECHO</strong>
+                                → voltage divider / level shifter
+                                → D18
+                            </li>
+
+                            <li>
+                                <strong>GND</strong>
+                                → Blue GND rail
+                            </li>
+
+                        </ul>
+
+                    </div>
+
+                    <div class="card">
+
+                        <div class="card-number">
+                            WARNING OUTPUT
+                        </div>
+
+                        <h3>
+                            Three LEDs
+                        </h3>
+
+                        <ul class="feature-list">
+
+                            <li>
+                                Green LED → D2
+                            </li>
+
+                            <li>
+                                Yellow LED → D4
+                            </li>
+
+                            <li>
+                                Red LED → D15
+                            </li>
+
+                            <li>
+                                All LED cathodes return to GND.
+                            </li>
+
+                        </ul>
+
+                    </div>
+
+                </div>
+
+                <div class="wiring-box">
+
+                    <div class="wiring-title">
+                        Wiring Map
+                    </div>
+
+                    <pre class="wiring-diagram"> ESP32             BREADBOARD / SENSOR
+
+ VIN ────────────► HC-SR04 VCC
+  D5 ────────────► HC-SR04 TRIG
+
+ HC-SR04 ECHO ──► [VOLTAGE DIVIDER / LEVEL SHIFTER]
+                         │
+                         ▼
+                       D18
+
+  D2 ────────────► Green LED Long Leg
+  D4 ────────────► Yellow LED Long Leg
+ D15 ────────────► Red LED Long Leg
+
+ GND ───────────► [Blue GND Rail]
+                         ▲
+                         │
+                  Sensor GND
+                  LED Short Legs</pre>
+
+                </div>
+
+                <div class="wiring-box">
+
+                    <div class="wiring-title">
+                        Pin Summary
+                    </div>
+
+                    <table class="pin-table">
+
+                        <thead>
+                            <tr>
+                                <th>Component</th>
+                                <th>Pin</th>
+                                <th>ESP32</th>
+                                <th>Purpose</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            <tr>
+                                <td>HC-SR04</td>
+                                <td>VCC</td>
+                                <td>VIN / 5V</td>
+                                <td>Sensor power</td>
+                            </tr>
+
+                            <tr>
+                                <td>HC-SR04</td>
+                                <td>TRIG</td>
+                                <td>D5</td>
+                                <td>Starts measurement</td>
+                            </tr>
+
+                            <tr>
+                                <td>HC-SR04</td>
+                                <td>ECHO</td>
+                                <td>D18 through level shifting</td>
+                                <td>Returns echo timing</td>
+                            </tr>
+
+                            <tr>
+                                <td>HC-SR04</td>
+                                <td>GND</td>
+                                <td>GND</td>
+                                <td>Common ground</td>
+                            </tr>
+
+                            <tr>
+                                <td>Green LED</td>
+                                <td>Anode</td>
+                                <td>D2</td>
+                                <td>Safe / far warning</td>
+                            </tr>
+
+                            <tr>
+                                <td>Yellow LED</td>
+                                <td>Anode</td>
+                                <td>D4</td>
+                                <td>Closer warning</td>
+                            </tr>
+
+                            <tr>
+                                <td>Red LED</td>
+                                <td>Anode</td>
+                                <td>D15</td>
+                                <td>Danger warning</td>
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+                <div class="callout warning">
+
+                    <div class="callout-title">
+                        💡 LED Resistor Reminder
+                    </div>
+
+                    <p>
+                        Put a <strong>220–330 Ω current-limiting
+                        resistor</strong> in series with each LED.
+                        Do not connect an LED directly between an ESP32
+                        GPIO and GND.
+                    </p>
+
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 04 — CREATE PROJECT
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="eyebrow">
+                    04 · PlatformIO
+                </div>
+
+                <h2>
+                    Create the Project
+                </h2>
+
+                <p>
+                    Good news: we don't need an external library for
+                    this project. We're going to write the sensor
+                    timing and distance calculation ourselves.
+                </p>
+
+                <div class="steps">
+
+                    <div class="step">
+                        <div class="step-num">01</div>
+
+                        <div class="step-content">
+                            <strong>
+                                Open VS Code
+                            </strong>
+
+                            <span>
+                                Launch VS Code and open PlatformIO.
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-num">02</div>
+
+                        <div class="step-content">
+                            <strong>
+                                Create New Project
+                            </strong>
+
+                            <span>
+                                Open PlatformIO and choose
+                                <strong>New Project</strong>.
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-num">03</div>
+
+                        <div class="step-content">
+                            <strong>
+                                Project Name
+                            </strong>
+
+                            <span>
+                                Use:
+                                <code class="inline">
+                                    ESP32-14-Distance
+                                </code>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-num">04</div>
+
+                        <div class="step-content">
+                            <strong>
+                                Board
+                            </strong>
+
+                            <span>
+                                Select:
+                                <strong>
+                                    DOIT ESP32 DEVKIT V1
+                                </strong>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-num">05</div>
+
+                        <div class="step-content">
+                            <strong>
+                                Framework
+                            </strong>
+
+                            <span>
+                                Select:
+                                <strong>Arduino</strong>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-num">06</div>
+
+                        <div class="step-content">
+                            <strong>
+                                Open main.cpp
+                            </strong>
+
+                            <span>
+                                Open:
+                                <code class="inline">
+                                    src/main.cpp
+                                </code>
+                            </span>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="callout">
+
+                    <div class="callout-title">
+                        No Library Required
+                    </div>
+
+                    <p>
+                        Unlike Project 13, where we installed the
+                        Adafruit DHT library, this project uses Arduino's
+                        built-in functions such as
+                        <code class="inline">digitalWrite()</code>,
+                        <code class="inline">delayMicroseconds()</code>,
+                        and <code class="inline">pulseIn()</code>.
+                    </p>
+
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 05 — COMPLETE CODE
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="eyebrow">
+                    05 · Code
+                </div>
+
+                <h2>
+                    Complete Code
+                </h2>
+
+                <p>
+                    Delete the default code inside
+                    <code class="inline">src/main.cpp</code>
+                    and paste this.
+                </p>
+
+                <p>
+                    Look closely at the
+                    <code class="inline">loop()</code>.
+                    The ESP32 first creates the ultrasonic pulse,
+                    then measures the Echo duration, performs the
+                    physics calculation, and finally updates the LEDs.
+                </p>
+
+                <div class="code-wrap">
+
+                    <div class="code-head">
+                        <span class="code-language">
+                            C++
+                        </span>
+
+                        <button class="copy-btn">
+                            Copy
+                        </button>
+                    </div>
+
+                    <pre class="code">/*
+ * ============================================================
+ * MY BRO'S FOURTEENTH ESP32 PROGRAM: ULTRASONIC PARKING RADAR
+ * ============================================================
+ */
+
+// Define Sensor Pins
+const int TRIG_PIN = 5;
+const int ECHO_PIN = 18;
+
+// Define LED Pins
+const int LED_GREEN = 2;
+const int LED_YELLOW = 4;
+const int LED_RED = 15;
+
+void setup() {
+    Serial.begin(115200);
+
+    // The Trigger shouts the sound (OUTPUT)
+    pinMode(TRIG_PIN, OUTPUT);
+
+    // The Echo listens for the sound (INPUT)
+    pinMode(ECHO_PIN, INPUT);
+
+    // Setup LEDs as outputs
+    pinMode(LED_GREEN, OUTPUT);
+    pinMode(LED_YELLOW, OUTPUT);
+    pinMode(LED_RED, OUTPUT);
+}
+
+void loop() {
+    // --------------------------------------------------------
+    // STEP 1: SHOUT THE SOUND WAVE
+    // --------------------------------------------------------
+
+    // Clear the trigger pin first just in case
+    digitalWrite(TRIG_PIN, LOW);
+    delayMicroseconds(2);
+
+    // Send a 10-microsecond pulse to trigger the sound wave
+    digitalWrite(TRIG_PIN, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(TRIG_PIN, LOW);
+
+    // --------------------------------------------------------
+    // STEP 2: MEASURE THE ECHO
+    // --------------------------------------------------------
+
+    // pulseIn() waits for the ECHO_PIN to go HIGH,
+    // then measures how long it stays HIGH.
+    long duration = pulseIn(ECHO_PIN, HIGH);
+
+    // --------------------------------------------------------
+    // STEP 3: THE PHYSICS MATH
+    // --------------------------------------------------------
+
+    // Speed of sound is roughly 0.034 centimeters
+    // per microsecond.
+    //
+    // We divide by 2 because the sound traveled:
+    //
+    // Sensor -> Object -> Sensor
+    //
+    // We only want the one-way distance.
+    int distanceCm = duration * 0.034 / 2;
+
+    // Print to Serial Monitor
+    Serial.print("Distance: ");
+    Serial.print(distanceCm);
+    Serial.println(" cm");
+
+    // --------------------------------------------------------
+    // STEP 4: VISUAL WARNING LOGIC
+    // --------------------------------------------------------
+
+    if (distanceCm > 30) {
+        // FAR AWAY (Safe)
+        // Only Green LED is ON.
+        digitalWrite(LED_GREEN, HIGH);
+        digitalWrite(LED_YELLOW, LOW);
+        digitalWrite(LED_RED, LOW);
+    }
+    else if (distanceCm > 10 && distanceCm <= 30) {
+        // GETTING CLOSER (Warning)
+        // Green + Yellow are ON.
+        digitalWrite(LED_GREEN, HIGH);
+        digitalWrite(LED_YELLOW, HIGH);
+        digitalWrite(LED_RED, LOW);
+    }
+    else {
+        // TOO CLOSE (Danger)
+        // All three LEDs are ON.
+        digitalWrite(LED_GREEN, HIGH);
+        digitalWrite(LED_YELLOW, HIGH);
+        digitalWrite(LED_RED, HIGH);
+    }
+
+    // Wait before pinging again so echoes do not overlap.
+    delay(100);
+}</pre>
+
+                </div>
+
+                <div class="callout warning">
+
+                    <div class="callout-title">
+                        ⚠️ Hardware Note
+                    </div>
+
+                    <p>
+                        The code assumes that the signal reaching
+                        <code class="inline">ECHO_PIN</code> is already
+                        safely reduced to ESP32 3.3 V logic through a
+                        voltage divider or level shifter.
+                    </p>
+
+                </div>
+
+                <p>
+                    Save your code with
+                    <strong>Ctrl + S</strong>.
+                </p>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 06 — UNDERSTAND CODE
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="eyebrow">
+                    06 · Deep Dive
+                </div>
+
+                <h2>
+                    Understand the Code
+                </h2>
+
+                <p>
+                    Let's break down the magic happening inside the
+                    program. ⚡
+                </p>
+
+                <div class="grid">
+
+                    <div class="card">
+
+                        <div class="card-number">
+                            delayMicroseconds()
+                        </div>
+
+                        <h3>
+                            The Trigger Pulse
+                        </h3>
+
+                        <p>
+                            This is similar to
+                            <code class="inline">delay()</code>,
+                            but it works at microsecond precision.
+                        </p>
+
+                        <p>
+                            We hold the Trigger pin HIGH for
+                            approximately 10 microseconds.
+                            That tells the HC-SR04 to start a
+                            measurement.
+                        </p>
+
+                    </div>
+
+                    <div class="card">
+
+                        <div class="card-number">
+                            pulseIn()
+                        </div>
+
+                        <h3>
+                            The Stopwatch
+                        </h3>
+
+                        <p>
+                            <code class="inline">
+                                pulseIn(ECHO_PIN, HIGH)
+                            </code>
+                            measures how long the Echo pin remains HIGH.
+                        </p>
+
+                        <p>
+                            The returned value is a time measurement
+                            in microseconds.
+                        </p>
+
+                    </div>
+
+                    <div class="card">
+
+                        <div class="card-number">
+                            PHYSICS
+                        </div>
+
+                        <h3>
+                            The Distance Math
+                        </h3>
+
+                        <p>
+                            Sound travels at roughly
+                            <strong>
+                                0.034 cm per microsecond
+                            </strong>
+                            under typical room-temperature conditions.
+                        </p>
+
+                        <p>
+                            Because the measured time covers the trip
+                            <strong>to the object and back</strong>,
+                            we divide by 2.
+                        </p>
+
+                    </div>
+
+                    <div class="card">
+
+                        <div class="card-number">
+                            LOGIC
+                        </div>
+
+                        <h3>
+                            Progressive Warning
+                        </h3>
+
+                        <p>
+                            The
+                            <code class="inline">
+                                if / else if / else
+                            </code>
+                            structure creates three distance zones.
+                        </p>
+
+                        <p>
+                            The closer the object gets, the more LEDs
+                            turn on.
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <div class="callout">
+
+                    <div class="callout-title">
+                        Example
+                    </div>
+
+                    <p>
+                        Suppose the Echo duration is
+                        <strong>100 microseconds</strong>.
+                        The calculation is approximately:
+                    </p>
+
+                    <div class="output">
+                        <span class="green">
+                            100 µs
+                        </span>
+                        ×
+                        <span class="green">
+                            0.034 cm/µs
+                        </span>
+                        =
+                        <span class="yellow">
+                            3.4 cm
+                        </span>
+                        round trip distance equivalent
+                        <br><br>
+                        <span class="yellow">
+                            3.4 ÷ 2 = 1.7 cm
+                        </span>
+                        one-way distance
+                    </div>
+
+                </div>
+
+                <div class="callout warning">
+
+                    <div class="callout-title">
+                        Why Divide by 2?
+                    </div>
+
+                    <p>
+                        This is the key physics idea.
+                        The sensor doesn't measure only the distance
+                        from itself to the object. The echo travels:
+                        <strong>
+                            sensor → object → sensor
+                        </strong>.
+                        Therefore, the measured path is approximately
+                        twice the one-way distance.
+                    </p>
+
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 07 — BUILD + UPLOAD
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="eyebrow">
+                    07 · Deploy
+                </div>
+
+                <h2>
+                    Build + Upload + Serial Monitor
+                </h2>
+
+                <p>
+                    Time to send the radar program into the ESP32. 🚀
+                </p>
+
+                <div class="steps">
+
+                    <div class="step">
+                        <div class="step-num">01</div>
+
+                        <div class="step-content">
+                            <strong>
+                                Build
+                            </strong>
+
+                            <span>
+                                Click the PlatformIO
+                                <strong>Build ✓</strong>
+                                button.
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-num">02</div>
+
+                        <div class="step-content">
+                            <strong>
+                                Upload
+                            </strong>
+
+                            <span>
+                                Click the
+                                <strong>Upload →</strong>
+                                button and wait for the firmware
+                                to flash.
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-num">03</div>
+
+                        <div class="step-content">
+                            <strong>
+                                Open Serial Monitor
+                            </strong>
+
+                            <span>
+                                Click the PlatformIO
+                                <strong>Plug 🔌</strong>
+                                icon to open the Serial Monitor.
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-num">04</div>
+
+                        <div class="step-content">
+                            <strong>
+                                Check Speed
+                            </strong>
+
+                            <span>
+                                Make sure the Serial Monitor is using
+                                <strong>115200 baud</strong>.
+                            </span>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="output">
+
+                    <span class="green">
+                        ESP32 ultrasonic radar online
+                    </span>
+                    <br>
+                    Distance: 147 cm
+                    <br>
+                    Distance: 147 cm
+                    <br>
+                    Distance: 146 cm
+                    <br>
+                    Distance: 148 cm
+                    <br>
+                    Distance: 147 cm
+
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 08 — EXPECTED RESULT
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="eyebrow">
+                    08 · Test
+                </div>
+
+                <h2>
+                    What Should Happen?
+                </h2>
+
+                <p>
+                    Now we're going to test the radar like an actual
+                    parking sensor.
+                </p>
+
+                <div class="steps">
+
+                    <div class="step">
+                        <div class="step-num">01</div>
+
+                        <div class="step-content">
+                            <strong>
+                                Aim at a Wall
+                            </strong>
+
+                            <span>
+                                Point the two silver sensor cylinders
+                                toward a flat wall.
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-num">02</div>
+
+                        <div class="step-content">
+                            <strong>
+                                Watch Serial Monitor
+                            </strong>
+
+                            <span>
+                                You should see a distance such as
+                                <code class="inline">
+                                    Distance: 150 cm
+                                </code>,
+                                depending on how far away the wall is.
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-num">03</div>
+
+                        <div class="step-content">
+                            <strong>
+                                Move Your Hand
+                            </strong>
+
+                            <span>
+                                Slowly move your hand toward the
+                                front of the sensor.
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-num">04</div>
+
+                        <div class="step-content">
+                            <strong>
+                                Cross 30 cm
+                            </strong>
+
+                            <span>
+                                The Yellow LED joins the Green LED.
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-num">05</div>
+
+                        <div class="step-content">
+                            <strong>
+                                Cross 10 cm
+                            </strong>
+
+                            <span>
+                                The Red LED joins the Green and Yellow
+                                LEDs.
+                            </span>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="led-states">
+
+                    <div class="led-state">
+
+                        <div class="led-row">
+                            <div class="led green"></div>
+                            <div class="led yellow off"></div>
+                            <div class="led red off"></div>
+                        </div>
+
+                        <div class="state-range">
+                            &gt; 30 cm
+                        </div>
+
+                        <div class="state-title">
+                            SAFE
+                        </div>
+
+                        <div class="state-description">
+                            Object is relatively far away.
+                            Only Green is illuminated.
+                        </div>
+
+                    </div>
+
+                    <div class="led-state">
+
+                        <div class="led-row">
+                            <div class="led green"></div>
+                            <div class="led yellow"></div>
+                            <div class="led red off"></div>
+                        </div>
+
+                        <div class="state-range">
+                            10–30 cm
+                        </div>
+
+                        <div class="state-title">
+                            WARNING
+                        </div>
+
+                        <div class="state-description">
+                            Object is getting closer.
+                            Green + Yellow are illuminated.
+                        </div>
+
+                    </div>
+
+                    <div class="led-state">
+
+                        <div class="led-row">
+                            <div class="led green"></div>
+                            <div class="led yellow"></div>
+                            <div class="led red"></div>
+                        </div>
+
+                        <div class="state-range">
+                            ≤ 10 cm
+                        </div>
+
+                        <div class="state-title">
+                            DANGER
+                        </div>
+
+                        <div class="state-description">
+                            Object is very close.
+                            All three LEDs are illuminated.
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="callout">
+
+                    <div class="callout-title">
+                        You Built a Radar
+                    </div>
+
+                    <p>
+                        You just created a physical system where the
+                        ESP32 sends a signal, receives a reflection,
+                        performs a measurement, and reacts to the
+                        environment. That's a serious jump from simply
+                        blinking LEDs. 😎
+                    </p>
+
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 09 — EXPERIMENT
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="eyebrow">
+                    09 · Experiment
+                </div>
+
+                <h2>
+                    Slow Down the Radar
+                </h2>
+
+                <p>
+                    Right now the radar updates roughly ten times per
+                    second because the bottom of the loop contains:
+                </p>
+
+                <div class="code-wrap">
+
+                    <div class="code-head">
+                        <span class="code-language">
+                            C++
+                        </span>
+
+                        <button class="copy-btn">
+                            Copy
+                        </button>
+                    </div>
+
+                    <pre class="code">delay(100);</pre>
+
+                </div>
+
+                <p>
+                    What if you don't want the ESP32 constantly
+                    spamming the Serial Monitor?
+                </p>
+
+                <div class="card">
+
+                    <div class="card-number">
+                        EXPERIMENT
+                    </div>
+
+                    <h3>
+                        Change 100 → 2000
+                    </h3>
+
+                    <div class="code-wrap">
+
+                        <div class="code-head">
+                            <span class="code-language">
+                                C++
+                            </span>
+
+                            <button class="copy-btn">
+                                Copy
+                            </button>
+                        </div>
+
+                        <pre class="code">delay(2000);</pre>
+
+                    </div>
+
+                    <p>
+                        Now the ESP32 waits about two seconds between
+                        measurements.
+                    </p>
+
+                    <p>
+                        This can be useful for slow-moving applications
+                        such as a simple water-level monitor or a
+                        measurement system where you don't need a
+                        constant stream of readings.
+                    </p>
+
+                </div>
+
+                <div class="callout warning">
+
+                    <div class="callout-title">
+                        Remember
+                    </div>
+
+                    <p>
+                        Increasing the delay also makes the warning
+                        system respond more slowly. You are trading
+                        measurement frequency for a slower update rate.
+                    </p>
+
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 10 — CHALLENGE
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="eyebrow">
+                    10 · Challenge
+                </div>
+
+                <h2>
+                    Make Danger Mode Blink
+                </h2>
+
+                <div class="challenge">
+
+                    <div class="challenge-badge">
+                        Boss Challenge
+                    </div>
+
+                    <h3>
+                        🚨 Make the Red LED Act Like an Emergency Siren
+                    </h3>
+
+                    <p>
+                        Right now, when an object gets closer than
+                        10 cm, the Red LED simply stays ON.
+                    </p>
+
+                    <p>
+                        Your mission is to make it blink rapidly instead.
+                    </p>
+
+                    <p>
+                        Find the final
+                        <code class="inline">else { }</code>
+                        block where the Red LED is turned on.
+                    </p>
+
+                    <p>
+                        Use
+                        <code class="inline">digitalWrite()</code>
+                        and
+                        <code class="inline">delay()</code>
+                        inside that block to flash the Red LED
+                        ON and OFF quickly.
+                    </p>
+
+                </div>
+
+                <div class="callout warning">
+
+                    <div class="callout-title">
+                        Challenge Hint
+                    </div>
+
+                    <p>
+                        You can create a simple blink by alternating:
+                    </p>
+
+                    <div class="output">
+                        digitalWrite(LED_RED, HIGH);
+                        <br>
+                        delay(...);
+                        <br>
+                        digitalWrite(LED_RED, LOW);
+                        <br>
+                        delay(...);
+                    </div>
+
+                </div>
+
+                <div class="callout warning">
+
+                    <div class="callout-title">
+                        What This Teaches
+                    </div>
+
+                    <p>
+                        Because this challenge uses
+                        <code class="inline">delay()</code>
+                        inside the danger branch, the ESP32 will spend
+                        more time blocking while the danger state is
+                        active. That means the Serial Monitor will update
+                        more slowly during the flashing sequence.
+                    </p>
+
+                    <p>
+                        That's okay for this beginner challenge.
+                        Later, you can rebuild the same behavior using
+                        <code class="inline">millis()</code> so the
+                        warning can blink without blocking the rest of
+                        the program.
+                    </p>
+
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 11 — TROUBLESHOOTING
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="eyebrow">
+                    11 · Debug
+                </div>
+
+                <h2>
+                    Troubleshooting
+                </h2>
+
+                <div class="troubleshooting">
+
+                    <div class="bug">
+
+                        <div class="bug-title">
+                            Serial Monitor always reads 0 cm
+                            or strange values.
+                        </div>
+
+                        <div class="bug-answer">
+                            Check the TRIG and ECHO wiring. Make sure
+                            TRIG is connected to D5 and ECHO reaches
+                            D18 through the required 3.3 V-safe
+                            voltage divider or level shifter.
+                            Also verify that the sensor has power
+                            and a common ground.
+                        </div>
+
+                    </div>
+
+                    <div class="bug">
+
+                        <div class="bug-title">
+                            TRIG and ECHO were swapped.
+                        </div>
+
+                        <div class="bug-answer">
+                            The Trigger pin sends the command to start
+                            the ultrasonic measurement. The Echo pin
+                            reports the returning timing pulse.
+                            They are not interchangeable.
+                        </div>
+
+                    </div>
+
+                    <div class="bug">
+
+                        <div class="bug-title">
+                            The distance jumps wildly.
+                        </div>
+
+                        <div class="bug-answer">
+                            Remember that the sensor uses sound.
+                            Soft surfaces, angled surfaces, very small
+                            targets, and awkward reflections can produce
+                            unstable readings. Try a flat, hard surface
+                            such as a wall or book.
+                        </div>
+
+                    </div>
+
+                    <div class="bug">
+
+                        <div class="bug-title">
+                            The sensor gets hot or behaves strangely.
+                        </div>
+
+                        <div class="bug-answer">
+                            Disconnect power and re-check VCC and GND.
+                            Do not reverse the sensor's power connections.
+                            Also verify that the HC-SR04 ECHO signal is
+                            level-shifted before reaching the ESP32 GPIO.
+                        </div>
+
+                    </div>
+
+                    <div class="bug">
+
+                        <div class="bug-title">
+                            LEDs don't behave correctly.
+                        </div>
+
+                        <div class="bug-answer">
+                            Check that each LED has the correct polarity,
+                            each GPIO is connected to the intended LED,
+                            and every LED has its own current-limiting
+                            resistor.
+                        </div>
+
+                    </div>
+
+                    <div class="bug">
+
+                        <div class="bug-title">
+                            Serial Monitor shows garbage characters.
+                        </div>
+
+                        <div class="bug-answer">
+                            Set the Serial Monitor to
+                            <strong>115200 baud</strong>, matching:
+                            <code class="inline">
+                                Serial.begin(115200);
+                            </code>
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="callout danger">
+
+                    <div class="callout-title">
+                        Stop If Hardware Is Getting Hot
+                    </div>
+
+                    <p>
+                        Software bugs usually do not make you need to
+                        keep powering a physically hot component.
+                        If something is unexpectedly heating up,
+                        disconnect USB power and inspect the wiring
+                        before continuing.
+                    </p>
+
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 12 — VOCABULARY
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="eyebrow">
+                    12 · Vocabulary
+                </div>
+
+                <h2>
+                    New Vocabulary
+                </h2>
+
+                <p>
+                    These three terms are the big ones from Project 14.
+                </p>
+
+                <table class="vocab">
+
+                    <thead>
+                        <tr>
+                            <th>Word</th>
+                            <th>Meaning</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        <tr>
+                            <td>
+                                Ultrasonic
+                            </td>
+
+                            <td>
+                                Sound waves with frequencies above the
+                                range normally audible to humans.
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td>
+                                Time-of-Flight
+                            </td>
+
+                            <td>
+                                Measuring distance by determining how
+                                long a signal takes to travel to a
+                                target and return.
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td>
+                                pulseIn()
+                            </td>
+
+                            <td>
+                                An Arduino function that measures the
+                                duration of a HIGH or LOW digital pulse,
+                                returning the duration in microseconds.
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td>
+                                Echo
+                            </td>
+
+                            <td>
+                                The reflected ultrasonic signal received
+                                after the transmitted sound wave hits
+                                an object.
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td>
+                                Threshold
+                            </td>
+
+                            <td>
+                                A chosen boundary used to turn a
+                                measurement into a decision, such as
+                                Safe, Warning, or Danger.
+                            </td>
+                        </tr>
+
+                    </tbody>
+
+                </table>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 13 — WHAT YOU LEARNED
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="eyebrow">
+                    13 · Achievement
+                </div>
+
+                <h2>
+                    What You Just Learned
+                </h2>
+
+                <div class="hero">
+
+                    <div class="eyebrow">
+                        System Upgrade Complete
+                    </div>
+
+                    <h2>
+                        Your ESP32 Can Now Measure Space.
+                    </h2>
+
+                    <p class="hero-subtitle">
+                        Outstanding work, my bro! 🔥
+                    </p>
+
+                    <p class="hero-subtitle">
+                        You just learned how to interact with a
+                        <strong>time-based sensor</strong>.
+                    </p>
+
+                    <p class="hero-subtitle">
+                        Instead of simply reading a voltage or asking a
+                        library for a ready-made measurement, your ESP32
+                        actively generated a physical signal, measured
+                        its reflection in microseconds, and used physics
+                        math to estimate physical distance.
+                    </p>
+
+                    <p class="hero-subtitle">
+                        That's a major concept.
+                    </p>
+
+                </div>
+
+                <div class="grid three">
+
+                    <div class="card">
+
+                        <div class="card-number">
+                            PHYSICS
+                        </div>
+
+                        <h3>
+                            Time-of-Flight
+                        </h3>
+
+                        <p>
+                            You used travel time and the approximate
+                            speed of sound to calculate distance.
+                        </p>
+
+                    </div>
+
+                    <div class="card">
+
+                        <div class="card-number">
+                            PROGRAMMING
+                        </div>
+
+                        <h3>
+                            pulseIn()
+                        </h3>
+
+                        <p>
+                            You measured the duration of a digital
+                            pulse at microsecond resolution.
+                        </p>
+
+                    </div>
+
+                    <div class="card">
+
+                        <div class="card-number">
+                            CONTROL LOGIC
+                        </div>
+
+                        <h3>
+                            Escalating States
+                        </h3>
+
+                        <p>
+                            You used if / else if / else to transform
+                            measurements into progressively stronger
+                            warning states.
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <div class="callout">
+
+                    <div class="callout-title">
+                        The Big Idea
+                    </div>
+
+                    <p>
+                        A sensor doesn't have to simply give your
+                        program a number. Your program can interact
+                        with the physical world, measure a response,
+                        perform mathematics, and then make a decision.
+                    </p>
+
+                    <p>
+                        That's the foundation of robotics,
+                        automation, parking sensors, obstacle
+                        detection, and many embedded systems.
+                    </p>
+
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 14 — NEXT PROJECT
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="eyebrow">
+                    14 · Next Mission
+                </div>
+
+                <h2>
+                    Cut the Cords.
+                </h2>
+
+                <p>
+                    Everything we've done so far has been
+                    <strong>wired</strong>.
+                </p>
+
+                <p>
+                    The ESP32 talks to components connected directly
+                    to its pins.
+                </p>
+
+                <div class="next-card">
+
+                    <div class="next-label">
+                        Next.exe
+                    </div>
+
+                    <div class="next-title">
+                        Project 15 — Connect ESP32 to Wi-Fi 📡
+                    </div>
+
+                    <p>
+                        The ESP32 has a secret weapon hidden inside
+                        its tiny board: a built-in Wi-Fi radio.
+                    </p>
+
+                    <p>
+                        It's time to wake up that radio chip and
+                        connect the microcontroller directly to a
+                        wireless network.
+                    </p>
+
+                    <p>
+                        We're moving from:
+                        <strong>
+                            sensor → wire → ESP32
+                        </strong>
+                        toward:
+                        <strong>
+                            ESP32 → wireless network → Internet
+                        </strong>.
+                    </p>
+
+                </div>
+
+                <div class="callout">
+
+                    <div class="callout-title">
+                        Next Mission
+                    </div>
+
+                    <p>
+                        In
+                        <strong>
+                            Project 15 — Connect ESP32 to Wi-Fi
+                        </strong>,
+                        we're going wireless. 📡⚡
+                    </p>
+
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION NAVIGATION
+                 ================================================= -->
+
+            <div class="section-nav">
+
+                <button
+                    class="nav-button"
+                    id="prevBtn"
+                    disabled
+                >
+                    ← Previous
+                </button>
+
+                <div class="nav-hint">
+                    Use ← / → keys to navigate
+                </div>
+
+                <button
+                    class="nav-button"
+                    id="nextBtn"
+                >
+                    Next →
+                </button>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- =========================================================
+         JAVASCRIPT
+         ========================================================= -->
+
+    <script>
+        const sections = [
+            ...document.querySelectorAll(".section")
+        ];
+
+        const navItems = [
+            ...document.querySelectorAll(".nav-item")
+        ];
+
+        const progressFill =
+            document.getElementById("progressFill");
+
+        const progressText =
+            document.getElementById("progressText");
+
+        const mobileProgress =
+            document.getElementById("mobileProgress");
+
+        const prevBtn =
+            document.getElementById("prevBtn");
+
+        const nextBtn =
+            document.getElementById("nextBtn");
+
+        const STORAGE_KEY =
+            "qc-esp32-project-14-section";
+
+        let currentSection = 0;
+
+        function updateSection(index) {
+            index = Math.max(
+                0,
+                Math.min(index, sections.length - 1)
+            );
+
+            currentSection = index;
+
+            sections.forEach((section, i) => {
+                section.classList.toggle(
+                    "active",
+                    i === currentSection
+                );
+            });
+
+            navItems.forEach((item, i) => {
+                item.classList.toggle(
+                    "active",
+                    i === currentSection
+                );
+            });
+
+            const progress =
+                ((currentSection + 1) / sections.length) * 100;
+
+            progressFill.style.width =
+                `${progress}%`;
+
+            progressText.textContent =
+                `${currentSection + 1} / ${sections.length}`;
+
+            mobileProgress.textContent =
+                `${String(currentSection + 1).padStart(2, "0")} / ${sections.length}`;
+
+            prevBtn.disabled =
+                currentSection === 0;
+
+            nextBtn.disabled =
+                currentSection === sections.length - 1;
+
+            window.scrollTo({
+                top: 0,
+                behavior: "smooth"
+            });
+
+            localStorage.setItem(
+                STORAGE_KEY,
+                currentSection
+            );
+        }
+
+        navItems.forEach((item) => {
+            item.addEventListener("click", () => {
+                updateSection(
+                    Number(item.dataset.section)
+                );
+            });
+        });
+
+        prevBtn.addEventListener("click", () => {
+            updateSection(
+                currentSection - 1
+            );
+        });
+
+        nextBtn.addEventListener("click", () => {
+            updateSection(
+                currentSection + 1
+            );
+        });
+
+        document.addEventListener(
+            "keydown",
+            (event) => {
+                if (
+                    event.target.tagName === "INPUT" ||
+                    event.target.tagName === "TEXTAREA"
+                ) {
+                    return;
+                }
+
+                if (event.key === "ArrowLeft") {
+                    updateSection(
+                        currentSection - 1
+                    );
+                }
+
+                if (event.key === "ArrowRight") {
+                    updateSection(
+                        currentSection + 1
+                    );
+                }
+            }
+        );
+
+        document
+            .querySelectorAll(".copy-btn")
+            .forEach((button) => {
+
+                button.addEventListener(
+                    "click",
+                    async () => {
+
+                        const code =
+                            button
+                                .closest(".code-wrap")
+                                .querySelector("pre.code")
+                                .innerText;
+
+                        try {
+                            await navigator.clipboard.writeText(
+                                code
+                            );
+
+                            const original =
+                                button.textContent;
+
+                            button.textContent =
+                                "Copied ✓";
+
+                            button.style.color =
+                                "var(--green)";
+
+                            setTimeout(() => {
+                                button.textContent =
+                                    original;
+
+                                button.style.color =
+                                    "";
+                            }, 1400);
+
+                        } catch {
+                            button.textContent =
+                                "Copy failed";
+
+                            setTimeout(() => {
+                                button.textContent =
+                                    "Copy";
+                            }, 1400);
+                        }
+                    }
+                );
+            });
+
+        const savedSection =
+            Number(
+                localStorage.getItem(
+                    STORAGE_KEY
+                )
+            );
+
+        if (
+            Number.isInteger(savedSection) &&
+            savedSection >= 0 &&
+            savedSection < sections.length
+        ) {
+            updateSection(savedSection);
+        } else {
+            updateSection(0);
+        }
+    </script>
+
+</body>
+</html>
