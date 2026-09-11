@@ -1,1 +1,177 @@
-[]
+[
+  {
+    "slug": "1. First Step:Blink LED",
+    "title": "1. First Step:Blink LED",
+    "file": "/library/ESP-32/projects/1.%20First%20Step%3ABlink%20LED.html"
+  },
+  {
+    "slug": "2. LED:Blink Patterns",
+    "title": "2. LED:Blink Patterns",
+    "file": "/library/ESP-32/projects/2.%20LED%3ABlink%20Patterns.html"
+  },
+  {
+    "slug": "3. LED Animation",
+    "title": "3. LED Animation",
+    "file": "/library/ESP-32/projects/3.%20LED%20Animation.html"
+  },
+  {
+    "slug": "4. LED+Button",
+    "title": "4. LED+Button",
+    "file": "/library/ESP-32/projects/4.%20LED%2BButton.html"
+  },
+  {
+    "slug": "5. LED+Button Toggle",
+    "title": "5. LED+Button Toggle",
+    "file": "/library/ESP-32/projects/5.%20LED%2BButton%20Toggle.html"
+  },
+  {
+    "slug": "6. LED+Two Buttons",
+    "title": "6. LED+Two Buttons",
+    "file": "/library/ESP-32/projects/6.%20LED%2BTwo%20Buttons.html"
+  },
+  {
+    "slug": "7. Traffic Light With Led",
+    "title": "7. Traffic Light With Led",
+    "file": "/library/ESP-32/projects/7.%20Traffic%20Light%20With%20Led.html"
+  },
+  {
+    "slug": "8. Non-Blocking With LED",
+    "title": "8. Non-Blocking With LED",
+    "file": "/library/ESP-32/projects/8.%20Non-Blocking%20With%20LED.html"
+  },
+  {
+    "slug": "9. Multi-task LED System",
+    "title": "9. Multi-task LED System",
+    "file": "/library/ESP-32/projects/9.%20Multi-task%20LED%20System.html"
+  },
+  {
+    "slug": "10. LED+Potentiometer",
+    "title": "10. LED+Potentiometer",
+    "file": "/library/ESP-32/projects/10.%20LED%2BPotentiometer.html"
+  },
+  {
+    "slug": "11. Potentiometer+3 LED Bar",
+    "title": "11. Potentiometer+3 LED Bar",
+    "file": "/library/ESP-32/projects/11.%20Potentiometer%2B3%20LED%20Bar.html"
+  },
+  {
+    "slug": "12. Auto Night Light",
+    "title": "12. Auto Night Light",
+    "file": "/library/ESP-32/projects/12.%20Auto%20Night%20Light.html"
+  },
+  {
+    "slug": "13. Temperature Monitor",
+    "title": "13. Temperature Monitor",
+    "file": "/library/ESP-32/projects/13.%20Temperature%20Monitor.html"
+  },
+  {
+    "slug": "14. UltraSonic Sensor Meter",
+    "title": "14. UltraSonic Sensor Meter",
+    "file": "/library/ESP-32/projects/14.%20UltraSonic%20Sensor%20Meter.html"
+  },
+  {
+    "slug": "15. Connet ESP-32 To WiFi",
+    "title": "15. Connet ESP-32 To WiFi",
+    "file": "/library/ESP-32/projects/15.%20Connet%20ESP-32%20To%20WiFi.html"
+  },
+  {
+    "slug": "16. ESP-32 Web Server",
+    "title": "16. ESP-32 Web Server",
+    "file": "/library/ESP-32/projects/16.%20ESP-32%20Web%20Server.html"
+  },
+  {
+    "slug": "17. Website LED Control",
+    "title": "17. Website LED Control",
+    "file": "/library/ESP-32/projects/17.%20Website%20LED%20Control.html"
+  },
+  {
+    "slug": "18. Multi-LED Web Control",
+    "title": "18. Multi-LED Web Control",
+    "file": "/library/ESP-32/projects/18.%20Multi-LED%20Web%20Control.html"
+  },
+  {
+    "slug": "19. LED Website Status",
+    "title": "19. LED Website Status",
+    "file": "/library/ESP-32/projects/19.%20LED%20Website%20Status.html"
+  },
+  {
+    "slug": "20. Web Sensor Dashboard",
+    "title": "20. Web Sensor Dashboard",
+    "file": "/library/ESP-32/projects/20.%20Web%20Sensor%20Dashboard.html"
+  },
+  {
+    "slug": "21. ESP-32 JavaScript Control",
+    "title": "21. ESP-32 JavaScript Control",
+    "file": "/library/ESP-32/projects/21.%20ESP-32%20JavaScript%20Control.html"
+  },
+  {
+    "slug": "22. Live ESP-32 Dashboard",
+    "title": "22. Live ESP-32 Dashboard",
+    "file": "/library/ESP-32/projects/22.%20Live%20ESP-32%20Dashboard.html"
+  },
+  {
+    "slug": "23. Mystery Project",
+    "title": "23. Mystery Project",
+    "file": "/library/ESP-32/projects/23.%20Mystery%20Project.html"
+  },
+  {
+    "slug": "24. Web+OLED Control System",
+    "title": "24. Web+OLED Control System",
+    "file": "/library/ESP-32/projects/24.%20Web%2BOLED%20Control%20System.html"
+  },
+  {
+    "slug": "25. ESP-32 Control Console",
+    "title": "25. ESP-32 Control Console",
+    "file": "/library/ESP-32/projects/25.%20ESP-32%20Control%20Console.html"
+  },
+  {
+    "slug": "26. Intro to ESP-NOW",
+    "title": "26. Intro to ESP-NOW",
+    "file": "/library/ESP-32/projects/26.%20Intro%20to%20ESP-NOW.html"
+  },
+  {
+    "slug": "27. The Smarthone Remote",
+    "title": "27. The Smarthone Remote",
+    "file": "/library/ESP-32/projects/27.%20The%20Smarthone%20Remote.html"
+  },
+  {
+    "slug": "28. API Weather Clock",
+    "title": "28. API Weather Clock",
+    "file": "/library/ESP-32/projects/28.%20API%20Weather%20Clock.html"
+  },
+  {
+    "slug": "29. Blobal IOT Cloud",
+    "title": "29. Blobal IOT Cloud",
+    "file": "/library/ESP-32/projects/29.%20Blobal%20IOT%20Cloud.html"
+  },
+  {
+    "slug": "30. EMAIL Alerts Via IFTTT",
+    "title": "30. EMAIL Alerts Via IFTTT",
+    "file": "/library/ESP-32/projects/30.%20EMAIL%20Alerts%20Via%20IFTTT.html"
+  },
+  {
+    "slug": "31. OTA With ESP-32",
+    "title": "31. OTA With ESP-32",
+    "file": "/library/ESP-32/projects/31.%20OTA%20With%20ESP-32.html"
+  },
+  {
+    "slug": "32. API Crypto Tracker",
+    "title": "32. API Crypto Tracker",
+    "file": "/library/ESP-32/projects/32.%20API%20Crypto%20Tracker.html"
+  },
+  {
+    "slug": "33. Real-Time WebSockets",
+    "title": "33. Real-Time WebSockets",
+    "file": "/library/ESP-32/projects/33.%20Real-Time%20WebSockets.html"
+  },
+  {
+    "slug": "34. Dual-Core Processing",
+    "title": "34. Dual-Core Processing",
+    "file": "/library/ESP-32/projects/34.%20Dual-Core%20Processing.html"
+  },
+  {
+    "slug": "35. The Ultimate Integration",
+    "title": "35. The Ultimate Integration",
+    "file": "/library/ESP-32/projects/35.%20The%20Ultimate%20Integration.html"
+  }
+]

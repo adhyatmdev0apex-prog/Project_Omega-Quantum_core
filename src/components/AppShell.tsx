@@ -64,10 +64,10 @@ export function AppShell({ children, workspace = false }: { children: ReactNode;
           className={cn(
             'min-w-0 min-h-0 flex-1',
             workspace
-              ? 'overflow-hidden flex flex-col'
+              ? 'flex min-h-0 flex-col overflow-hidden'
               : 'overflow-y-auto px-4 py-6 md:px-8 md:py-8',
           )}
-        >
+>
           {workspace
             ? children
             : <div className="mx-auto max-w-5xl">{children}</div>

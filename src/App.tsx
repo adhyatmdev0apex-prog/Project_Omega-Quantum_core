@@ -9,6 +9,8 @@ import { DashboardPage } from './pages/DashboardPage';
 import { LibraryPage } from './pages/LibraryPage';
 import { LibraryCategoriesPage } from './pages/LibraryCategoriesPage';
 import { Esp32LibraryPage } from './pages/Esp32LibraryPage';
+import { Esp32ProjectsPage } from './pages/Esp32ProjectsPage';
+import { Esp32ResourcesPage } from './pages/Esp32ResourcesPage';
 import { Esp32GuidePage } from './pages/Esp32GuidePage';
 import { TextbookPage } from './pages/TextbookPage';
 import { LabsPage } from './pages/LabsPage';
@@ -70,8 +72,9 @@ function Routed() {
   // Workspace mode removes max-w, padding, and the system monitor sidebar.
   // Add any new full-screen lab here; it automatically inherits the layout.
   const isWorkspace =
-    (root === 'beta' && !!segments[1]) ||     // /beta/<slug>
-    (root === 'labs' && segments[1] === 'linux'); // /labs/linux
+    (root === 'beta' && !!segments[1]) ||
+    (root === 'labs' && segments[1] === 'linux') ||
+    (root === 'library' && segments[1] === 'esp32' && segments[2] === 'projects' && !!segments[3]);
 
   const page = renderPage(segments);
   return <AppShell workspace={isWorkspace}>{page}</AppShell>;
@@ -86,14 +89,9 @@ function renderPage(segments: string[]) {
       if (!sub) return <LibraryCategoriesPage />;
       if (sub === 'cyber') return <LibraryPage />;
       if (sub === 'esp32') {
-        const mode = extra as 'projects' | 'resources' | undefined;
-        if (!extra) return <Esp32LibraryPage mode="home" />;
-        if (mode === 'projects') {
-          return segments[3]
-            ? <Esp32GuidePage slug={decodeURIComponent(segments[3])} />
-            : <Esp32LibraryPage mode="projects" />;
-        }
-        if (mode === 'resources') return <Esp32LibraryPage mode="resources" />;
+        if (!extra) return <Esp32LibraryPage />;
+        if (extra === 'projects') return segments[3] ? <Esp32GuidePage slug={decodeURIComponent(segments[3])} /> : <Esp32ProjectsPage />;
+        if (extra === 'resources') return <Esp32ResourcesPage />;
         return <Esp32GuidePage slug={decodeURIComponent(extra)} />;
       }
       return <TextbookPage slug={sub} />; // existing volume deep-links (e.g. /library/volume1) unchanged

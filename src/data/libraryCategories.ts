@@ -27,7 +27,7 @@ export const LIBRARY_CATEGORIES: LibraryCategoryMeta[] = [
       'Foundations, Advanced, Professional, Real Projects, and the Cyber Range — the complete five-volume path from first principles to live offensive/defensive practice.',
     icon: 'Shield',
     accent: 'neon',
-    status: 'active',
+    status: 'coming-soon',
   },
   {
     id: 'esp32',
@@ -38,6 +38,6 @@ export const LIBRARY_CATEGORIES: LibraryCategoryMeta[] = [
       'Microcontroller fundamentals, firmware, and hands-on embedded builds. Guides land here as they are written.',
     icon: 'Cpu',
     accent: 'cyan',
-    status: 'coming-soon',
+    status: 'active',
   },
 ];
