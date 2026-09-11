@@ -12,7 +12,7 @@ export function Esp32GuidePage({ slug }: { slug: string }) {
   const file = `/library/ESP-32/projects/${encodeURIComponent(slug)}.html`;
 
   return (
-    <div className="flex h-full flex-col gap-3">
+    <div className="flex h-full min-h-0 flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <button
           onClick={() => navigate('/library/esp32/projects')}

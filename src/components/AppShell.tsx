@@ -62,11 +62,12 @@ export function AppShell({ children, workspace = false }: { children: ReactNode;
         <main
           id="qc-main"
           className={cn(
-            'min-w-0 flex-1',
+            'min-w-0 min-h-0 flex-1',
             workspace
               ? 'overflow-hidden flex flex-col'
               : 'overflow-y-auto px-4 py-6 md:px-8 md:py-8',
           )}
+>
         >
           {workspace
             ? children
