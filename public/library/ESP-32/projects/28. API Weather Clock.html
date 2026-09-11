@@ -1,0 +1,3750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Project 28 — The API Weather Clock</title>
+
+    <style>
+        :root {
+            --bg: #050807;
+            --panel: #0b110f;
+            --panel-2: #0e1714;
+            --green: #00ff88;
+            --cyan: #00e5ff;
+            --yellow: #ffd84d;
+            --red: #ff5577;
+            --text: #e8fff4;
+            --muted: #91a89d;
+            --border: rgba(0, 255, 136, 0.18);
+            --sidebar-width: 285px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            min-height: 100vh;
+            background:
+                radial-gradient(
+                    circle at 20% 10%,
+                    rgba(0, 255, 136, 0.08),
+                    transparent 30%
+                ),
+                radial-gradient(
+                    circle at 85% 75%,
+                    rgba(0, 229, 255, 0.06),
+                    transparent 28%
+                ),
+                var(--bg);
+            color: var(--text);
+            font-family:
+                Inter,
+                ui-sans-serif,
+                system-ui,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+            line-height: 1.65;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: -1;
+            opacity: 0.18;
+            background-image:
+                linear-gradient(
+                    rgba(0, 255, 136, 0.08) 1px,
+                    transparent 1px
+                ),
+                linear-gradient(
+                    90deg,
+                    rgba(0, 255, 136, 0.08) 1px,
+                    transparent 1px
+                );
+            background-size: 40px 40px;
+            mask-image: linear-gradient(
+                to bottom,
+                black,
+                transparent 95%
+            );
+        }
+
+        button,
+        a {
+            font: inherit;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        /* =========================================================
+           SIDEBAR
+           ========================================================= */
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            padding: 28px 20px;
+            border-right: 1px solid var(--border);
+            background:
+                linear-gradient(
+                    180deg,
+                    rgba(11, 17, 15, 0.98),
+                    rgba(5, 8, 7, 0.98)
+                );
+            backdrop-filter: blur(18px);
+            overflow-y: auto;
+            z-index: 20;
+        }
+
+        .brand {
+            margin-bottom: 28px;
+            padding: 18px;
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(0, 255, 136, 0.08),
+                    rgba(0, 229, 255, 0.025)
+                );
+            box-shadow:
+                0 0 30px rgba(0, 255, 136, 0.04),
+                inset 0 0 20px rgba(0, 255, 136, 0.02);
+        }
+
+        .brand small {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--green);
+            font-size: 0.7rem;
+            font-weight: 800;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+        }
+
+        .brand h2 {
+            color: var(--text);
+            font-size: 1.15rem;
+            line-height: 1.2;
+        }
+
+        .brand p {
+            margin-top: 8px;
+            color: var(--muted);
+            font-size: 0.78rem;
+        }
+
+        .progress-area {
+            margin-bottom: 22px;
+            padding: 0 4px;
+        }
+
+        .progress-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            color: var(--muted);
+            font-size: 0.72rem;
+            font-weight: 700;
+        }
+
+        .progress-text {
+            color: var(--green);
+        }
+
+        .progress-track {
+            height: 5px;
+            overflow: hidden;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.07);
+        }
+
+        .progress-fill {
+            width: 7.14%;
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(
+                90deg,
+                var(--green),
+                var(--cyan)
+            );
+            box-shadow: 0 0 12px rgba(0, 255, 136, 0.5);
+            transition: width 0.35s ease;
+        }
+
+        .nav-list {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .nav-item {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid transparent;
+            border-radius: 10px;
+            background: transparent;
+            color: var(--muted);
+            text-align: left;
+            font-size: 0.8rem;
+            transition:
+                color 0.2s ease,
+                background 0.2s ease,
+                border 0.2s ease,
+                transform 0.2s ease;
+        }
+
+        .nav-item:hover {
+            color: var(--text);
+            background: rgba(0, 255, 136, 0.05);
+            transform: translateX(2px);
+        }
+
+        .nav-item.active {
+            border-color: var(--border);
+            background:
+                linear-gradient(
+                    90deg,
+                    rgba(0, 255, 136, 0.11),
+                    rgba(0, 255, 136, 0.025)
+                );
+            color: var(--green);
+            box-shadow:
+                inset 3px 0 0 var(--green),
+                0 0 18px rgba(0, 255, 136, 0.035);
+        }
+
+        .nav-number {
+            display: inline-block;
+            width: 28px;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 0.68rem;
+            font-weight: 800;
+        }
+
+        .nav-item.active .nav-number {
+            color: var(--green);
+        }
+
+        /* =========================================================
+           MOBILE HEADER
+           ========================================================= */
+
+        .mobile-header {
+            display: none;
+            position: sticky;
+            top: 0;
+            z-index: 15;
+            padding: 13px 16px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(5, 8, 7, 0.92);
+            backdrop-filter: blur(18px);
+        }
+
+        .mobile-header-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+        }
+
+        .mobile-title {
+            min-width: 0;
+        }
+
+        .mobile-title small {
+            display: block;
+            color: var(--green);
+            font-size: 0.62rem;
+            font-weight: 800;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+        }
+
+        .mobile-title strong {
+            display: block;
+            overflow: hidden;
+            color: var(--text);
+            font-size: 0.9rem;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .mobile-progress {
+            flex-shrink: 0;
+            color: var(--green);
+            font-size: 0.72rem;
+            font-weight: 800;
+        }
+
+        /* =========================================================
+           MAIN
+           ========================================================= */
+
+        .main {
+            min-height: 100vh;
+            margin-left: var(--sidebar-width);
+        }
+
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 34px;
+            border-bottom: 1px solid rgba(0, 255, 136, 0.08);
+            background: rgba(5, 8, 7, 0.74);
+            backdrop-filter: blur(18px);
+        }
+
+        .topbar-left {
+            color: var(--muted);
+            font-size: 0.74rem;
+            font-weight: 700;
+        }
+
+        .topbar-left span {
+            color: var(--green);
+        }
+
+        .topbar-right {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 0.7rem;
+        }
+
+        .content {
+            width: min(1100px, calc(100% - 48px));
+            margin: 0 auto;
+            padding: 45px 0 80px;
+        }
+
+        /* =========================================================
+           SECTIONS
+           ========================================================= */
+
+        .section {
+            display: none;
+            animation: sectionIn 0.35s ease;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes sectionIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* =========================================================
+           HERO
+           ========================================================= */
+
+        .hero {
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 28px;
+            padding: 42px;
+            border: 1px solid var(--border);
+            border-radius: 26px;
+            background:
+                radial-gradient(
+                    circle at 80% 20%,
+                    rgba(0, 229, 255, 0.07),
+                    transparent 30%
+                ),
+                radial-gradient(
+                    circle at 20% 80%,
+                    rgba(0, 255, 136, 0.06),
+                    transparent 35%
+                ),
+                var(--panel);
+            box-shadow:
+                0 20px 70px rgba(0, 0, 0, 0.25),
+                inset 0 0 50px rgba(0, 255, 136, 0.015);
+        }
+
+        .hero::after {
+            content: "API // HTTP // JSON // OLED";
+            position: absolute;
+            right: 26px;
+            bottom: 20px;
+            color: rgba(0, 255, 136, 0.08);
+            font-family: monospace;
+            font-size: 0.65rem;
+            letter-spacing: 0.16em;
+        }
+
+        .eyebrow {
+            margin-bottom: 10px;
+            color: var(--green);
+            font-size: 0.72rem;
+            font-weight: 900;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+        }
+
+        .hero h1 {
+            max-width: 850px;
+            color: var(--text);
+            font-size: clamp(2.1rem, 5vw, 4.4rem);
+            line-height: 0.98;
+            letter-spacing: -0.045em;
+        }
+
+        .hero h1 span {
+            color: var(--green);
+            text-shadow: 0 0 24px rgba(0, 255, 136, 0.18);
+        }
+
+        .hero-subtitle {
+            max-width: 800px;
+            margin-top: 20px;
+            color: var(--muted);
+            font-size: 1rem;
+        }
+
+        .terminal {
+            margin-top: 28px;
+            padding: 18px 20px;
+            border: 1px solid rgba(0, 255, 136, 0.16);
+            border-radius: 14px;
+            background: #030504;
+            color: #b8d7ca;
+            font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+            font-size: 0.82rem;
+        }
+
+        .terminal .prompt {
+            color: var(--green);
+        }
+
+        /* =========================================================
+           TYPOGRAPHY
+           ========================================================= */
+
+        .section-header {
+            margin-bottom: 26px;
+        }
+
+        .section-header .section-number {
+            margin-bottom: 5px;
+            color: var(--green);
+            font-family: monospace;
+            font-size: 0.72rem;
+            font-weight: 900;
+            letter-spacing: 0.15em;
+        }
+
+        .section-header h2 {
+            color: var(--text);
+            font-size: clamp(1.7rem, 3vw, 2.5rem);
+            line-height: 1.1;
+        }
+
+        .section-header p {
+            max-width: 800px;
+            margin-top: 10px;
+            color: var(--muted);
+        }
+
+        .lead {
+            margin-bottom: 24px;
+            color: #c4ddd2;
+            font-size: 1rem;
+        }
+
+        strong {
+            color: var(--text);
+        }
+
+        code.inline {
+            padding: 2px 6px;
+            border: 1px solid rgba(0, 255, 136, 0.12);
+            border-radius: 5px;
+            background: rgba(0, 255, 136, 0.06);
+            color: var(--green);
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+
+        /* =========================================================
+           CARDS
+           ========================================================= */
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .grid.three {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .card {
+            padding: 22px;
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(14, 23, 20, 0.96),
+                    rgba(7, 12, 10, 0.96)
+                );
+        }
+
+        .card h3 {
+            margin-bottom: 8px;
+            color: var(--green);
+            font-size: 1rem;
+        }
+
+        .card p {
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+
+        .card ul,
+        .card ol {
+            margin-top: 10px;
+            padding-left: 20px;
+            color: var(--muted);
+            font-size: 0.88rem;
+        }
+
+        .card li + li {
+            margin-top: 7px;
+        }
+
+        .icon {
+            display: inline-flex;
+            width: 34px;
+            height: 34px;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: rgba(0, 255, 136, 0.06);
+            font-size: 1rem;
+        }
+
+        /* =========================================================
+           INFO BOXES
+           ========================================================= */
+
+        .info {
+            margin: 20px 0;
+            padding: 18px 20px;
+            border-left: 3px solid var(--green);
+            border-radius: 0 12px 12px 0;
+            background: rgba(0, 255, 136, 0.045);
+        }
+
+        .info.warning {
+            border-left-color: var(--yellow);
+            background: rgba(255, 216, 77, 0.045);
+        }
+
+        .info.danger {
+            border-left-color: var(--red);
+            background: rgba(255, 85, 119, 0.045);
+        }
+
+        .info h3 {
+            margin-bottom: 5px;
+            color: var(--green);
+            font-size: 0.9rem;
+        }
+
+        .info.warning h3 {
+            color: var(--yellow);
+        }
+
+        .info.danger h3 {
+            color: var(--red);
+        }
+
+        .info p {
+            color: var(--muted);
+            font-size: 0.88rem;
+        }
+
+        /* =========================================================
+           CODE BLOCKS
+           ========================================================= */
+
+        .code-wrap {
+            position: relative;
+            margin: 18px 0;
+            border: 1px solid rgba(0, 255, 136, 0.15);
+            border-radius: 16px;
+            background: #020403;
+            overflow: hidden;
+        }
+
+        .code-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 9px 13px;
+            border-bottom: 1px solid rgba(0, 255, 136, 0.1);
+            background: rgba(0, 255, 136, 0.035);
+        }
+
+        .code-language {
+            color: var(--green);
+            font-family: monospace;
+            font-size: 0.68rem;
+            font-weight: 800;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .copy-btn {
+            padding: 5px 9px;
+            border: 1px solid rgba(0, 255, 136, 0.14);
+            border-radius: 7px;
+            background: rgba(255, 255, 255, 0.025);
+            color: var(--muted);
+            font-size: 0.68rem;
+            transition:
+                background 0.2s ease,
+                color 0.2s ease;
+        }
+
+        .copy-btn:hover {
+            background: rgba(0, 255, 136, 0.08);
+            color: var(--green);
+        }
+
+        pre.code {
+            max-height: 650px;
+            overflow: auto;
+            padding: 20px;
+            color: #c8e6da;
+            font-family:
+                "Cascadia Code",
+                "SFMono-Regular",
+                Consolas,
+                monospace;
+            font-size: 0.76rem;
+            line-height: 1.65;
+            tab-size: 4;
+            white-space: pre;
+        }
+
+        /* =========================================================
+           STEPS
+           ========================================================= */
+
+        .steps {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .step {
+            display: grid;
+            grid-template-columns: 42px 1fr;
+            gap: 14px;
+            align-items: start;
+            padding: 17px;
+            border: 1px solid rgba(0, 255, 136, 0.12);
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.018);
+        }
+
+        .step-number {
+            display: flex;
+            width: 32px;
+            height: 32px;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            background: rgba(0, 255, 136, 0.06);
+            color: var(--green);
+            font-family: monospace;
+            font-size: 0.75rem;
+            font-weight: 900;
+        }
+
+        .step h3 {
+            margin-bottom: 3px;
+            color: var(--text);
+            font-size: 0.92rem;
+        }
+
+        .step p {
+            color: var(--muted);
+            font-size: 0.84rem;
+        }
+
+        /* =========================================================
+           WIRING
+           ========================================================= */
+
+        .wiring {
+            margin: 20px 0;
+            padding: 22px;
+            border: 1px solid rgba(0, 255, 136, 0.15);
+            border-radius: 18px;
+            background: #030605;
+        }
+
+        .wiring h3 {
+            margin-bottom: 14px;
+            color: var(--green);
+            font-size: 0.95rem;
+        }
+
+        .wire-line {
+            display: grid;
+            grid-template-columns: 100px 35px 1fr;
+            align-items: center;
+            min-height: 35px;
+            color: var(--muted);
+            font-family: monospace;
+            font-size: 0.8rem;
+        }
+
+        .wire-pin {
+            color: var(--cyan);
+        }
+
+        .wire-arrow {
+            color: var(--green);
+            text-align: center;
+        }
+
+        .wire-target {
+            color: var(--text);
+        }
+
+        /* =========================================================
+           FLOW
+           ========================================================= */
+
+        .flow {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 24px 0;
+        }
+
+        .flow-box {
+            padding: 12px 15px;
+            border: 1px solid rgba(0, 255, 136, 0.18);
+            border-radius: 11px;
+            background: rgba(0, 255, 136, 0.045);
+            color: var(--text);
+            font-size: 0.76rem;
+            font-weight: 800;
+            text-align: center;
+        }
+
+        .flow-arrow {
+            color: var(--green);
+            font-weight: 900;
+        }
+
+        /* =========================================================
+           TABLE
+           ========================================================= */
+
+        .table-wrap {
+            margin: 20px 0;
+            overflow-x: auto;
+            border: 1px solid rgba(0, 255, 136, 0.13);
+            border-radius: 15px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 600px;
+        }
+
+        th,
+        td {
+            padding: 13px 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            background: rgba(0, 255, 136, 0.055);
+            color: var(--green);
+            font-size: 0.74rem;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        td {
+            color: var(--muted);
+            font-size: 0.82rem;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* =========================================================
+           STATUS DISPLAY
+           ========================================================= */
+
+        .status-display {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin: 22px 0;
+        }
+
+        .status-card {
+            padding: 22px;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            background: rgba(0, 255, 136, 0.025);
+        }
+
+        .status-card .label {
+            margin-bottom: 8px;
+            color: var(--muted);
+            font-size: 0.68rem;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .status-card .value {
+            color: var(--green);
+            font-family: monospace;
+            font-size: 1.25rem;
+            font-weight: 900;
+        }
+
+        /* =========================================================
+           NAVIGATION
+           ========================================================= */
+
+        .bottom-nav {
+            display: flex;
+            justify-content: space-between;
+            gap: 14px;
+            margin-top: 42px;
+            padding-top: 22px;
+            border-top: 1px solid rgba(0, 255, 136, 0.1);
+        }
+
+        .nav-btn {
+            min-width: 150px;
+            padding: 12px 17px;
+            border: 1px solid rgba(0, 255, 136, 0.18);
+            border-radius: 11px;
+            background: rgba(0, 255, 136, 0.045);
+            color: var(--text);
+            font-size: 0.8rem;
+            font-weight: 800;
+            transition:
+                background 0.2s ease,
+                border 0.2s ease,
+                transform 0.2s ease;
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            border-color: rgba(0, 255, 136, 0.35);
+            background: rgba(0, 255, 136, 0.09);
+            transform: translateY(-1px);
+        }
+
+        .nav-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.3;
+        }
+
+        .nav-btn.next {
+            color: var(--green);
+        }
+
+        /* =========================================================
+           SPECIAL TEXT
+           ========================================================= */
+
+        .quote {
+            margin: 24px 0;
+            padding: 24px;
+            border: 1px solid rgba(0, 255, 136, 0.12);
+            border-radius: 18px;
+            background:
+                linear-gradient(
+                    135deg,
+                    rgba(0, 255, 136, 0.055),
+                    rgba(0, 229, 255, 0.025)
+                );
+            color: #c8e8db;
+            font-size: 1.05rem;
+            font-weight: 700;
+        }
+
+        .big-green {
+            color: var(--green);
+            font-weight: 900;
+        }
+
+        .small-note {
+            margin-top: 9px;
+            color: rgba(255, 255, 255, 0.38);
+            font-size: 0.72rem;
+        }
+
+        /* =========================================================
+           RESPONSIVE
+           ========================================================= */
+
+        @media (max-width: 900px) {
+            .sidebar {
+                display: none;
+            }
+
+            .mobile-header {
+                display: block;
+            }
+
+            .main {
+                margin-left: 0;
+            }
+
+            .topbar {
+                display: none;
+            }
+
+            .content {
+                width: min(100% - 28px, 760px);
+                padding-top: 25px;
+            }
+
+            .hero {
+                padding: 28px 22px;
+                border-radius: 20px;
+            }
+
+            .hero::after {
+                display: none;
+            }
+
+            .grid,
+            .grid.three {
+                grid-template-columns: 1fr;
+            }
+
+            .status-display {
+                grid-template-columns: 1fr;
+            }
+
+            .bottom-nav {
+                position: sticky;
+                bottom: 0;
+                z-index: 8;
+                margin-left: -14px;
+                margin-right: -14px;
+                padding: 12px 14px;
+                background: rgba(5, 8, 7, 0.94);
+                backdrop-filter: blur(15px);
+            }
+
+            .nav-btn {
+                min-width: 0;
+                flex: 1;
+            }
+        }
+
+        @media (max-width: 560px) {
+            .hero h1 {
+                font-size: 2.25rem;
+            }
+
+            .hero-subtitle {
+                font-size: 0.88rem;
+            }
+
+            .section-header h2 {
+                font-size: 1.65rem;
+            }
+
+            .wire-line {
+                grid-template-columns: 72px 25px 1fr;
+                font-size: 0.68rem;
+            }
+
+            pre.code {
+                font-size: 0.68rem;
+            }
+
+            .bottom-nav {
+                gap: 8px;
+            }
+
+            .nav-btn {
+                padding: 10px 9px;
+                font-size: 0.7rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- =========================================================
+         MOBILE HEADER
+         ========================================================= -->
+
+    <header class="mobile-header">
+        <div class="mobile-header-inner">
+            <div class="mobile-title">
+                <small>Quantum Core // ESP32</small>
+                <strong>Project 28 — API Weather Clock</strong>
+            </div>
+
+            <div
+                class="mobile-progress"
+                id="mobileProgress"
+            >
+                01 / 14
+            </div>
+        </div>
+    </header>
+
+    <!-- =========================================================
+         SIDEBAR
+         ========================================================= -->
+
+    <aside class="sidebar">
+
+        <div class="brand">
+            <small>Quantum Core</small>
+            <h2>ESP32 Library</h2>
+            <p>Project 28 // API Weather Clock</p>
+        </div>
+
+        <div class="progress-area">
+            <div class="progress-top">
+                <span>MISSION PROGRESS</span>
+                <span
+                    class="progress-text"
+                    id="progressText"
+                >
+                    1 / 14
+                </span>
+            </div>
+
+            <div class="progress-track">
+                <div
+                    class="progress-fill"
+                    id="progressFill"
+                ></div>
+            </div>
+        </div>
+
+        <nav class="nav-list">
+
+            <button
+                class="nav-item active"
+                data-section="0"
+            >
+                <span class="nav-number">01</span>
+                Mission
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="1"
+            >
+                <span class="nav-number">02</span>
+                What You Have
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="2"
+            >
+                <span class="nav-number">03</span>
+                What We're Learning
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="3"
+            >
+                <span class="nav-number">04</span>
+                Wiring
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="4"
+            >
+                <span class="nav-number">05</span>
+                Create Project
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="5"
+            >
+                <span class="nav-number">06</span>
+                Complete Code
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="6"
+            >
+                <span class="nav-number">07</span>
+                Understand Code
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="7"
+            >
+                <span class="nav-number">08</span>
+                Build + Upload
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="8"
+            >
+                <span class="nav-number">09</span>
+                What Should Happen
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="9"
+            >
+                <span class="nav-number">10</span>
+                Experiment
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="10"
+            >
+                <span class="nav-number">11</span>
+                Challenge
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="11"
+            >
+                <span class="nav-number">12</span>
+                Troubleshooting
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="12"
+            >
+                <span class="nav-number">13</span>
+                Vocabulary
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="13"
+            >
+                <span class="nav-number">14</span>
+                Next Project
+            </button>
+
+        </nav>
+    </aside>
+
+    <!-- =========================================================
+         MAIN
+         ========================================================= -->
+
+    <main class="main">
+
+        <div class="topbar">
+            <div class="topbar-left">
+                ESP32 LIBRARY
+                <span>// PROJECT 28</span>
+            </div>
+
+            <div class="topbar-right">
+                ONE BOARD // INTERNET // OLED
+            </div>
+        </div>
+
+        <div class="content">
+
+            <!-- =================================================
+                 SECTION 01 — MISSION
+                 ================================================= -->
+
+            <section class="section active">
+
+                <div class="hero">
+
+                    <div class="eyebrow">
+                        PROJECT 28 // INTERNET CLIENT
+                    </div>
+
+                    <h1>
+                        The
+                        <span>API Weather Clock</span>
+                    </h1>
+
+                    <p class="hero-subtitle">
+                        Your ESP32 is no longer just waiting for your
+                        phone. Today, it reaches out into the open
+                        internet, requests live weather data, parses
+                        JSON, and displays the result on a physical
+                        OLED screen.
+                    </p>
+
+                    <div class="terminal">
+                        <span class="prompt">my-bro@esp32:~$</span>
+                        connect-to-world --api --oled
+                        <br>
+                        <span class="prompt">system:</span>
+                        INTERNET CLIENT MODE ENABLED
+                    </div>
+
+                </div>
+
+                <div class="quote">
+                    Up until now, your ESP32 has mostly acted as a
+                    <span class="big-green">server</span>.
+
+                    It waited for your phone to ask for something.
+
+                    <br><br>
+
+                    Today we flip the script.
+
+                    <br><br>
+
+                    Your ESP32 becomes the
+                    <span class="big-green">client</span>.
+
+                    It independently asks an internet server for
+                    information and brings that information back to
+                    your hardware.
+                </div>
+
+                <div class="grid">
+
+                    <div class="card">
+                        <div class="icon">🌐</div>
+                        <h3>From Local → Global</h3>
+                        <p>
+                            Previous projects mostly stayed inside
+                            your home network. Now the ESP32 reaches
+                            an internet API hosted outside your local
+                            network.
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <div class="icon">📡</div>
+                        <h3>Client Architecture</h3>
+                        <p>
+                            The ESP32 sends an HTTP GET request,
+                            receives a response, extracts useful
+                            information, and displays it.
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <div class="icon">📦</div>
+                        <h3>JSON Data</h3>
+                        <p>
+                            Instead of downloading a human-designed
+                            webpage, the ESP32 receives structured
+                            machine-readable data.
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <div class="icon">📺</div>
+                        <h3>Physical Output</h3>
+                        <p>
+                            The internet data does not stay trapped
+                            inside software. The temperature and wind
+                            information appear directly on the OLED.
+                        </p>
+                    </div>
+
+                </div>
+
+                <div class="info">
+                    <h3>MISSION OBJECTIVE</h3>
+                    <p>
+                        Go from
+                        <strong>
+                            "My ESP32 only knows what I tell it."
+                        </strong>
+                        to
+                        <strong>
+                            "My ESP32 independently pulls live
+                            information from global internet servers."
+                        </strong>
+                    </p>
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 02 — WHAT YOU HAVE
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="section-header">
+                    <div class="section-number">
+                        02 // HARDWARE
+                    </div>
+
+                    <h2>What You Have</h2>
+
+                    <p>
+                        We are bringing the OLED back. No sensors are
+                        required because the internet will provide the
+                        weather data.
+                    </p>
+                </div>
+
+                <div class="grid">
+
+                    <div class="card">
+                        <div class="icon">💻</div>
+                        <h3>Windows Laptop / PC</h3>
+                        <p>
+                            Used for PlatformIO, compiling the
+                            firmware, and uploading it to the ESP32.
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <div class="icon">🔌</div>
+                        <h3>USB Cable</h3>
+                        <p>
+                            Connects the ESP32 to your computer for
+                            programming and power.
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <div class="icon">🟦</div>
+                        <h3>ESP32 DevKit V1</h3>
+                        <p>
+                            The main controller. Its Wi-Fi radio
+                            gives it access to the internet.
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <div class="icon">🍞</div>
+                        <h3>Breadboard</h3>
+                        <p>
+                            Gives us a clean place to connect the
+                            OLED and jumper wires.
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <div class="icon">📺</div>
+                        <h3>0.96" OLED Display</h3>
+                        <p>
+                            A 128×64 I2C display used to show the
+                            downloaded weather information.
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <div class="icon">🔗</div>
+                        <h3>Jumper Wires</h3>
+                        <p>
+                            Used for VCC, GND, SDA, and SCL.
+                        </p>
+                    </div>
+
+                </div>
+
+                <div class="info warning">
+                    <h3>ONE BOARD MISSION</h3>
+                    <p>
+                        This project intentionally uses exactly
+                        <strong>one ESP32 board</strong>. The internet
+                        is the remote data source.
+                    </p>
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 03 — WHAT WE ARE LEARNING
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="section-header">
+                    <div class="section-number">
+                        03 // CONCEPTS
+                    </div>
+
+                    <h2>What Are We Learning?</h2>
+
+                    <p>
+                        Three major concepts turn the ESP32 from a
+                        local controller into an internet-connected
+                        computing device.
+                    </p>
+                </div>
+
+                <div class="grid">
+
+                    <div class="card">
+                        <div class="icon">🌐</div>
+
+                        <h3>1. What Is an API?</h3>
+
+                        <p>
+                            API stands for
+                            <strong>
+                                Application Programming Interface
+                            </strong>.
+                        </p>
+
+                        <p style="margin-top: 10px;">
+                            Think of an API as a special internet
+                            endpoint designed for programs to request
+                            data.
+                        </p>
+
+                        <p style="margin-top: 10px;">
+                            A normal website is designed for humans.
+                            An API response is designed to be easily
+                            processed by software.
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <div class="icon">📨</div>
+
+                        <h3>2. HTTP GET Requests</h3>
+
+                        <p>
+                            In Projects 17–27, we used
+                            <code class="inline">WebServer</code>
+                            to make the ESP32 listen for requests.
+                        </p>
+
+                        <p style="margin-top: 10px;">
+                            Now we use
+                            <code class="inline">HTTPClient</code>
+                            so the ESP32 can make requests itself.
+                        </p>
+
+                        <p style="margin-top: 10px;">
+                            It sends a GET request to the weather API
+                            and waits for the server's response.
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <div class="icon">📦</div>
+
+                        <h3>3. Parsing JSON</h3>
+
+                        <p>
+                            In Project 22, the ESP32 created JSON
+                            data for your browser.
+                        </p>
+
+                        <p style="margin-top: 10px;">
+                            Today we do the opposite:
+                            <strong>
+                                receive JSON and unpack it.
+                            </strong>
+                        </p>
+
+                        <p style="margin-top: 10px;">
+                            The
+                            <code class="inline">
+                                ArduinoJson
+                            </code>
+                            library lets us extract values such as
+                            temperature and wind speed.
+                        </p>
+                    </div>
+
+                </div>
+
+                <div class="flow">
+
+                    <div class="flow-box">
+                        ESP32
+                    </div>
+
+                    <div class="flow-arrow">
+                        →
+                    </div>
+
+                    <div class="flow-box">
+                        HTTP GET
+                    </div>
+
+                    <div class="flow-arrow">
+                        →
+                    </div>
+
+                    <div class="flow-box">
+                        Weather API
+                    </div>
+
+                    <div class="flow-arrow">
+                        →
+                    </div>
+
+                    <div class="flow-box">
+                        JSON
+                    </div>
+
+                    <div class="flow-arrow">
+                        →
+                    </div>
+
+                    <div class="flow-box">
+                        ArduinoJson
+                    </div>
+
+                    <div class="flow-arrow">
+                        →
+                    </div>
+
+                    <div class="flow-box">
+                        OLED
+                    </div>
+
+                </div>
+
+                <div class="info">
+                    <h3>THE BIG ARCHITECTURAL CHANGE</h3>
+                    <p>
+                        Your ESP32 is now both a
+                        <strong>network device</strong>
+                        and a
+                        <strong>software client</strong>.
+                        It can request information without waiting
+                        for another device to tell it what to do.
+                    </p>
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 04 — WIRING
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="section-header">
+                    <div class="section-number">
+                        04 // HARDWARE CONNECTION
+                    </div>
+
+                    <h2>Wiring</h2>
+
+                    <p>
+                        Same OLED wiring as Project 25. The ESP32's
+                        Wi-Fi connection happens through its onboard
+                        radio, so there is no extra networking
+                        hardware.
+                    </p>
+                </div>
+
+                <div class="wiring">
+
+                    <h3>OLED → ESP32</h3>
+
+                    <div class="wire-line">
+                        <span class="wire-pin">3V3</span>
+                        <span class="wire-arrow">→</span>
+                        <span class="wire-target">
+                            OLED VCC
+                        </span>
+                    </div>
+
+                    <div class="wire-line">
+                        <span class="wire-pin">GND</span>
+                        <span class="wire-arrow">→</span>
+                        <span class="wire-target">
+                            OLED GND
+                        </span>
+                    </div>
+
+                    <div class="wire-line">
+                        <span class="wire-pin">D22</span>
+                        <span class="wire-arrow">→</span>
+                        <span class="wire-target">
+                            OLED SCL
+                        </span>
+                    </div>
+
+                    <div class="wire-line">
+                        <span class="wire-pin">D21</span>
+                        <span class="wire-arrow">→</span>
+                        <span class="wire-target">
+                            OLED SDA
+                        </span>
+                    </div>
+
+                </div>
+
+                <div class="code-wrap">
+
+                    <div class="code-header">
+                        <span class="code-language">
+                            Plaintext
+                        </span>
+
+                        <button class="copy-btn">
+                            Copy
+                        </button>
+                    </div>
+
+                    <pre class="code"> ESP32             BREADBOARD (OLED)
+
+ 3V3 ───────────► VCC
+ GND ───────────► GND
+
+ D22 ───────────► SCL
+ D21 ───────────► SDA</pre>
+
+                </div>
+
+                <div class="info warning">
+                    <h3>CHECK YOUR OLED LABELS</h3>
+                    <p>
+                        Most 0.96" I2C OLED modules use
+                        <strong>VCC, GND, SCL, SDA</strong>.
+                        However, some boards arrange the physical
+                        pins differently. Follow the labels printed
+                        on your actual display rather than blindly
+                        copying the physical order.
+                    </p>
+                </div>
+
+                <div class="grid">
+
+                    <div class="card">
+                        <h3>📡 SDA — Data</h3>
+                        <p>
+                            SDA carries the actual information being
+                            exchanged between the ESP32 and OLED.
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <h3>⏱️ SCL — Clock</h3>
+                        <p>
+                            SCL provides the timing signal used to
+                            synchronize the I2C communication.
+                        </p>
+                    </div>
+
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 05 — CREATE PROJECT
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="section-header">
+                    <div class="section-number">
+                        05 // PLATFORMIO
+                    </div>
+
+                    <h2>Create the Project</h2>
+
+                    <p>
+                        We need the OLED libraries plus one brand-new
+                        library for processing internet JSON.
+                    </p>
+                </div>
+
+                <div class="steps">
+
+                    <div class="step">
+                        <div class="step-number">1</div>
+
+                        <div>
+                            <h3>Open VS Code</h3>
+
+                            <p>
+                                Open VS Code and enter PlatformIO.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-number">2</div>
+
+                        <div>
+                            <h3>Create a New Project</h3>
+
+                            <p>
+                                Click
+                                <strong>New Project</strong>.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-number">3</div>
+
+                        <div>
+                            <h3>Name the Project</h3>
+
+                            <p>
+                                Use:
+                                <code class="inline">
+                                    ESP32-28-WeatherAPI
+                                </code>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-number">4</div>
+
+                        <div>
+                            <h3>Select the Board</h3>
+
+                            <p>
+                                Choose:
+                                <strong>
+                                    DOIT ESP32 DEVKIT V1
+                                </strong>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-number">5</div>
+
+                        <div>
+                            <h3>Select Arduino</h3>
+
+                            <p>
+                                Framework:
+                                <strong>Arduino</strong>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-number">6</div>
+
+                        <div>
+                            <h3>Finish</h3>
+
+                            <p>
+                                Let PlatformIO generate the project.
+                            </p>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="info danger">
+                    <h3>🚨 STOP — ADD THE LIBRARIES</h3>
+
+                    <p>
+                        Open
+                        <code class="inline">
+                            platformio.ini
+                        </code>
+                        and replace its contents with:
+                    </p>
+                </div>
+
+                <div class="code-wrap">
+
+                    <div class="code-header">
+                        <span class="code-language">
+                            INI / TOML
+                        </span>
+
+                        <button class="copy-btn">
+                            Copy
+                        </button>
+                    </div>
+
+                    <pre class="code">[env:esp32doit-devkit-v1]
+platform = espressif32
+board = esp32doit-devkit-v1
+framework = arduino
+monitor_speed = 115200
+
+lib_deps =
+    adafruit/Adafruit SSD1306
+    adafruit/Adafruit GFX Library
+    bblanchon/ArduinoJson</pre>
+
+                </div>
+
+                <div class="card">
+                    <h3>📚 What PlatformIO Will Download</h3>
+
+                    <ul>
+                        <li>
+                            <strong>Adafruit SSD1306</strong>
+                            — controls the OLED driver.
+                        </li>
+
+                        <li>
+                            <strong>Adafruit GFX</strong>
+                            — provides drawing and text functions.
+                        </li>
+
+                        <li>
+                            <strong>ArduinoJson</strong>
+                            — parses JSON received from the API.
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="info">
+                    <h3>ONE MORE THING</h3>
+                    <p>
+                        Save the file with
+                        <strong>Ctrl + S</strong>,
+                        then open:
+                        <code class="inline">
+                            src/main.cpp
+                        </code>
+                    </p>
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 06 — COMPLETE CODE
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="section-header">
+                    <div class="section-number">
+                        06 // FIRMWARE
+                    </div>
+
+                    <h2>Complete Code</h2>
+
+                    <p>
+                        Delete the default PlatformIO code and paste
+                        the complete program below.
+                    </p>
+                </div>
+
+                <div class="info danger">
+                    <h3>🚨 CRITICAL — WIFI DETAILS</h3>
+
+                    <p>
+                        Replace
+                        <code class="inline">
+                            YOUR_WIFI_NAME
+                        </code>
+                        and
+                        <code class="inline">
+                            YOUR_PASSWORD
+                        </code>
+                        with your actual 2.4 GHz Wi-Fi credentials.
+                    </p>
+
+                    <p style="margin-top: 8px;">
+                        Do not publish real Wi-Fi credentials in a
+                        public Git repository.
+                    </p>
+                </div>
+
+                <div class="info warning">
+                    <h3>🌦️ WEATHER LOCATION</h3>
+
+                    <p>
+                        The example API URL starts with London
+                        coordinates. We will change those coordinates
+                        later in the Experiment section.
+                    </p>
+                </div>
+
+                <div class="code-wrap">
+
+                    <div class="code-header">
+                        <span class="code-language">
+                            C++
+                        </span>
+
+                        <button class="copy-btn">
+                            Copy
+                        </button>
+                    </div>
+
+                    <pre class="code">/*
+ * ============================================================
+ * MY BRO'S TWENTY-EIGHTH ESP32 PROGRAM: LIVE WEATHER API
+ * ============================================================
+ */
+
+#include &lt;WiFi.h&gt;
+#include &lt;HTTPClient.h&gt;
+#include &lt;ArduinoJson.h&gt;
+#include &lt;Wire.h&gt;
+#include &lt;Adafruit_GFX.h&gt;
+#include &lt;Adafruit_SSD1306.h&gt;
+
+const char* ssid = "YOUR_WIFI_NAME";
+const char* password = "YOUR_PASSWORD";
+
+// Open-Meteo coordinates for London
+String weatherAPI =
+    "http://api.open-meteo.com/v1/forecast?"
+    "latitude=51.5085&amp;longitude=-0.1257"
+    "&amp;current_weather=true";
+
+// Setup OLED
+Adafruit_SSD1306 display(128, 64, &amp;Wire, -1);
+
+// Timer variables
+unsigned long previousMillis = 0;
+const long interval = 10000;
+
+void setup() {
+    Serial.begin(115200);
+
+    // 1. BOOT OLED
+    if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+        for (;;) {
+        }
+    }
+
+    display.clearDisplay();
+    display.setTextColor(WHITE);
+    display.setTextSize(2);
+    display.setCursor(0, 20);
+    display.println("WIFI...");
+    display.display();
+
+    // 2. CONNECT TO WI-FI
+    WiFi.begin(ssid, password);
+
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(500);
+    }
+
+    Serial.println("\n🔥 Wi-Fi Connected!");
+
+    display.clearDisplay();
+    display.setCursor(0, 20);
+    display.println("CONNECTED!");
+    display.display();
+}
+
+void loop() {
+    unsigned long currentMillis = millis();
+
+    // --------------------------------------------------------
+    // THE API FETCH TIMER
+    // --------------------------------------------------------
+    if (
+        currentMillis - previousMillis >= interval ||
+        previousMillis == 0
+    ) {
+        previousMillis = currentMillis;
+
+        // Check if Wi-Fi is still alive
+        if (WiFi.status() == WL_CONNECTED) {
+
+            Serial.println(
+                "🌐 Connecting to Weather API..."
+            );
+
+            // 1. CREATE HTTP CLIENT
+            HTTPClient http;
+
+            // 2. OPEN THE API URL
+            http.begin(weatherAPI);
+
+            // 3. SEND HTTP GET REQUEST
+            int httpResponseCode = http.GET();
+
+            // 4. CHECK SERVER RESPONSE
+            if (httpResponseCode == 200) {
+
+                // Download the JSON response
+                String payload = http.getString();
+
+                // 5. CREATE JSON DOCUMENT
+                JsonDocument doc;
+
+                // Parse the JSON response
+                deserializeJson(doc, payload);
+
+                // Extract the values we want
+                float temperature =
+                    doc["current_weather"]["temperature"];
+
+                float windSpeed =
+                    doc["current_weather"]["windspeed"];
+
+                Serial.print("Success! Temp: ");
+                Serial.println(temperature);
+
+                // 6. UPDATE OLED
+                display.clearDisplay();
+
+                display.setTextSize(1);
+                display.setCursor(0, 0);
+                display.println(
+                    "LIVE WEATHER (LONDON)"
+                );
+
+                display.drawLine(
+                    0,
+                    10,
+                    128,
+                    10,
+                    WHITE
+                );
+
+                // Temperature
+                display.setTextSize(3);
+                display.setCursor(0, 20);
+                display.print(temperature);
+
+                display.setTextSize(1);
+                display.print(" C");
+
+                // Wind
+                display.setCursor(0, 50);
+                display.print("Wind: ");
+                display.print(windSpeed);
+                display.print(" km/h");
+
+                display.display();
+
+            } else {
+
+                Serial.print("Error code: ");
+                Serial.println(httpResponseCode);
+            }
+
+            // 7. CLOSE HTTP CONNECTION
+            http.end();
+        }
+    }
+}</pre>
+
+                </div>
+
+                <div class="info">
+                    <h3>💡 WHAT THIS PROGRAM DOES</h3>
+
+                    <p>
+                        The ESP32 connects to Wi-Fi, waits ten seconds
+                        between API requests, downloads JSON from
+                        Open-Meteo, extracts temperature and wind
+                        speed, and renders them on the OLED.
+                    </p>
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 07 — UNDERSTAND CODE
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="section-header">
+                    <div class="section-number">
+                        07 // CODE ARCHITECTURE
+                    </div>
+
+                    <h2>Understand the Code</h2>
+
+                    <p>
+                        This is the same basic architecture used by
+                        many internet-connected applications:
+                        request → response → parse → display.
+                    </p>
+                </div>
+
+                <div class="grid">
+
+                    <div class="card">
+                        <h3>
+                            <code class="inline">
+                                HTTPClient http;
+                            </code>
+                        </h3>
+
+                        <p>
+                            Creates an HTTP client object that lets
+                            the ESP32 communicate with a web server.
+                        </p>
+
+                        <p style="margin-top: 10px;">
+                            Think of it as the networking machinery
+                            used to make an outgoing web request.
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <h3>
+                            <code class="inline">
+                                http.GET();
+                            </code>
+                        </h3>
+
+                        <p>
+                            Sends an HTTP GET request to the URL
+                            configured with
+                            <code class="inline">
+                                http.begin()
+                            </code>.
+                        </p>
+
+                        <p style="margin-top: 10px;">
+                            The server then sends a response back.
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <h3>HTTP Status Code</h3>
+
+                        <p>
+                            The return value tells us what happened.
+                        </p>
+
+                        <ul>
+                            <li>
+                                <strong>200</strong>
+                                — request succeeded.
+                            </li>
+
+                            <li>
+                                <strong>404</strong>
+                                — resource not found.
+                            </li>
+
+                            <li>
+                                Negative values can indicate a
+                                connection-level failure.
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="card">
+                        <h3>
+                            <code class="inline">
+                                deserializeJson()
+                            </code>
+                        </h3>
+
+                        <p>
+                            Converts the raw JSON response into a
+                            structure that ArduinoJson can navigate.
+                        </p>
+
+                        <p style="margin-top: 10px;">
+                            Instead of manually searching through a
+                            giant text string, we can access named
+                            fields directly.
+                        </p>
+                    </div>
+
+                </div>
+
+                <div class="code-wrap">
+
+                    <div class="code-header">
+                        <span class="code-language">
+                            JSON
+                        </span>
+
+                        <button class="copy-btn">
+                            Copy
+                        </button>
+                    </div>
+
+                    <pre class="code">{
+    "current_weather": {
+        "temperature": 24.5,
+        "windspeed": 12.3
+    }
+}</pre>
+
+                </div>
+
+                <div class="card">
+                    <h3>
+                        🔎 The JSON Path
+                    </h3>
+
+                    <p>
+                        This expression:
+                    </p>
+
+                    <div class="code-wrap">
+                        <div class="code-header">
+                            <span class="code-language">
+                                C++
+                            </span>
+
+                            <button class="copy-btn">
+                                Copy
+                            </button>
+                        </div>
+
+                        <pre class="code">doc["current_weather"]["temperature"]</pre>
+                    </div>
+
+                    <p>
+                        means:
+                    </p>
+
+                    <div class="flow">
+
+                        <div class="flow-box">
+                            doc
+                        </div>
+
+                        <div class="flow-arrow">
+                            →
+                        </div>
+
+                        <div class="flow-box">
+                            current_weather
+                        </div>
+
+                        <div class="flow-arrow">
+                            →
+                        </div>
+
+                        <div class="flow-box">
+                            temperature
+                        </div>
+
+                        <div class="flow-arrow">
+                            →
+                        </div>
+
+                        <div class="flow-box">
+                            24.5
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="info">
+                    <h3>⏱️ WHY USE MILLIS?</h3>
+
+                    <p>
+                        Instead of putting
+                        <code class="inline">
+                            delay(10000)
+                        </code>
+                        around the entire loop, we use
+                        <code class="inline">
+                            millis()
+                        </code>
+                        to decide when the next API request is due.
+                        This leaves the main loop available for other
+                        work between requests.
+                    </p>
+                </div>
+
+                <div class="info warning">
+                    <h3>⚠️ API REQUESTS ARE NOT FREE</h3>
+
+                    <p>
+                        Do not continuously hammer a public API with
+                        thousands of requests per second. APIs can
+                        impose rate limits, reject abusive traffic,
+                        or temporarily block clients. A ten-second
+                        interval is only a beginner demonstration;
+                        production systems should follow the API's
+                        documented usage limits.
+                    </p>
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 08 — BUILD + UPLOAD
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="section-header">
+                    <div class="section-number">
+                        08 // DEPLOY
+                    </div>
+
+                    <h2>Build + Upload + Serial Monitor</h2>
+
+                    <p>
+                        Time to send the weather client into the real
+                        world. 🌍
+                    </p>
+                </div>
+
+                <div class="steps">
+
+                    <div class="step">
+                        <div class="step-number">1</div>
+
+                        <div>
+                            <h3>Build</h3>
+
+                            <p>
+                                Click the PlatformIO
+                                <strong>Build ✓</strong>
+                                button.
+                            </p>
+
+                            <p class="small-note">
+                                PlatformIO should download ArduinoJson
+                                and compile the firmware.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-number">2</div>
+
+                        <div>
+                            <h3>Upload</h3>
+
+                            <p>
+                                Click the
+                                <strong>Upload →</strong>
+                                button.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-number">3</div>
+
+                        <div>
+                            <h3>Open Serial Monitor</h3>
+
+                            <p>
+                                Open the PlatformIO Serial Monitor
+                                at
+                                <strong>115200 baud</strong>.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-number">4</div>
+
+                        <div>
+                            <h3>Watch the Network Connection</h3>
+
+                            <p>
+                                The ESP32 should connect to your Wi-Fi
+                                and then begin requesting weather
+                                data.
+                            </p>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="info">
+                    <h3>EXPECTED SERIAL ACTIVITY</h3>
+
+                    <div class="code-wrap">
+                        <div class="code-header">
+                            <span class="code-language">
+                                Serial Monitor
+                            </span>
+
+                            <button class="copy-btn">
+                                Copy
+                            </button>
+                        </div>
+
+                        <pre class="code">🔥 Wi-Fi Connected!
+🌐 Connecting to Weather API...
+Success! Temp: 24.5
+
+🌐 Connecting to Weather API...
+Success! Temp: 24.6</pre>
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 09 — WHAT SHOULD HAPPEN
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="section-header">
+                    <div class="section-number">
+                        09 // EXPECTED RESULT
+                    </div>
+
+                    <h2>What Should Happen?</h2>
+
+                    <p>
+                        Follow the entire data journey from boot to
+                        physical display.
+                    </p>
+                </div>
+
+                <div class="steps">
+
+                    <div class="step">
+                        <div class="step-number">1</div>
+
+                        <div>
+                            <h3>OLED Boots</h3>
+
+                            <p>
+                                The screen displays:
+                                <strong>
+                                    WIFI...
+                                </strong>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-number">2</div>
+
+                        <div>
+                            <h3>Wi-Fi Connects</h3>
+
+                            <p>
+                                The ESP32 joins your Wi-Fi network and
+                                the OLED changes to:
+                                <strong>
+                                    CONNECTED!
+                                </strong>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-number">3</div>
+
+                        <div>
+                            <h3>ESP32 Calls the Internet</h3>
+
+                            <p>
+                                The ESP32 opens an HTTP connection to
+                                the weather API and sends a GET
+                                request.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-number">4</div>
+
+                        <div>
+                            <h3>Server Sends JSON</h3>
+
+                            <p>
+                                The API returns structured weather
+                                information.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-number">5</div>
+
+                        <div>
+                            <h3>ArduinoJson Extracts Values</h3>
+
+                            <p>
+                                The program reads the temperature and
+                                wind-speed fields.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-number">6</div>
+
+                        <div>
+                            <h3>OLED Updates</h3>
+
+                            <p>
+                                The physical screen displays the
+                                latest temperature and wind speed.
+                            </p>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="status-display">
+
+                    <div class="status-card">
+                        <div class="label">
+                            Temperature
+                        </div>
+
+                        <div class="value">
+                            24.5 °C
+                        </div>
+                    </div>
+
+                    <div class="status-card">
+                        <div class="label">
+                            Wind Speed
+                        </div>
+
+                        <div class="value">
+                            12.3 km/h
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="quote">
+                    You just built a tiny computer that can
+                    independently leave your desk, contact an
+                    internet service, download structured data,
+                    understand that data, and render it onto a
+                    physical screen.
+
+                    <br><br>
+
+                    That's a serious jump in capability. ⚡
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 10 — EXPERIMENT
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="section-header">
+                    <div class="section-number">
+                        10 // EXPERIMENT
+                    </div>
+
+                    <h2>Make It Your Weather Station</h2>
+
+                    <p>
+                        Right now the code is using London's
+                        coordinates. Let's point the API toward your
+                        own city.
+                    </p>
+                </div>
+
+                <div class="steps">
+
+                    <div class="step">
+                        <div class="step-number">1</div>
+
+                        <div>
+                            <h3>Find Your Coordinates</h3>
+
+                            <p>
+                                Use a map service to find the latitude
+                                and longitude of the location you want
+                                to monitor.
+                            </p>
+
+                            <p class="small-note">
+                                You do not need to expose your exact
+                                home address in your code or public
+                                repository. A city-level coordinate
+                                is usually enough for a weather
+                                project.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-number">2</div>
+
+                        <div>
+                            <h3>Find the API URL</h3>
+
+                            <p>
+                                Locate this section:
+                            </p>
+
+                            <div class="code-wrap">
+                                <div class="code-header">
+                                    <span class="code-language">
+                                        C++
+                                    </span>
+
+                                    <button class="copy-btn">
+                                        Copy
+                                    </button>
+                                </div>
+
+                                <pre class="code">latitude=51.5085
+longitude=-0.1257</pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-number">3</div>
+
+                        <div>
+                            <h3>Replace the Coordinates</h3>
+
+                            <p>
+                                Replace the London latitude and
+                                longitude with the coordinates for
+                                your chosen city.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-number">4</div>
+
+                        <div>
+                            <h3>Change the OLED Title</h3>
+
+                            <p>
+                                Replace:
+                            </p>
+
+                            <div class="code-wrap">
+                                <div class="code-header">
+                                    <span class="code-language">
+                                        C++
+                                    </span>
+
+                                    <button class="copy-btn">
+                                        Copy
+                                    </button>
+                                </div>
+
+                                <pre class="code">LIVE WEATHER (LONDON)</pre>
+                            </div>
+
+                            <p>
+                                with your chosen city name.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-number">5</div>
+
+                        <div>
+                            <h3>Upload Again</h3>
+
+                            <p>
+                                Build and upload the firmware.
+                            </p>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="info">
+                    <h3>🌍 THE RESULT</h3>
+
+                    <p>
+                        Your ESP32 is now a small standalone weather
+                        terminal for the location you selected.
+                    </p>
+                </div>
+
+                <div class="info warning">
+                    <h3>PRIVACY NOTE</h3>
+
+                    <p>
+                        For a public project, use city-level
+                        coordinates rather than publishing the exact
+                        coordinates of your home.
+                    </p>
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 11 — CHALLENGE
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="section-header">
+                    <div class="section-number">
+                        11 // ENGINEERING CHALLENGE
+                    </div>
+
+                    <h2>On-Demand Weather Button</h2>
+
+                    <p>
+                        Right now the ESP32 automatically asks the API
+                        every ten seconds. Let's make the weather
+                        update happen only when you request it.
+                    </p>
+                </div>
+
+                <div class="info warning">
+                    <h3>🎯 OBJECTIVE</h3>
+
+                    <p>
+                        Turn the ESP32 into an
+                        <strong>
+                            on-demand weather pager
+                        </strong>.
+                        Press a physical button and only then make
+                        the API request.
+                    </p>
+                </div>
+
+                <h3 style="margin-top: 24px;">
+                    Requirements
+                </h3>
+
+                <div class="steps">
+
+                    <div class="step">
+                        <div class="step-number">1</div>
+
+                        <div>
+                            <h3>Add a Push Button</h3>
+
+                            <p>
+                                Connect a push button to
+                                <strong>D14</strong>.
+                            </p>
+
+                            <p class="small-note">
+                                One side of the button goes to D14.
+                                The opposite side goes to GND.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-number">2</div>
+
+                        <div>
+                            <h3>Enable INPUT_PULLUP</h3>
+
+                            <p>
+                                Add:
+                            </p>
+
+                            <div class="code-wrap">
+                                <div class="code-header">
+                                    <span class="code-language">
+                                        C++
+                                    </span>
+
+                                    <button class="copy-btn">
+                                        Copy
+                                    </button>
+                                </div>
+
+                                <pre class="code">pinMode(14, INPUT_PULLUP);</pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-number">3</div>
+
+                        <div>
+                            <h3>Remove the Timer Trigger</h3>
+
+                            <p>
+                                Remove the
+                                <code class="inline">
+                                    millis()
+                                </code>
+                                condition that decides when the API
+                                request happens.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-number">4</div>
+
+                        <div>
+                            <h3>Add Button Memory</h3>
+
+                            <p>
+                                Create a
+                                <code class="inline">
+                                    lastButtonState
+                                </code>
+                                variable so the ESP32 detects a new
+                                button press rather than repeatedly
+                                treating a held button as many presses.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-number">5</div>
+
+                        <div>
+                            <h3>Trigger the API Request</h3>
+
+                            <p>
+                                Run the weather-fetch logic when the
+                                button changes from HIGH to LOW.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-number">6</div>
+
+                        <div>
+                            <h3>Add Debouncing</h3>
+
+                            <p>
+                                Use a small debounce delay or,
+                                preferably in a later project, a
+                                non-blocking debounce technique.
+                            </p>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="code-wrap">
+
+                    <div class="code-header">
+                        <span class="code-language">
+                            Logic Hint
+                        </span>
+
+                        <button class="copy-btn">
+                            Copy
+                        </button>
+                    </div>
+
+                    <pre class="code">int currentButtonState = digitalRead(14);
+
+if (lastButtonState == HIGH &&
+    currentButtonState == LOW) {
+
+    // YOUR WEATHER FETCH LOGIC HERE
+
+    delay(50);
+}
+
+lastButtonState = currentButtonState;</pre>
+
+                </div>
+
+                <div class="info">
+                    <h3>🧠 THINK LIKE AN ENGINEER</h3>
+
+                    <p>
+                        Don't simply delete the timer and paste random
+                        code into the loop. Think about the event:
+                    </p>
+
+                    <p style="margin-top: 10px;">
+                        <strong>
+                            Button press → request → server response
+                            → JSON parsing → OLED update
+                        </strong>
+                    </p>
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 12 — TROUBLESHOOTING
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="section-header">
+                    <div class="section-number">
+                        12 // DEBUGGING
+                    </div>
+
+                    <h2>Troubleshooting</h2>
+
+                    <p>
+                        Internet projects introduce a whole new class
+                        of failure points: hardware, Wi-Fi, DNS,
+                        HTTP, API availability, JSON parsing, and
+                        display output.
+                    </p>
+                </div>
+
+                <div class="grid">
+
+                    <div class="card">
+                        <h3>❌ Error code: -1</h3>
+
+                        <p>
+                            The HTTP connection failed before a normal
+                            HTTP response was received.
+                        </p>
+
+                        <ul>
+                            <li>
+                                Check Wi-Fi connection.
+                            </li>
+
+                            <li>
+                                Check whether the network actually
+                                has internet access.
+                            </li>
+
+                            <li>
+                                Check the API URL.
+                            </li>
+
+                            <li>
+                                Check whether DNS/network access is
+                                working.
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="card">
+                        <h3>❌ OLED Says CONNECTED!</h3>
+
+                        <p>
+                            The ESP32 joined Wi-Fi, but the API
+                            request may not be succeeding.
+                        </p>
+
+                        <ul>
+                            <li>
+                                Open Serial Monitor.
+                            </li>
+
+                            <li>
+                                Look for
+                                <code class="inline">
+                                    Connecting to Weather API...
+                                </code>
+                            </li>
+
+                            <li>
+                                Check the HTTP response code.
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="card">
+                        <h3>❌ OLED Is Completely Dark</h3>
+
+                        <p>
+                            Check the I2C wiring.
+                        </p>
+
+                        <ul>
+                            <li>
+                                VCC → 3V3
+                            </li>
+
+                            <li>
+                                GND → GND
+                            </li>
+
+                            <li>
+                                SDA → D21
+                            </li>
+
+                            <li>
+                                SCL → D22
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="card">
+                        <h3>❌ OLED Init Fails</h3>
+
+                        <p>
+                            The code currently uses I2C address
+                            <code class="inline">
+                                0x3C
+                            </code>.
+                        </p>
+
+                        <p style="margin-top: 10px;">
+                            Some OLED modules use
+                            <code class="inline">
+                                0x3D
+                            </code>
+                            instead.
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <h3>❌ ArduinoJson Errors</h3>
+
+                        <p>
+                            Make sure the ArduinoJson library is
+                            actually listed in
+                            <code class="inline">
+                                lib_deps
+                            </code>.
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <h3>❌ Wi-Fi Never Connects</h3>
+
+                        <p>
+                            Remember that the ESP32 DevKit V1 uses
+                            2.4 GHz Wi-Fi for this project.
+                        </p>
+
+                        <p style="margin-top: 10px;">
+                            Also check that your SSID and password are
+                            case-sensitive and correctly entered.
+                        </p>
+                    </div>
+
+                </div>
+
+                <div class="info warning">
+                    <h3>⚠️ IMPORTANT ABOUT HTTPS</h3>
+
+                    <p>
+                        This beginner project uses an HTTP endpoint to
+                        keep TLS certificate handling out of the
+                        first API lesson.
+                        <strong>
+                            In real-world applications, sensitive
+                            information should be transferred over
+                            HTTPS.
+                        </strong>
+                    </p>
+                </div>
+
+                <div class="info">
+                    <h3>DEBUGGING ORDER</h3>
+
+                    <p>
+                        Don't randomly change ten things at once.
+                        Debug from the bottom of the stack upward:
+                    </p>
+
+                    <div class="flow">
+
+                        <div class="flow-box">
+                            OLED
+                        </div>
+
+                        <div class="flow-arrow">
+                            →
+                        </div>
+
+                        <div class="flow-box">
+                            ESP32
+                        </div>
+
+                        <div class="flow-arrow">
+                            →
+                        </div>
+
+                        <div class="flow-box">
+                            Wi-Fi
+                        </div>
+
+                        <div class="flow-arrow">
+                            →
+                        </div>
+
+                        <div class="flow-box">
+                            HTTP
+                        </div>
+
+                        <div class="flow-arrow">
+                            →
+                        </div>
+
+                        <div class="flow-box">
+                            API
+                        </div>
+
+                        <div class="flow-arrow">
+                            →
+                        </div>
+
+                        <div class="flow-box">
+                            JSON
+                        </div>
+
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 13 — VOCABULARY
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="section-header">
+                    <div class="section-number">
+                        13 // KNOWLEDGE
+                    </div>
+
+                    <h2>New Vocabulary</h2>
+
+                    <p>
+                        These words are going to appear constantly as
+                        you move deeper into IoT and networking.
+                    </p>
+                </div>
+
+                <div class="table-wrap">
+
+                    <table>
+
+                        <thead>
+                            <tr>
+                                <th>Word</th>
+                                <th>Meaning</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            <tr>
+                                <td>
+                                    <strong>API</strong>
+                                </td>
+
+                                <td>
+                                    Application Programming Interface.
+                                    A defined interface that lets
+                                    software request or exchange
+                                    information with another system.
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    <strong>HTTP GET</strong>
+                                </td>
+
+                                <td>
+                                    An HTTP request method commonly
+                                    used to ask a server for a
+                                    resource or information.
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    <strong>JSON</strong>
+                                </td>
+
+                                <td>
+                                    JavaScript Object Notation. A
+                                    structured text format commonly
+                                    used for exchanging data between
+                                    software systems.
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    <strong>Deserialization</strong>
+                                </td>
+
+                                <td>
+                                    Converting serialized data such as
+                                    JSON text into a structured form
+                                    that a program can work with.
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    <strong>Client</strong>
+                                </td>
+
+                                <td>
+                                    A device or program that requests
+                                    information or services from
+                                    another system.
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    <strong>HTTP Status Code</strong>
+                                </td>
+
+                                <td>
+                                    A number returned by an HTTP
+                                    server describing the result of a
+                                    request, such as 200 or 404.
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    <strong>Endpoint</strong>
+                                </td>
+
+                                <td>
+                                    A specific network location where
+                                    a service accepts requests.
+                                </td>
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+                <div class="grid three">
+
+                    <div class="card">
+                        <h3>🌐 Client</h3>
+
+                        <p>
+                            Asks for information.
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <h3>🖥️ Server</h3>
+
+                        <p>
+                            Receives the request and provides a
+                            response.
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <h3>📦 JSON</h3>
+
+                        <p>
+                            Carries structured information between
+                            them.
+                        </p>
+                    </div>
+
+                </div>
+
+                <div class="info">
+                    <h3>🎯 WHAT YOU JUST LEARNED</h3>
+
+                    <p>
+                        You learned how to consume a public API,
+                        perform an HTTP request from an ESP32, parse
+                        structured JSON, and render internet data on
+                        physical hardware.
+                    </p>
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 14 — NEXT PROJECT
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="hero">
+
+                    <div class="eyebrow">
+                        PROJECT 28 // COMPLETE
+                    </div>
+
+                    <h1>
+                        You Just Connected
+                        <span>ESP32 → Internet → OLED</span>
+                    </h1>
+
+                    <p class="hero-subtitle">
+                        This is a major architectural upgrade.
+                        Your ESP32 can now independently request
+                        information from a global service, process it,
+                        and turn it into a physical output.
+                    </p>
+
+                </div>
+
+                <div class="quote">
+
+                    Before:
+
+                    <br>
+
+                    <span class="big-green">
+                        ESP32 → waits for instructions
+                    </span>
+
+                    <br><br>
+
+                    Now:
+
+                    <br>
+
+                    <span class="big-green">
+                        ESP32 → Internet → API → JSON → OLED
+                    </span>
+
+                </div>
+
+                <div class="grid">
+
+                    <div class="card">
+                        <div class="icon">📡</div>
+
+                        <h3>Internet Client</h3>
+
+                        <p>
+                            Your ESP32 can initiate communication
+                            instead of only waiting for incoming
+                            requests.
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <div class="icon">🌍</div>
+
+                        <h3>Public APIs</h3>
+
+                        <p>
+                            You learned how software can consume
+                            information provided by external
+                            services.
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <div class="icon">📦</div>
+
+                        <h3>Structured Data</h3>
+
+                        <p>
+                            You learned how JSON turns raw internet
+                            responses into structured information.
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <div class="icon">📺</div>
+
+                        <h3>Physical Rendering</h3>
+
+                        <p>
+                            You turned global internet data into
+                            information visible on a physical OLED.
+                        </p>
+                    </div>
+
+                </div>
+
+                <div class="info">
+                    <h3>🚀 PROJECT 29 — GLOBAL IoT CLOUD</h3>
+
+                    <p>
+                        So far, your ESP32 can
+                        <strong>
+                            pull data down
+                        </strong>
+                        from the internet.
+                    </p>
+
+                    <p style="margin-top: 10px;">
+                        But what if we want the opposite?
+                    </p>
+
+                    <p style="margin-top: 10px;">
+                        What if your ESP32 measures something in your
+                        room and sends that information
+                        <strong>
+                            UP to the cloud
+                        </strong>
+                        so you can view it from somewhere else?
+                    </p>
+                </div>
+
+                <div class="card">
+
+                    <h3>
+                        ☁️ Project 29 — Global IoT Cloud
+                    </h3>
+
+                    <p>
+                        We are going to connect the ESP32 to a
+                        professional IoT cloud platform such as
+                        ThingSpeak.
+                    </p>
+
+                    <p style="margin-top: 12px;">
+                        The architecture will become:
+                    </p>
+
+                    <div class="flow">
+
+                        <div class="flow-box">
+                            Sensor
+                        </div>
+
+                        <div class="flow-arrow">
+                            →
+                        </div>
+
+                        <div class="flow-box">
+                            ESP32
+                        </div>
+
+                        <div class="flow-arrow">
+                            →
+                        </div>
+
+                        <div class="flow-box">
+                            Internet
+                        </div>
+
+                        <div class="flow-arrow">
+                            →
+                        </div>
+
+                        <div class="flow-box">
+                            IoT Cloud
+                        </div>
+
+                        <div class="flow-arrow">
+                            →
+                        </div>
+
+                        <div class="flow-box">
+                            Anywhere
+                        </div>
+
+                    </div>
+
+                    <p>
+                        Instead of your ESP32 only consuming
+                        information, it will start publishing its own
+                        data to the cloud.
+                    </p>
+
+                </div>
+
+                <div class="info warning">
+                    <h3>MISSION STATUS</h3>
+
+                    <p>
+                        <strong>
+                            Project 28 complete.
+                        </strong>
+                        You have officially entered
+                        internet-connected IoT territory.
+                    </p>
+                </div>
+
+                <div class="quote">
+                    Next stop:
+
+                    <span class="big-green">
+                        ESP32 → CLOUD → DATA FROM ANYWHERE.
+                    </span>
+
+                    ☁️⚡
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 BOTTOM NAVIGATION
+                 ================================================= -->
+
+            <div class="bottom-nav">
+
+                <button
+                    class="nav-btn"
+                    id="prevBtn"
+                    disabled
+                >
+                    ← Previous
+                </button>
+
+                <button
+                    class="nav-btn next"
+                    id="nextBtn"
+                >
+                    Next →
+                </button>
+
+            </div>
+
+        </div>
+    </main>
+
+    <!-- =========================================================
+         JAVASCRIPT
+         ========================================================= -->
+
+    <script>
+        const sections = [
+            ...document.querySelectorAll(".section")
+        ];
+
+        const navItems = [
+            ...document.querySelectorAll(".nav-item")
+        ];
+
+        const progressFill =
+            document.getElementById("progressFill");
+
+        const progressText =
+            document.getElementById("progressText");
+
+        const mobileProgress =
+            document.getElementById("mobileProgress");
+
+        const prevBtn =
+            document.getElementById("prevBtn");
+
+        const nextBtn =
+            document.getElementById("nextBtn");
+
+        let currentSection = 0;
+
+        function updateSection(index) {
+            index = Math.max(
+                0,
+                Math.min(index, sections.length - 1)
+            );
+
+            currentSection = index;
+
+            sections.forEach((section, i) => {
+                section.classList.toggle(
+                    "active",
+                    i === currentSection
+                );
+            });
+
+            navItems.forEach((item, i) => {
+                item.classList.toggle(
+                    "active",
+                    i === currentSection
+                );
+            });
+
+            const progress =
+                ((currentSection + 1) /
+                    sections.length) *
+                100;
+
+            progressFill.style.width =
+                `${progress}%`;
+
+            progressText.textContent =
+                `${currentSection + 1} / ${sections.length}`;
+
+            mobileProgress.textContent =
+                `${String(currentSection + 1).padStart(2, "0")} / ${sections.length}`;
+
+            prevBtn.disabled =
+                currentSection === 0;
+
+            nextBtn.disabled =
+                currentSection === sections.length - 1;
+
+            window.scrollTo({
+                top: 0,
+                behavior: "smooth"
+            });
+
+            localStorage.setItem(
+                "qc-esp32-project-28-section",
+                currentSection
+            );
+        }
+
+        navItems.forEach((item) => {
+            item.addEventListener("click", () => {
+                updateSection(
+                    Number(item.dataset.section)
+                );
+            });
+        });
+
+        prevBtn.addEventListener("click", () => {
+            updateSection(
+                currentSection - 1
+            );
+        });
+
+        nextBtn.addEventListener("click", () => {
+            updateSection(
+                currentSection + 1
+            );
+        });
+
+        document.addEventListener(
+            "keydown",
+            (event) => {
+                if (
+                    event.target.tagName === "INPUT" ||
+                    event.target.tagName === "TEXTAREA"
+                ) {
+                    return;
+                }
+
+                if (event.key === "ArrowLeft") {
+                    updateSection(
+                        currentSection - 1
+                    );
+                }
+
+                if (event.key === "ArrowRight") {
+                    updateSection(
+                        currentSection + 1
+                    );
+                }
+            }
+        );
+
+        document
+            .querySelectorAll(".copy-btn")
+            .forEach((button) => {
+
+                button.addEventListener(
+                    "click",
+                    async () => {
+
+                        const code =
+                            button
+                                .closest(".code-wrap")
+                                .querySelector(
+                                    "pre.code"
+                                )
+                                .innerText;
+
+                        try {
+                            await navigator.clipboard.writeText(
+                                code
+                            );
+
+                            const original =
+                                button.textContent;
+
+                            button.textContent =
+                                "Copied ✓";
+
+                            button.style.color =
+                                "var(--green)";
+
+                            setTimeout(() => {
+                                button.textContent =
+                                    original;
+
+                                button.style.color =
+                                    "";
+                            }, 1400);
+
+                        } catch {
+                            button.textContent =
+                                "Copy failed";
+
+                            setTimeout(() => {
+                                button.textContent =
+                                    "Copy";
+                            }, 1400);
+                        }
+                    }
+                );
+            });
+
+        const savedSection = Number(
+            localStorage.getItem(
+                "qc-esp32-project-28-section"
+            )
+        );
+
+        if (
+            Number.isInteger(savedSection) &&
+            savedSection >= 0 &&
+            savedSection < sections.length
+        ) {
+            updateSection(savedSection);
+        } else {
+            updateSection(0);
+        }
+    </script>
+
+</body>
+</html>

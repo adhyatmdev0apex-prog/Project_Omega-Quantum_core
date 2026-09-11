@@ -1,0 +1,2923 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+    <title>Project 34 — Dual-Core Processing | Quantum Core</title>
+
+    <style>
+        :root {
+            --bg: #050807;
+            --panel: #0a100d;
+            --panel-2: #0d1511;
+            --green: #00ff88;
+            --green-dim: #00c96b;
+            --cyan: #00e5ff;
+            --yellow: #ffd166;
+            --red: #ff5577;
+            --text: #e7fff2;
+            --muted: #8aa99a;
+            --border: rgba(0, 255, 136, 0.16);
+            --sidebar: 285px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background:
+                radial-gradient(
+                    circle at 15% 10%,
+                    rgba(0, 255, 136, 0.08),
+                    transparent 30%
+                ),
+                radial-gradient(
+                    circle at 85% 80%,
+                    rgba(0, 229, 255, 0.05),
+                    transparent 30%
+                ),
+                var(--bg);
+            color: var(--text);
+            font-family:
+                Inter,
+                ui-sans-serif,
+                system-ui,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0.16;
+            background-image:
+                linear-gradient(
+                    rgba(255, 255, 255, 0.025) 1px,
+                    transparent 1px
+                ),
+                linear-gradient(
+                    90deg,
+                    rgba(255, 255, 255, 0.025) 1px,
+                    transparent 1px
+                );
+            background-size: 40px 40px;
+            mask-image: linear-gradient(
+                to bottom,
+                black,
+                transparent 90%
+            );
+            z-index: -1;
+        }
+
+        button {
+            font: inherit;
+        }
+
+        .mobile-header {
+            display: none;
+        }
+
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: var(--sidebar);
+            padding: 26px 18px;
+            background:
+                linear-gradient(
+                    180deg,
+                    rgba(7, 13, 10, 0.98),
+                    rgba(4, 8, 6, 0.98)
+                );
+            border-right: 1px solid var(--border);
+            overflow-y: auto;
+            z-index: 20;
+        }
+
+        .brand {
+            padding: 8px 10px 24px;
+        }
+
+        .brand-small {
+            color: var(--green);
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+        }
+
+        .brand h2 {
+            margin: 7px 0 0;
+            font-size: 22px;
+            letter-spacing: -0.04em;
+        }
+
+        .brand p {
+            margin: 6px 0 0;
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .progress-area {
+            padding: 0 10px 22px;
+        }
+
+        .progress-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            color: var(--muted);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .progress-track {
+            height: 5px;
+            overflow: hidden;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .progress-fill {
+            width: 7.14%;
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(
+                90deg,
+                var(--green),
+                var(--cyan)
+            );
+            box-shadow: 0 0 14px rgba(0, 255, 136, 0.35);
+            transition: width 0.3s ease;
+        }
+
+        .nav-label {
+            padding: 0 10px 8px;
+            color: #587264;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+        }
+
+        .nav-item {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            margin-bottom: 4px;
+            padding: 10px 11px;
+            border: 1px solid transparent;
+            border-radius: 10px;
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+            text-align: left;
+            transition:
+                background 0.2s ease,
+                border 0.2s ease,
+                color 0.2s ease,
+                transform 0.2s ease;
+        }
+
+        .nav-item:hover {
+            color: var(--text);
+            background: rgba(0, 255, 136, 0.04);
+            border-color: rgba(0, 255, 136, 0.08);
+        }
+
+        .nav-item.active {
+            color: var(--green);
+            background: rgba(0, 255, 136, 0.07);
+            border-color: rgba(0, 255, 136, 0.14);
+            box-shadow:
+                inset 3px 0 0 var(--green),
+                0 0 20px rgba(0, 255, 136, 0.03);
+        }
+
+        .nav-number {
+            min-width: 24px;
+            color: #536e60;
+            font-family: monospace;
+            font-size: 11px;
+        }
+
+        .nav-item.active .nav-number {
+            color: var(--green);
+        }
+
+        .nav-text {
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .main {
+            min-height: 100vh;
+            margin-left: var(--sidebar);
+        }
+
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 34px;
+            background: rgba(5, 8, 7, 0.78);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(14px);
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 12px var(--green);
+        }
+
+        .topbar-label {
+            color: var(--muted);
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .topbar-right {
+            color: #587264;
+            font-family: monospace;
+            font-size: 11px;
+        }
+
+        .content {
+            width: min(1100px, calc(100% - 52px));
+            margin: 0 auto;
+            padding: 42px 0 70px;
+        }
+
+        .section {
+            display: none;
+            animation: sectionIn 0.35s ease;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes sectionIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hero {
+            position: relative;
+            overflow: hidden;
+            padding: 38px;
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            background:
+                radial-gradient(
+                    circle at 85% 20%,
+                    rgba(0, 255, 136, 0.11),
+                    transparent 28%
+                ),
+                linear-gradient(
+                    135deg,
+                    rgba(10, 18, 14, 0.98),
+                    rgba(6, 12, 9, 0.98)
+                );
+            box-shadow:
+                0 25px 80px rgba(0, 0, 0, 0.35),
+                inset 0 1px 0 rgba(255, 255, 255, 0.025);
+        }
+
+        .hero::after {
+            content: "DUAL CORE";
+            position: absolute;
+            right: 30px;
+            bottom: 15px;
+            color: rgba(0, 255, 136, 0.035);
+            font-size: 70px;
+            font-weight: 900;
+            letter-spacing: -0.08em;
+            pointer-events: none;
+        }
+
+        .eyebrow {
+            margin-bottom: 10px;
+            color: var(--green);
+            font-family: monospace;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            margin: 0;
+            max-width: 850px;
+            color: #effff7;
+            font-size: clamp(36px, 5vw, 62px);
+            line-height: 0.98;
+            letter-spacing: -0.065em;
+        }
+
+        .hero-subtitle {
+            max-width: 760px;
+            margin: 22px 0 0;
+            color: #a9c6b6;
+            font-size: 16px;
+            line-height: 1.75;
+        }
+
+        .terminal {
+            position: relative;
+            z-index: 1;
+            margin-top: 28px;
+            padding: 18px 20px;
+            border: 1px solid rgba(0, 255, 136, 0.14);
+            border-radius: 13px;
+            background: #030604;
+            color: var(--green);
+            font-family: monospace;
+            font-size: 13px;
+            line-height: 1.7;
+        }
+
+        .terminal .dim {
+            color: #5c7869;
+        }
+
+        .section-header {
+            margin-bottom: 26px;
+        }
+
+        .section-number {
+            margin-bottom: 8px;
+            color: var(--green);
+            font-family: monospace;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.15em;
+        }
+
+        h2 {
+            margin: 0;
+            color: #effff7;
+            font-size: clamp(28px, 4vw, 42px);
+            letter-spacing: -0.05em;
+        }
+
+        h3 {
+            margin: 0 0 10px;
+            color: #eafff3;
+            font-size: 19px;
+            letter-spacing: -0.025em;
+        }
+
+        p {
+            color: #a5c0b0;
+            line-height: 1.75;
+        }
+
+        .lead {
+            max-width: 850px;
+            font-size: 16px;
+        }
+
+        .grid {
+            display: grid;
+            gap: 15px;
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .card {
+            padding: 21px;
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(13, 21, 17, 0.95),
+                    rgba(7, 13, 10, 0.95)
+                );
+        }
+
+        .card p {
+            margin: 8px 0 0;
+            font-size: 14px;
+        }
+
+        .icon-box {
+            width: 40px;
+            height: 40px;
+            display: grid;
+            place-items: center;
+            margin-bottom: 14px;
+            border: 1px solid rgba(0, 255, 136, 0.15);
+            border-radius: 11px;
+            background: rgba(0, 255, 136, 0.06);
+            color: var(--green);
+            font-size: 19px;
+        }
+
+        .callout {
+            margin: 20px 0;
+            padding: 18px 20px;
+            border-left: 3px solid var(--green);
+            border-radius: 0 12px 12px 0;
+            background: rgba(0, 255, 136, 0.055);
+        }
+
+        .callout.warning {
+            border-left-color: var(--yellow);
+            background: rgba(255, 209, 102, 0.055);
+        }
+
+        .callout.danger {
+            border-left-color: var(--red);
+            background: rgba(255, 85, 119, 0.055);
+        }
+
+        .callout strong {
+            color: var(--green);
+        }
+
+        .callout.warning strong {
+            color: var(--yellow);
+        }
+
+        .callout.danger strong {
+            color: var(--red);
+        }
+
+        .flow {
+            display: flex;
+            align-items: stretch;
+            gap: 10px;
+            margin: 22px 0;
+        }
+
+        .flow-box {
+            flex: 1;
+            min-width: 0;
+            padding: 17px;
+            border: 1px solid var(--border);
+            border-radius: 13px;
+            background: rgba(9, 17, 13, 0.95);
+            text-align: center;
+        }
+
+        .flow-box .title {
+            color: var(--green);
+            font-weight: 800;
+            font-size: 13px;
+        }
+
+        .flow-box .desc {
+            margin-top: 7px;
+            color: var(--muted);
+            font-size: 11px;
+            line-height: 1.5;
+        }
+
+        .flow-arrow {
+            display: grid;
+            place-items: center;
+            color: var(--cyan);
+            font-size: 18px;
+        }
+
+        .code-wrap {
+            position: relative;
+            margin: 18px 0;
+        }
+
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 9px 13px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-bottom: 0;
+            border-radius: 11px 11px 0 0;
+            background: #090f0c;
+        }
+
+        .code-language {
+            color: #688777;
+            font-family: monospace;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .copy-btn {
+            border: 0;
+            background: transparent;
+            color: #688777;
+            cursor: pointer;
+            font-family: monospace;
+            font-size: 10px;
+            font-weight: 800;
+        }
+
+        .copy-btn:hover {
+            color: var(--green);
+        }
+
+        pre.code {
+            margin: 0;
+            padding: 20px;
+            overflow-x: auto;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 0 0 11px 11px;
+            background: #020403;
+            color: #d9fbe8;
+            font-family:
+                "Cascadia Code",
+                "Fira Code",
+                Consolas,
+                monospace;
+            font-size: 12px;
+            line-height: 1.65;
+            tab-size: 4;
+        }
+
+        code.inline {
+            padding: 2px 6px;
+            border: 1px solid rgba(0, 255, 136, 0.12);
+            border-radius: 5px;
+            background: rgba(0, 255, 136, 0.05);
+            color: var(--green);
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+
+        .wiring {
+            margin-top: 18px;
+            padding: 22px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            background: #030604;
+        }
+
+        .wiring pre {
+            margin: 0;
+            color: #b9d6c6;
+            font-family: monospace;
+            font-size: 13px;
+            line-height: 1.8;
+        }
+
+        .core-map {
+            display: grid;
+            grid-template-columns: 1fr 110px 1fr;
+            gap: 15px;
+            align-items: stretch;
+            margin: 25px 0;
+        }
+
+        .core {
+            position: relative;
+            padding: 25px;
+            border: 1px solid rgba(0, 255, 136, 0.22);
+            border-radius: 18px;
+            background:
+                radial-gradient(
+                    circle at 50% 20%,
+                    rgba(0, 255, 136, 0.09),
+                    transparent 55%
+                ),
+                #07100b;
+            text-align: center;
+        }
+
+        .core-number {
+            color: var(--green);
+            font-family: monospace;
+            font-size: 12px;
+            font-weight: 900;
+            letter-spacing: 0.14em;
+        }
+
+        .core h3 {
+            margin: 9px 0;
+            font-size: 26px;
+        }
+
+        .core p {
+            margin: 0;
+            font-size: 12px;
+        }
+
+        .chip {
+            display: grid;
+            place-items: center;
+            min-height: 150px;
+            padding: 15px;
+            border: 1px solid rgba(0, 229, 255, 0.18);
+            border-radius: 18px;
+            background:
+                radial-gradient(
+                    circle,
+                    rgba(0, 229, 255, 0.08),
+                    transparent 65%
+                ),
+                #061015;
+            color: var(--cyan);
+            font-family: monospace;
+            font-size: 12px;
+            font-weight: 900;
+            text-align: center;
+        }
+
+        .steps {
+            counter-reset: step;
+            display: grid;
+            gap: 12px;
+        }
+
+        .step {
+            position: relative;
+            padding: 18px 18px 18px 60px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 13px;
+            background: rgba(8, 14, 11, 0.85);
+        }
+
+        .step::before {
+            counter-increment: step;
+            content: counter(step);
+            position: absolute;
+            left: 17px;
+            top: 17px;
+            width: 27px;
+            height: 27px;
+            display: grid;
+            place-items: center;
+            border-radius: 50%;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            color: var(--green);
+            font-family: monospace;
+            font-size: 11px;
+            font-weight: 900;
+        }
+
+        .step strong {
+            color: #eafff3;
+        }
+
+        .step p {
+            margin: 5px 0 0;
+            font-size: 13px;
+        }
+
+        .checklist {
+            display: grid;
+            gap: 9px;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .checklist li {
+            position: relative;
+            padding-left: 27px;
+            color: #aac6b5;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .checklist li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: var(--green);
+            font-weight: 900;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+            margin-top: 18px;
+            border: 1px solid var(--border);
+            border-radius: 13px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 650px;
+        }
+
+        th,
+        td {
+            padding: 13px 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            text-align: left;
+            font-size: 13px;
+        }
+
+        th {
+            color: var(--green);
+            background: rgba(0, 255, 136, 0.045);
+            font-family: monospace;
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        td {
+            color: #a7c3b2;
+        }
+
+        tr:last-child td {
+            border-bottom: 0;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 5px 8px;
+            border: 1px solid rgba(0, 255, 136, 0.13);
+            border-radius: 999px;
+            background: rgba(0, 255, 136, 0.05);
+            color: var(--green);
+            font-family: monospace;
+            font-size: 10px;
+            font-weight: 800;
+        }
+
+        .challenge {
+            padding: 24px;
+            border: 1px solid rgba(255, 209, 102, 0.18);
+            border-radius: 17px;
+            background:
+                radial-gradient(
+                    circle at 100% 0%,
+                    rgba(255, 209, 102, 0.07),
+                    transparent 35%
+                ),
+                rgba(18, 15, 7, 0.75);
+        }
+
+        .challenge .tag {
+            color: var(--yellow);
+            font-family: monospace;
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+        }
+
+        .challenge h3 {
+            margin-top: 8px;
+        }
+
+        .nav-controls {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: 38px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .nav-btn {
+            min-width: 120px;
+            padding: 12px 17px;
+            border: 1px solid rgba(0, 255, 136, 0.15);
+            border-radius: 10px;
+            background: rgba(0, 255, 136, 0.045);
+            color: var(--green);
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 800;
+            transition:
+                background 0.2s ease,
+                border 0.2s ease,
+                transform 0.2s ease;
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            transform: translateY(-1px);
+            background: rgba(0, 255, 136, 0.08);
+            border-color: rgba(0, 255, 136, 0.28);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.25;
+            cursor: not-allowed;
+        }
+
+        .kbd {
+            padding: 3px 7px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom-color: rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            background: #0b120e;
+            color: #789386;
+            font-family: monospace;
+            font-size: 10px;
+        }
+
+        .footer-note {
+            margin-top: 25px;
+            color: #516c5d;
+            font-size: 11px;
+            text-align: center;
+        }
+
+        .highlight {
+            color: var(--green);
+        }
+
+        .cyan {
+            color: var(--cyan);
+        }
+
+        .yellow {
+            color: var(--yellow);
+        }
+
+        .red {
+            color: var(--red);
+        }
+
+        @media (max-width: 900px) {
+            .sidebar {
+                display: none;
+            }
+
+            .mobile-header {
+                position: sticky;
+                top: 0;
+                z-index: 30;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 13px 17px;
+                background: rgba(5, 8, 7, 0.92);
+                border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+                backdrop-filter: blur(14px);
+            }
+
+            .mobile-brand {
+                color: var(--green);
+                font-family: monospace;
+                font-size: 12px;
+                font-weight: 900;
+            }
+
+            .mobile-progress {
+                color: var(--muted);
+                font-family: monospace;
+                font-size: 11px;
+            }
+
+            .main {
+                margin-left: 0;
+            }
+
+            .topbar {
+                display: none;
+            }
+
+            .content {
+                width: min(100% - 28px, 1000px);
+                padding-top: 25px;
+            }
+
+            .hero {
+                padding: 27px 22px;
+            }
+
+            .hero::after {
+                display: none;
+            }
+
+            .grid-2,
+            .grid-3 {
+                grid-template-columns: 1fr;
+            }
+
+            .flow {
+                flex-direction: column;
+            }
+
+            .flow-arrow {
+                transform: rotate(90deg);
+            }
+
+            .core-map {
+                grid-template-columns: 1fr;
+            }
+
+            .chip {
+                min-height: 80px;
+            }
+
+            .nav-controls {
+                position: sticky;
+                bottom: 0;
+                z-index: 5;
+                margin-left: -14px;
+                margin-right: -14px;
+                padding: 12px 14px;
+                background: rgba(5, 8, 7, 0.92);
+                backdrop-filter: blur(14px);
+            }
+        }
+
+        @media (max-width: 560px) {
+            h1 {
+                font-size: 39px;
+            }
+
+            h2 {
+                font-size: 30px;
+            }
+
+            .hero {
+                border-radius: 17px;
+            }
+
+            .card {
+                padding: 17px;
+            }
+
+            pre.code {
+                font-size: 11px;
+            }
+
+            .nav-btn {
+                min-width: 100px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- MOBILE HEADER -->
+    <header class="mobile-header">
+        <div class="mobile-brand">QUANTUM CORE // ESP32</div>
+        <div class="mobile-progress" id="mobileProgress">01 / 14</div>
+    </header>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="brand">
+            <div class="brand-small">Quantum Core</div>
+            <h2>ESP32 Library</h2>
+            <p>Project 34 // FreeRTOS &amp; Dual-Core Processing</p>
+        </div>
+
+        <div class="progress-area">
+            <div class="progress-meta">
+                <span>Progress</span>
+                <span id="progressText">1 / 14</span>
+            </div>
+
+            <div class="progress-track">
+                <div
+                    class="progress-fill"
+                    id="progressFill"
+                ></div>
+            </div>
+        </div>
+
+        <div class="nav-label">Mission Steps</div>
+
+        <button class="nav-item active" data-section="0">
+            <span class="nav-number">01</span>
+            <span class="nav-text">Mission Brief</span>
+        </button>
+
+        <button class="nav-item" data-section="1">
+            <span class="nav-number">02</span>
+            <span class="nav-text">What We're Learning</span>
+        </button>
+
+        <button class="nav-item" data-section="2">
+            <span class="nav-number">03</span>
+            <span class="nav-text">Dual-Core Map</span>
+        </button>
+
+        <button class="nav-item" data-section="3">
+            <span class="nav-number">04</span>
+            <span class="nav-text">Wiring</span>
+        </button>
+
+        <button class="nav-item" data-section="4">
+            <span class="nav-number">05</span>
+            <span class="nav-text">Create Project</span>
+        </button>
+
+        <button class="nav-item" data-section="5">
+            <span class="nav-number">06</span>
+            <span class="nav-text">Complete Code</span>
+        </button>
+
+        <button class="nav-item" data-section="6">
+            <span class="nav-number">07</span>
+            <span class="nav-text">Understand Code</span>
+        </button>
+
+        <button class="nav-item" data-section="7">
+            <span class="nav-number">08</span>
+            <span class="nav-text">Build + Upload</span>
+        </button>
+
+        <button class="nav-item" data-section="8">
+            <span class="nav-number">09</span>
+            <span class="nav-text">Expected Result</span>
+        </button>
+
+        <button class="nav-item" data-section="9">
+            <span class="nav-number">10</span>
+            <span class="nav-text">WDT Experiment</span>
+        </button>
+
+        <button class="nav-item" data-section="10">
+            <span class="nav-number">11</span>
+            <span class="nav-text">Challenge</span>
+        </button>
+
+        <button class="nav-item" data-section="11">
+            <span class="nav-number">12</span>
+            <span class="nav-text">Troubleshooting</span>
+        </button>
+
+        <button class="nav-item" data-section="12">
+            <span class="nav-number">13</span>
+            <span class="nav-text">Vocabulary</span>
+        </button>
+
+        <button class="nav-item" data-section="13">
+            <span class="nav-number">14</span>
+            <span class="nav-text">Next Project</span>
+        </button>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+
+        <div class="topbar">
+            <div class="topbar-left">
+                <span class="status-dot"></span>
+                <span class="topbar-label">
+                    ESP32 / PROJECT 34 / FREERTOS
+                </span>
+            </div>
+
+            <div class="topbar-right">
+                CORE_0 + CORE_1 // ONLINE
+            </div>
+        </div>
+
+        <div class="content">
+
+            <!-- ===================================================== -->
+            <!-- SECTION 1 -->
+            <!-- ===================================================== -->
+
+            <section class="section active">
+
+                <div class="hero">
+                    <div class="eyebrow">
+                        Project 34 // Dual-Core Processing
+                    </div>
+
+                    <h1>
+                        TWO CORES.<br>
+                        ONE ESP32.
+                    </h1>
+
+                    <p class="hero-subtitle">
+                        Brooo, welcome back. ⚡
+                        You have already learned WebSockets,
+                        <code class="inline">millis()</code>,
+                        APIs, OLEDs, Wi-Fi, and increasingly complex
+                        ESP32 systems.
+                        <br><br>
+                        Now we're going underneath the Arduino
+                        <code class="inline">loop()</code>.
+                        We're going to meet
+                        <strong>FreeRTOS</strong>,
+                        create independent tasks, and pin them to
+                        different processor cores.
+                    </p>
+
+                    <div class="terminal">
+                        <span class="dim">mission:</span>
+                        dual-core-processing<br>
+                        <span class="dim">target:</span>
+                        ESP32 DevKit V1<br>
+                        <span class="dim">runtime:</span>
+                        FreeRTOS<br>
+                        <span class="dim">architecture:</span>
+                        CORE_0 + CORE_1<br>
+                        <span class="dim">status:</span>
+                        <span class="highlight">
+                            READY TO SCHEDULE
+                        </span>
+                    </div>
+                </div>
+
+                <div class="grid grid-2" style="margin-top: 18px;">
+
+                    <div class="card">
+                        <div class="icon-box">🧠</div>
+                        <h3>From loop() → Tasks</h3>
+                        <p>
+                            Instead of putting every operation inside
+                            one giant Arduino loop, FreeRTOS lets us
+                            structure work as independent tasks managed
+                            by the operating system.
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <div class="icon-box">⚡</div>
+                        <h3>Core Pinning</h3>
+                        <p>
+                            We'll explicitly request that one task runs
+                            on Core 0 and another runs on Core 1.
+                        </p>
+                    </div>
+
+                </div>
+
+                <div class="callout warning">
+                    <strong>⚠️ Hardware note:</strong>
+                    The classic ESP32 used in many ESP32 DevKit V1 boards
+                    is dual-core, but not every chip in the ESP32 family
+                    is. Some newer ESP32 variants are single-core.
+                    This project assumes a dual-core ESP32 target and a
+                    framework version that supports
+                    <code class="inline">xTaskCreatePinnedToCore()</code>.
+                </div>
+
+            </section>
+
+            <!-- ===================================================== -->
+            <!-- SECTION 2 -->
+            <!-- ===================================================== -->
+
+            <section class="section">
+
+                <div class="section-header">
+                    <div class="section-number">02 // CONCEPT</div>
+                    <h2>What Are We Learning?</h2>
+                    <p class="lead">
+                        Today we're stepping from beginner Arduino
+                        programming into operating-system-level task
+                        scheduling.
+                    </p>
+                </div>
+
+                <div class="grid grid-3">
+
+                    <div class="card">
+                        <div class="icon-box">🧩</div>
+                        <h3>FreeRTOS</h3>
+                        <p>
+                            FreeRTOS is the real-time operating-system
+                            layer used by ESP32 software. It provides
+                            tasks, priorities, scheduling, delays,
+                            synchronization, and other RTOS primitives.
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <div class="icon-box">🧵</div>
+                        <h3>Tasks</h3>
+                        <p>
+                            A FreeRTOS task is an independently scheduled
+                            unit of work with its own stack and priority.
+                            Think of it as a managed worker inside the OS.
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <div class="icon-box">🎯</div>
+                        <h3>Core Pinning</h3>
+                        <p>
+                            A pinned task is restricted to a selected
+                            CPU core. That lets us deliberately control
+                            where specific work executes.
+                        </p>
+                    </div>
+
+                </div>
+
+                <div class="callout">
+                    <strong>Key idea:</strong>
+                    Multitasking does not always mean two things are
+                    physically executing at the exact same instant.
+                    On a dual-core ESP32, tasks can genuinely execute
+                    concurrently when they are scheduled on separate
+                    cores, while multiple tasks on one core are still
+                    interleaved by the scheduler.
+                </div>
+
+                <div class="grid grid-2">
+
+                    <div class="card">
+                        <h3>⏱️ vTaskDelay()</h3>
+                        <p>
+                            This tells FreeRTOS that the current task
+                            should sleep for a period of time. The task
+                            stops consuming CPU time while it waits,
+                            allowing other work to run.
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <h3>🐕 Watchdog Timer</h3>
+                        <p>
+                            A watchdog monitors system responsiveness.
+                            If software prevents required watchdog service
+                            for too long, the system can trigger a reset.
+                            It is a recovery mechanism, not simply a
+                            detector of the <code class="inline">delay()</code>
+                            function.
+                        </p>
+                    </div>
+
+                </div>
+
+            </section>
+
+            <!-- ===================================================== -->
+            <!-- SECTION 3 -->
+            <!-- ===================================================== -->
+
+            <section class="section">
+
+                <div class="section-header">
+                    <div class="section-number">03 // ARCHITECTURE</div>
+                    <h2>Meet the Two Cores</h2>
+                    <p class="lead">
+                        Imagine the ESP32 as a tiny computer containing
+                        two CPU cores. We're going to give each core a
+                        different job.
+                    </p>
+                </div>
+
+                <div class="core-map">
+
+                    <div class="core">
+                        <div class="core-number">PROCESSOR</div>
+                        <h3>CORE 0</h3>
+                        <p>
+                            Task 1<br>
+                            Slow LED
+                            <br><br>
+                            <span class="badge">
+                                1000 ms
+                            </span>
+                        </p>
+                    </div>
+
+                    <div class="chip">
+                        ESP32<br>
+                        DUAL-CORE<br>
+                        CPU
+                    </div>
+
+                    <div class="core">
+                        <div class="core-number">PROCESSOR</div>
+                        <h3>CORE 1</h3>
+                        <p>
+                            Task 2<br>
+                            Fast LED
+                            <br><br>
+                            <span class="badge">
+                                200 ms
+                            </span>
+                        </p>
+                    </div>
+
+                </div>
+
+                <div class="flow">
+
+                    <div class="flow-box">
+                        <div class="title">
+                            Task 1
+                        </div>
+                        <div class="desc">
+                            Infinite loop controlling
+                            LED on D2
+                        </div>
+                    </div>
+
+                    <div class="flow-arrow">→</div>
+
+                    <div class="flow-box">
+                        <div class="title">
+                            FreeRTOS Scheduler
+                        </div>
+                        <div class="desc">
+                            Manages task execution,
+                            priorities and delays
+                        </div>
+                    </div>
+
+                    <div class="flow-arrow">→</div>
+
+                    <div class="flow-box">
+                        <div class="title">
+                            Task 2
+                        </div>
+                        <div class="desc">
+                            Infinite loop controlling
+                            LED on D4
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="callout warning">
+                    <strong>Important architecture correction:</strong>
+                    On classic Arduino-ESP32 configurations, the Arduino
+                    <code class="inline">loop()</code> runs inside an
+                    RTOS task, commonly associated with Core 1 on the
+                    classic dual-core ESP32. Wi-Fi and system work are
+                    also managed by ESP-IDF/FreeRTOS tasks. Do not think
+                    of Core 0 as simply "the Wi-Fi core" in every ESP32
+                    configuration. The exact task/core arrangement is
+                    framework- and chip-dependent.
+                </div>
+
+            </section>
+
+            <!-- ===================================================== -->
+            <!-- SECTION 4 -->
+            <!-- ===================================================== -->
+
+            <section class="section">
+
+                <div class="section-header">
+                    <div class="section-number">04 // HARDWARE</div>
+                    <h2>Wire the Two Indicators</h2>
+                    <p class="lead">
+                        Two LEDs make the two independent tasks visible.
+                        One LED represents Core 0 and the other represents
+                        Core 1.
+                    </p>
+                </div>
+
+                <div class="grid grid-2">
+
+                    <div class="card">
+                        <h3>💡 LED 1 — Core 0</h3>
+                        <p>
+                            Connect the LED through a
+                            <strong class="highlight">
+                                220–330Ω current-limiting resistor
+                            </strong>
+                            to GPIO D2.
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <h3>💡 LED 2 — Core 1</h3>
+                        <p>
+                            Connect the second LED through another
+                            <strong class="highlight">
+                                220–330Ω current-limiting resistor
+                            </strong>
+                            to GPIO D4.
+                        </p>
+                    </div>
+
+                </div>
+
+                <div class="wiring">
+<pre>
+ESP32                  BREADBOARD
+
+D2 ──► 220–330Ω ──► LED 1 Long Leg (+)
+                    LED 1 Short Leg (−)
+                           │
+                           ▼
+                    BLUE GND RAIL
+
+D4 ──► 220–330Ω ──► LED 2 Long Leg (+)
+                    LED 2 Short Leg (−)
+                           │
+                           ▼
+                    BLUE GND RAIL
+
+
+ESP32 GND ───────────────► BLUE GND RAIL
+
+
+LED 1 = Core 0 indicator
+LED 2 = Core 1 indicator
+</pre>
+                </div>
+
+                <div class="callout danger">
+                    <strong>⚠️ Do not skip the resistors.</strong>
+                    Never connect a bare LED directly between an ESP32
+                    GPIO and GND. Use a 220–330Ω series resistor for each
+                    LED to limit current and protect the LED and GPIO.
+                </div>
+
+            </section>
+
+            <!-- ===================================================== -->
+            <!-- SECTION 5 -->
+            <!-- ===================================================== -->
+
+            <section class="section">
+
+                <div class="section-header">
+                    <div class="section-number">05 // SETUP</div>
+                    <h2>Create the Project</h2>
+                    <p class="lead">
+                        FreeRTOS support is already part of the ESP32
+                        Arduino environment. We don't need to install
+                        a separate FreeRTOS library.
+                    </p>
+                </div>
+
+                <div class="steps">
+
+                    <div class="step">
+                        <strong>Open VS Code</strong>
+                        <p>
+                            Start VS Code and open your PlatformIO
+                            workspace.
+                        </p>
+                    </div>
+
+                    <div class="step">
+                        <strong>Create a New Project</strong>
+                        <p>
+                            Open PlatformIO and select
+                            <strong>New Project</strong>.
+                        </p>
+                    </div>
+
+                    <div class="step">
+                        <strong>Name it</strong>
+                        <p>
+                            Use:
+                            <code class="inline">
+                                ESP32-34-DualCore
+                            </code>
+                        </p>
+                    </div>
+
+                    <div class="step">
+                        <strong>Select the board</strong>
+                        <p>
+                            Choose:
+                            <strong>
+                                DOIT ESP32 DEVKIT V1
+                            </strong>
+                        </p>
+                    </div>
+
+                    <div class="step">
+                        <strong>Select Arduino</strong>
+                        <p>
+                            Framework:
+                            <strong>Arduino</strong>
+                        </p>
+                    </div>
+
+                    <div class="step">
+                        <strong>Open main.cpp</strong>
+                        <p>
+                            Open
+                            <code class="inline">
+                                src/main.cpp
+                            </code>
+                            and replace the default program.
+                        </p>
+                    </div>
+
+                </div>
+
+                <div class="callout">
+                    <strong>Why no extra library?</strong>
+                    The Arduino ESP32 core is built on top of the ESP-IDF
+                    software stack, which includes FreeRTOS functionality.
+                    That's why the RTOS task APIs are available to our
+                    ESP32 Arduino program.
+                </div>
+
+            </section>
+
+            <!-- ===================================================== -->
+            <!-- SECTION 6 -->
+            <!-- ===================================================== -->
+
+            <section class="section">
+
+                <div class="section-header">
+                    <div class="section-number">06 // CODE</div>
+                    <h2>Complete Code</h2>
+                    <p class="lead">
+                        This is the heart of the project. Notice something
+                        strange at the bottom:
+                        <code class="inline">loop()</code>
+                        does practically nothing.
+                    </p>
+                </div>
+
+                <div class="code-wrap">
+
+                    <div class="code-header">
+                        <span class="code-language">
+                            C++ // ESP32
+                        </span>
+
+                        <button class="copy-btn">
+                            Copy
+                        </button>
+                    </div>
+
+                    <pre class="code">/*
+ * ============================================================
+ * MY BRO'S THIRTY-FOURTH ESP32 PROGRAM: DUAL-CORE FREERTOS
+ * ============================================================
+ */
+
+#include &lt;Arduino.h&gt;
+
+const int LED_CORE_0 = 2;
+const int LED_CORE_1 = 4;
+
+// Handles let FreeRTOS keep track of our tasks.
+TaskHandle_t Task1;
+TaskHandle_t Task2;
+
+// ============================================================
+// TASK 1: PINNED TO CORE 0
+// ============================================================
+void Task1code(void *pvParameters) {
+
+    Serial.print("Task 1 is initializing on Core: ");
+    Serial.println(xPortGetCoreID());
+
+    for (;;) {
+
+        digitalWrite(LED_CORE_0, HIGH);
+
+        // Put THIS task to sleep for 1 second.
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+
+        digitalWrite(LED_CORE_0, LOW);
+
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+    }
+}
+
+// ============================================================
+// TASK 2: PINNED TO CORE 1
+// ============================================================
+void Task2code(void *pvParameters) {
+
+    Serial.print("Task 2 is initializing on Core: ");
+    Serial.println(xPortGetCoreID());
+
+    for (;;) {
+
+        digitalWrite(LED_CORE_1, HIGH);
+
+        // Put THIS task to sleep for 200 ms.
+        vTaskDelay(200 / portTICK_PERIOD_MS);
+
+        digitalWrite(LED_CORE_1, LOW);
+
+        vTaskDelay(200 / portTICK_PERIOD_MS);
+    }
+}
+
+// ============================================================
+// SETUP
+// ============================================================
+void setup() {
+
+    Serial.begin(115200);
+
+    pinMode(LED_CORE_0, OUTPUT);
+    pinMode(LED_CORE_1, OUTPUT);
+
+    digitalWrite(LED_CORE_0, LOW);
+    digitalWrite(LED_CORE_1, LOW);
+
+    Serial.println("\nBooting Dual-Core Engine...");
+
+    // --------------------------------------------------------
+    // CREATE TASK 1
+    // --------------------------------------------------------
+    xTaskCreatePinnedToCore(
+        Task1code,              // Task function
+        "Task1",                // Task name
+        10000,                  // Stack size
+        NULL,                   // Parameters
+        1,                      // Priority
+        &Task1,                 // Task handle
+        0                       // Core 0
+    );
+
+    // --------------------------------------------------------
+    // CREATE TASK 2
+    // --------------------------------------------------------
+    xTaskCreatePinnedToCore(
+        Task2code,              // Task function
+        "Task2",                // Task name
+        10000,                  // Stack size
+        NULL,                   // Parameters
+        1,                      // Priority
+        &Task2,                 // Task handle
+        1                       // Core 1
+    );
+}
+
+// ============================================================
+// ARDUINO LOOP
+// ============================================================
+void loop() {
+
+    // The two FreeRTOS tasks are doing the actual work.
+    // This loop intentionally has nothing important to do.
+
+}</pre>
+
+                </div>
+
+                <div class="callout">
+                    <strong>🔥 Notice the architecture:</strong>
+                    <code class="inline">setup()</code>
+                    creates the tasks. Each task then owns its own
+                    infinite <code class="inline">for (;;)</code> loop.
+                    FreeRTOS schedules those tasks after creation.
+                </div>
+
+            </section>
+
+            <!-- ===================================================== -->
+            <!-- SECTION 7 -->
+            <!-- ===================================================== -->
+
+            <section class="section">
+
+                <div class="section-header">
+                    <div class="section-number">07 // DEEP DIVE</div>
+                    <h2>Understand the Code</h2>
+                    <p class="lead">
+                        Let's decode the important FreeRTOS pieces instead
+                        of blindly copying them.
+                    </p>
+                </div>
+
+                <div class="grid grid-2">
+
+                    <div class="card">
+                        <h3>xPortGetCoreID()</h3>
+                        <p>
+                            This returns the CPU core on which the calling
+                            task is currently executing.
+                        </p>
+
+                        <div class="code-wrap">
+                            <div class="code-header">
+                                <span class="code-language">
+                                    C++
+                                </span>
+                            </div>
+
+                            <pre class="code">Serial.println(xPortGetCoreID());</pre>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>for(;;)</h3>
+                        <p>
+                            This is an infinite loop:
+                        </p>
+
+                        <div class="code-wrap">
+                            <div class="code-header">
+                                <span class="code-language">
+                                    C++
+                                </span>
+                            </div>
+
+                            <pre class="code">for (;;) {
+    // task work
+}</pre>
+                        </div>
+
+                        <p>
+                            A task normally needs to remain alive instead
+                            of simply reaching the end of its function.
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <h3>vTaskDelay()</h3>
+                        <p>
+                            The task becomes blocked for the requested
+                            number of RTOS ticks. Other schedulable work
+                            can use the CPU while this task waits.
+                        </p>
+
+                        <div class="code-wrap">
+                            <div class="code-header">
+                                <span class="code-language">
+                                    C++
+                                </span>
+                            </div>
+
+                            <pre class="code">vTaskDelay(1000 / portTICK_PERIOD_MS);</pre>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>xTaskCreatePinnedToCore()</h3>
+                        <p>
+                            This creates a FreeRTOS task and specifies
+                            which CPU core it is allowed to execute on.
+                        </p>
+
+                        <div class="code-wrap">
+                            <div class="code-header">
+                                <span class="code-language">
+                                    C++
+                                </span>
+                            </div>
+
+                            <pre class="code">xTaskCreatePinnedToCore(
+    Task1code,
+    "Task1",
+    10000,
+    NULL,
+    1,
+    &Task1,
+    0
+);</pre>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="callout warning">
+                    <strong>⚠️ Tick ≠ processor cycle:</strong>
+                    FreeRTOS "ticks" are scheduler time units, not CPU
+                    clock cycles. The expression
+                    <code class="inline">
+                        1000 / portTICK_PERIOD_MS
+                    </code>
+                    converts approximately one second into the number
+                    of RTOS ticks expected by
+                    <code class="inline">vTaskDelay()</code>.
+                </div>
+
+                <div class="table-wrap">
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Meaning</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            <tr>
+                                <td>Task function</td>
+                                <td>The function executed by the task.</td>
+                            </tr>
+
+                            <tr>
+                                <td>Task name</td>
+                                <td>A human-readable task name.</td>
+                            </tr>
+
+                            <tr>
+                                <td>Stack size</td>
+                                <td>Stack memory allocated for the task.</td>
+                            </tr>
+
+                            <tr>
+                                <td>Parameters</td>
+                                <td>Optional data passed into the task.</td>
+                            </tr>
+
+                            <tr>
+                                <td>Priority</td>
+                                <td>Relative scheduling priority.</td>
+                            </tr>
+
+                            <tr>
+                                <td>Task handle</td>
+                                <td>Reference used to manage the task.</td>
+                            </tr>
+
+                            <tr>
+                                <td>Core</td>
+                                <td>The CPU core on which the task is pinned.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                </div>
+
+            </section>
+
+            <!-- ===================================================== -->
+            <!-- SECTION 8 -->
+            <!-- ===================================================== -->
+
+            <section class="section">
+
+                <div class="section-header">
+                    <div class="section-number">08 // DEPLOY</div>
+                    <h2>Build + Upload + Serial</h2>
+                    <p class="lead">
+                        Time to put the scheduler on the actual ESP32.
+                    </p>
+                </div>
+
+                <div class="steps">
+
+                    <div class="step">
+                        <strong>Build</strong>
+                        <p>
+                            Click the PlatformIO
+                            <strong>Build ✓</strong>
+                            button.
+                        </p>
+                    </div>
+
+                    <div class="step">
+                        <strong>Upload</strong>
+                        <p>
+                            Connect the ESP32 by USB and click
+                            <strong>Upload →</strong>.
+                        </p>
+                    </div>
+
+                    <div class="step">
+                        <strong>Open Serial Monitor</strong>
+                        <p>
+                            Set the monitor to
+                            <code class="inline">
+                                115200 baud
+                            </code>.
+                        </p>
+                    </div>
+
+                    <div class="step">
+                        <strong>Watch the initialization</strong>
+                        <p>
+                            Each task prints the CPU core that it reports
+                            from inside its own task function.
+                        </p>
+                    </div>
+
+                </div>
+
+                <div class="code-wrap">
+
+                    <div class="code-header">
+                        <span class="code-language">
+                            Expected Serial Pattern
+                        </span>
+                    </div>
+
+                    <pre class="code">Booting Dual-Core Engine...
+Task 1 is initializing on Core: 0
+Task 2 is initializing on Core: 1</pre>
+
+                </div>
+
+                <div class="callout">
+                    <strong>Important:</strong>
+                    The exact ordering of initialization messages can vary
+                    because task scheduling begins as soon as tasks are
+                    created. What matters is that each task reports the
+                    core you pinned it to.
+                </div>
+
+            </section>
+
+            <!-- ===================================================== -->
+            <!-- SECTION 9 -->
+            <!-- ===================================================== -->
+
+            <section class="section">
+
+                <div class="section-header">
+                    <div class="section-number">09 // RESULT</div>
+                    <h2>What Should Happen?</h2>
+                    <p class="lead">
+                        The LEDs now give us a physical visualization of
+                        two independently scheduled tasks.
+                    </p>
+                </div>
+
+                <div class="grid grid-2">
+
+                    <div class="card">
+                        <div class="icon-box">🟢</div>
+                        <h3>LED 1 — D2</h3>
+                        <p>
+                            Core 0's task turns the LED ON for about
+                            1 second and OFF for about 1 second.
+                        </p>
+
+                        <div style="margin-top: 13px;">
+                            <span class="badge">
+                                1s ON / 1s OFF
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="icon-box">🔵</div>
+                        <h3>LED 2 — D4</h3>
+                        <p>
+                            Core 1's task turns the LED ON for about
+                            200 ms and OFF for about 200 ms.
+                        </p>
+
+                        <div style="margin-top: 13px;">
+                            <span class="badge">
+                                200ms ON / 200ms OFF
+                            </span>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="flow">
+
+                    <div class="flow-box">
+                        <div class="title">
+                            CORE 0
+                        </div>
+
+                        <div class="desc">
+                            LED D2<br>
+                            1000 ms delay
+                        </div>
+                    </div>
+
+                    <div class="flow-arrow">+</div>
+
+                    <div class="flow-box">
+                        <div class="title">
+                            CORE 1
+                        </div>
+
+                        <div class="desc">
+                            LED D4<br>
+                            200 ms delay
+                        </div>
+                    </div>
+
+                    <div class="flow-arrow">=</div>
+
+                    <div class="flow-box">
+                        <div class="title">
+                            SAME ESP32
+                        </div>
+
+                        <div class="desc">
+                            Two independent tasks
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="callout">
+                    <strong>🔥 The important part isn't the LEDs.</strong>
+                    The LEDs are simply our visual proof. The real lesson
+                    is that FreeRTOS is scheduling separate tasks and
+                    <code class="inline">vTaskDelay()</code>
+                    is allowing each task to sleep without occupying the
+                    CPU during its wait.
+                </div>
+
+            </section>
+
+            <!-- ===================================================== -->
+            <!-- SECTION 10 -->
+            <!-- ===================================================== -->
+
+            <section class="section">
+
+                <div class="section-header">
+                    <div class="section-number">10 // EXPERIMENT</div>
+                    <h2>Watchdog Timer Experiment</h2>
+                    <p class="lead">
+                        Let's test what actually causes watchdog trouble.
+                    </p>
+                </div>
+
+                <div class="callout warning">
+                    <strong>⚠️ Important correction:</strong>
+                    Do not deliberately replace
+                    <code class="inline">vTaskDelay()</code>
+                    with ordinary Arduino
+                    <code class="inline">delay()</code>
+                    expecting an automatic watchdog reset.
+                    In Arduino-ESP32, <code class="inline">delay()</code>
+                    generally yields through the RTOS.
+                </div>
+
+                <div class="grid grid-2">
+
+                    <div class="card">
+                        <h3>Safe waiting</h3>
+
+                        <div class="code-wrap">
+                            <div class="code-header">
+                                <span class="code-language">
+                                    C++
+                                </span>
+                            </div>
+
+                            <pre class="code">vTaskDelay(
+    200 / portTICK_PERIOD_MS
+);</pre>
+                        </div>
+
+                        <p>
+                            The current task becomes blocked for the
+                            requested time.
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <h3>What causes trouble?</h3>
+
+                        <div class="code-wrap">
+                            <div class="code-header">
+                                <span class="code-language">
+                                    C++
+                                </span>
+                            </div>
+
+                            <pre class="code">for (;;) {
+    // CPU-intensive work
+    // with no yielding
+}</pre>
+                        </div>
+
+                        <p>
+                            A task that monopolizes a core and prevents
+                            required system work from running can contribute
+                            to watchdog timeouts.
+                        </p>
+                    </div>
+
+                </div>
+
+                <h3 style="margin-top: 30px;">
+                    A safer learning experiment
+                </h3>
+
+                <p>
+                    Instead of intentionally freezing the system,
+                    temporarily add a CPU-heavy loop inside one task and
+                    observe how system responsiveness changes. Keep the
+                    experiment short and be prepared for a watchdog reset.
+                </p>
+
+                <div class="code-wrap">
+
+                    <div class="code-header">
+                        <span class="code-language">
+                            C++ // EXPERIMENT
+                        </span>
+
+                        <button class="copy-btn">
+                            Copy
+                        </button>
+                    </div>
+
+                    <pre class="code">for (;;) {
+
+    volatile unsigned long long total = 0;
+
+    for (unsigned long long i = 0;
+         i &lt; 500000000ULL;
+         i++) {
+
+        total += i;
+    }
+
+    vTaskDelay(1);
+}</pre>
+
+                </div>
+
+                <div class="callout danger">
+                    <strong>🚨 Do not treat watchdog resets as crashes to fear.</strong>
+                    A watchdog reset is a deliberate recovery mechanism.
+                    In real embedded development, you design tasks so
+                    they yield, block appropriately, or synchronize with
+                    the rest of the system rather than intentionally
+                    starving the scheduler.
+                </div>
+
+            </section>
+
+            <!-- ===================================================== -->
+            <!-- SECTION 11 -->
+            <!-- ===================================================== -->
+
+            <section class="section">
+
+                <div class="section-header">
+                    <div class="section-number">11 // CHALLENGE</div>
+                    <h2>One Core for Math. One for Hardware.</h2>
+                    <p class="lead">
+                        Now let's stop treating the two cores as simple
+                        LED blinkers.
+                    </p>
+                </div>
+
+                <div class="challenge">
+
+                    <div class="tag">
+                        Mission // Split the workload
+                    </div>
+
+                    <h3>
+                        Print a counter on Core 0 while Core 1 keeps
+                        blinking the LED.
+                    </h3>
+
+                    <p>
+                        Modify the project so that Task 1 becomes a
+                        computation/logging task while Task 2 remains
+                        responsible for the fast LED.
+                    </p>
+
+                    <ul class="checklist">
+                        <li>
+                            Create
+                            <code class="inline">
+                                int counter = 0;
+                            </code>
+                        </li>
+
+                        <li>
+                            In Task 1, increment the counter.
+                        </li>
+
+                        <li>
+                            Print the counter every second.
+                        </li>
+
+                        <li>
+                            Keep Task 1 pinned to Core 0.
+                        </li>
+
+                        <li>
+                            Keep the LED task pinned to Core 1.
+                        </li>
+
+                        <li>
+                            Use
+                            <code class="inline">
+                                vTaskDelay()
+                            </code>
+                            so the task yields while waiting.
+                        </li>
+                    </ul>
+
+                </div>
+
+                <h3 style="margin-top: 30px;">
+                    Your target architecture
+                </h3>
+
+                <div class="core-map">
+
+                    <div class="core">
+                        <div class="core-number">CORE 0</div>
+                        <h3>COUNTER</h3>
+                        <p>
+                            counter = counter + 1<br>
+                            Serial output<br>
+                            every 1 second
+                        </p>
+                    </div>
+
+                    <div class="chip">
+                        SAME<br>
+                        ESP32
+                    </div>
+
+                    <div class="core">
+                        <div class="core-number">CORE 1</div>
+                        <h3>LED</h3>
+                        <p>
+                            Fast blinking<br>
+                            200 ms timing
+                        </p>
+                    </div>
+
+                </div>
+
+                <div class="callout">
+                    <strong>Boss-level thinking:</strong>
+                    You're beginning to separate a program into
+                    responsibilities. One task can handle computation or
+                    communication while another handles time-sensitive
+                    hardware work. Real embedded systems use this kind of
+                    architecture constantly—but they also need proper
+                    synchronization when tasks share data.
+                </div>
+
+            </section>
+
+            <!-- ===================================================== -->
+            <!-- SECTION 12 -->
+            <!-- ===================================================== -->
+
+            <section class="section">
+
+                <div class="section-header">
+                    <div class="section-number">12 // DEBUG</div>
+                    <h2>Troubleshooting</h2>
+                    <p class="lead">
+                        FreeRTOS errors can look intimidating. Start with
+                        the architecture instead of randomly changing code.
+                    </p>
+                </div>
+
+                <div class="grid">
+
+                    <div class="card">
+                        <h3>🔴 ESP32 keeps rebooting</h3>
+                        <p>
+                            Look for watchdog messages, stack problems,
+                            memory exhaustion, or a task that is consuming
+                            a core without yielding when it should.
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <h3>🔴 Task never appears in Serial Monitor</h3>
+                        <p>
+                            Check whether
+                            <code class="inline">
+                                xTaskCreatePinnedToCore()
+                            </code>
+                            succeeded and verify that the task function
+                            actually reaches its first Serial statement.
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <h3>🔴 Compilation error around task creation</h3>
+                        <p>
+                            Count the parameters carefully. Make sure the
+                            task handle uses
+                            <code class="inline">&amp;Task1</code>
+                            and the final parameter is a valid core number
+                            for your dual-core target.
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <h3>🔴 Both LEDs are dead</h3>
+                        <p>
+                            Check GPIO numbers, LED polarity, common GND,
+                            resistor placement, and breadboard rows.
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <h3>🔴 Core number isn't what you expected</h3>
+                        <p>
+                            Confirm the board is actually a dual-core ESP32
+                            and that your selected Arduino-ESP32 version
+                            supports the pinning API being used.
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <h3>🔴 Random instability</h3>
+                        <p>
+                            Look for tasks using too much stack, shared
+                            variables without synchronization, blocking
+                            operations, or excessive CPU consumption.
+                        </p>
+                    </div>
+
+                </div>
+
+                <div class="callout warning">
+                    <strong>Advanced warning:</strong>
+                    Once two tasks access the same variable or hardware,
+                    "it works on my board" is not enough. You may need
+                    synchronization primitives such as mutexes, semaphores,
+                    queues, or task notifications to prevent race conditions.
+                </div>
+
+            </section>
+
+            <!-- ===================================================== -->
+            <!-- SECTION 13 -->
+            <!-- ===================================================== -->
+
+            <section class="section">
+
+                <div class="section-header">
+                    <div class="section-number">13 // VOCABULARY</div>
+                    <h2>New Vocabulary</h2>
+                    <p class="lead">
+                        These are words you'll see everywhere once you
+                        start working with embedded RTOS systems.
+                    </p>
+                </div>
+
+                <div class="table-wrap">
+
+                    <table>
+
+                        <thead>
+                            <tr>
+                                <th>Term</th>
+                                <th>Meaning</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            <tr>
+                                <td>
+                                    <strong class="highlight">
+                                        FreeRTOS
+                                    </strong>
+                                </td>
+
+                                <td>
+                                    A real-time operating-system kernel
+                                    used within the ESP32 software stack
+                                    to schedule and manage tasks.
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    <strong class="highlight">
+                                        Task
+                                    </strong>
+                                </td>
+
+                                <td>
+                                    An independently scheduled unit of
+                                    work managed by FreeRTOS.
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    <strong class="highlight">
+                                        Core Pinning
+                                    </strong>
+                                </td>
+
+                                <td>
+                                    Restricting a task to a particular CPU
+                                    core.
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    <strong class="highlight">
+                                        Scheduler
+                                    </strong>
+                                </td>
+
+                                <td>
+                                    The operating-system mechanism that
+                                    decides which ready task should run.
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    <strong class="highlight">
+                                        vTaskDelay()
+                                    </strong>
+                                </td>
+
+                                <td>
+                                    Blocks the current task for a number
+                                    of RTOS ticks, allowing other work to
+                                    execute.
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    <strong class="highlight">
+                                        Watchdog Timer
+                                    </strong>
+                                </td>
+
+                                <td>
+                                    A recovery mechanism that can reset
+                                    the system when required software
+                                    responsiveness is not maintained.
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    <strong class="highlight">
+                                        Concurrent
+                                    </strong>
+                                </td>
+
+                                <td>
+                                    Multiple tasks making progress during
+                                    overlapping periods of time.
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    <strong class="highlight">
+                                        Parallel
+                                    </strong>
+                                </td>
+
+                                <td>
+                                    Work physically executing at the same
+                                    time on separate processing resources.
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    <strong class="highlight">
+                                        Race Condition
+                                    </strong>
+                                </td>
+
+                                <td>
+                                    A bug where the result depends on the
+                                    timing or ordering of concurrent access
+                                    to shared data.
+                                </td>
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </section>
+
+            <!-- ===================================================== -->
+            <!-- SECTION 14 -->
+            <!-- ===================================================== -->
+
+            <section class="section">
+
+                <div class="hero">
+
+                    <div class="eyebrow">
+                        Project 34 // Complete
+                    </div>
+
+                    <h1>
+                        YOU JUST ENTERED<br>
+                        RTOS MODE. ⚡
+                    </h1>
+
+                    <p class="hero-subtitle">
+                        Bro, this is a serious milestone.
+                        You moved beyond simply writing Arduino
+                        <code class="inline">loop()</code> code and
+                        started thinking about
+                        <strong>tasks, scheduling, CPU cores, blocking,
+                        yielding, and system architecture.</strong>
+                    </p>
+
+                    <div class="terminal">
+                        <span class="dim">hardware:</span>
+                        ESP32<br>
+                        <span class="dim">cores:</span>
+                        CORE_0 + CORE_1<br>
+                        <span class="dim">scheduler:</span>
+                        FreeRTOS<br>
+                        <span class="dim">tasks:</span>
+                        2<br>
+                        <span class="dim">architecture:</span>
+                        <span class="highlight">
+                            MULTI-TASK
+                        </span><br>
+                        <span class="dim">status:</span>
+                        <span class="highlight">
+                            MISSION COMPLETE
+                        </span>
+                    </div>
+
+                </div>
+
+                <div class="grid grid-2" style="margin-top: 18px;">
+
+                    <div class="card">
+                        <div class="icon-box">🧠</div>
+
+                        <h3>
+                            What You Can Now Understand
+                        </h3>
+
+                        <ul class="checklist">
+                            <li>FreeRTOS tasks</li>
+                            <li>Task priorities</li>
+                            <li>Core pinning</li>
+                            <li>RTOS delays</li>
+                            <li>Watchdog behavior</li>
+                            <li>Concurrent task architecture</li>
+                            <li>Why shared data needs synchronization</li>
+                        </ul>
+                    </div>
+
+                    <div class="card">
+                        <div class="icon-box">🚀</div>
+
+                        <h3>
+                            The Final Boss
+                        </h3>
+
+                        <p>
+                            You've now touched hardware, GPIO,
+                            state machines, timers, sensors, Wi-Fi,
+                            HTTP, APIs, JSON, OLED graphics,
+                            JavaScript control, WebSockets,
+                            ESP-NOW concepts, and FreeRTOS.
+                        </p>
+
+                        <p>
+                            There's one project left:
+                            <strong class="highlight">
+                                the ultimate integration.
+                            </strong>
+                        </p>
+                    </div>
+
+                </div>
+
+                <div class="callout" style="margin-top: 18px;">
+                    <strong>🎯 One final architecture lesson:</strong>
+                    More cores do not automatically make software better.
+                    Good embedded engineering is about dividing work,
+                    choosing appropriate timing mechanisms, keeping tasks
+                    responsive, protecting shared resources, and knowing
+                    exactly why each task exists.
+                </div>
+
+                <div
+                    class="card"
+                    style="
+                        margin-top: 18px;
+                        border-color: rgba(0, 255, 136, 0.25);
+                    "
+                >
+                    <h3>
+                        PROJECT 35 // THE ULTIMATE INTEGRATION
+                    </h3>
+
+                    <p>
+                        This is the boss fight.
+                        We're going to combine almost everything you've
+                        learned into one flagship ESP32 system.
+                    </p>
+
+                    <div class="flow">
+
+                        <div class="flow-box">
+                            <div class="title">HARDWARE</div>
+                            <div class="desc">
+                                GPIO + Sensors + OLED
+                            </div>
+                        </div>
+
+                        <div class="flow-arrow">+</div>
+
+                        <div class="flow-box">
+                            <div class="title">NETWORKING</div>
+                            <div class="desc">
+                                Wi-Fi + Web + WebSockets
+                            </div>
+                        </div>
+
+                        <div class="flow-arrow">+</div>
+
+                        <div class="flow-box">
+                            <div class="title">SOFTWARE</div>
+                            <div class="desc">
+                                millis() + FreeRTOS
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <p
+                        style="
+                            color: var(--green);
+                            font-family: monospace;
+                            font-weight: 800;
+                        "
+                    >
+                        NEXT.EXE → PROJECT 35
+                    </p>
+                </div>
+
+                <div class="footer-note">
+                    Use ← and → to navigate • Progress is saved locally
+                </div>
+
+            </section>
+
+            <!-- NAVIGATION -->
+            <div class="nav-controls">
+
+                <button
+                    class="nav-btn"
+                    id="prevBtn"
+                    disabled
+                >
+                    ← Previous
+                </button>
+
+                <span
+                    style="
+                        display: flex;
+                        align-items: center;
+                        gap: 6px;
+                        color: #506a5c;
+                        font-size: 10px;
+                    "
+                >
+                    <span class="kbd">←</span>
+                    <span class="kbd">→</span>
+                </span>
+
+                <button
+                    class="nav-btn"
+                    id="nextBtn"
+                >
+                    Next →
+                </button>
+
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        const sections = [
+            ...document.querySelectorAll(".section")
+        ];
+
+        const navItems = [
+            ...document.querySelectorAll(".nav-item")
+        ];
+
+        const progressFill =
+            document.getElementById("progressFill");
+
+        const progressText =
+            document.getElementById("progressText");
+
+        const mobileProgress =
+            document.getElementById("mobileProgress");
+
+        const prevBtn =
+            document.getElementById("prevBtn");
+
+        const nextBtn =
+            document.getElementById("nextBtn");
+
+        let currentSection = 0;
+
+        function updateSection(index) {
+            index = Math.max(
+                0,
+                Math.min(index, sections.length - 1)
+            );
+
+            currentSection = index;
+
+            sections.forEach((section, i) => {
+                section.classList.toggle(
+                    "active",
+                    i === currentSection
+                );
+            });
+
+            navItems.forEach((item, i) => {
+                item.classList.toggle(
+                    "active",
+                    i === currentSection
+                );
+            });
+
+            const progress =
+                ((currentSection + 1) / sections.length) * 100;
+
+            progressFill.style.width =
+                `${progress}%`;
+
+            progressText.textContent =
+                `${currentSection + 1} / ${sections.length}`;
+
+            mobileProgress.textContent =
+                `${String(currentSection + 1).padStart(2, "0")} / ${sections.length}`;
+
+            prevBtn.disabled =
+                currentSection === 0;
+
+            nextBtn.disabled =
+                currentSection === sections.length - 1;
+
+            window.scrollTo({
+                top: 0,
+                behavior: "smooth"
+            });
+
+            localStorage.setItem(
+                "qc-esp32-project-34-section",
+                currentSection
+            );
+        }
+
+        navItems.forEach((item) => {
+            item.addEventListener("click", () => {
+                updateSection(
+                    Number(item.dataset.section)
+                );
+            });
+        });
+
+        prevBtn.addEventListener("click", () => {
+            updateSection(currentSection - 1);
+        });
+
+        nextBtn.addEventListener("click", () => {
+            updateSection(currentSection + 1);
+        });
+
+        document.addEventListener("keydown", (event) => {
+            if (
+                event.target.tagName === "INPUT" ||
+                event.target.tagName === "TEXTAREA"
+            ) {
+                return;
+            }
+
+            if (event.key === "ArrowLeft") {
+                updateSection(currentSection - 1);
+            }
+
+            if (event.key === "ArrowRight") {
+                updateSection(currentSection + 1);
+            }
+        });
+
+        document
+            .querySelectorAll(".copy-btn")
+            .forEach((button) => {
+
+                button.addEventListener(
+                    "click",
+                    async () => {
+
+                        const code =
+                            button
+                                .closest(".code-wrap")
+                                .querySelector("pre.code")
+                                .innerText;
+
+                        try {
+
+                            await navigator.clipboard.writeText(
+                                code
+                            );
+
+                            const original =
+                                button.textContent;
+
+                            button.textContent =
+                                "Copied ✓";
+
+                            button.style.color =
+                                "var(--green)";
+
+                            setTimeout(() => {
+
+                                button.textContent =
+                                    original;
+
+                                button.style.color =
+                                    "";
+
+                            }, 1400);
+
+                        } catch {
+
+                            const original =
+                                button.textContent;
+
+                            button.textContent =
+                                "Copy failed";
+
+                            setTimeout(() => {
+                                button.textContent =
+                                    original;
+                            }, 1400);
+                        }
+                    }
+                );
+            });
+
+        const savedSection =
+            Number(
+                localStorage.getItem(
+                    "qc-esp32-project-34-section"
+                )
+            );
+
+        if (
+            Number.isInteger(savedSection) &&
+            savedSection >= 0 &&
+            savedSection < sections.length
+        ) {
+            updateSection(savedSection);
+        } else {
+            updateSection(0);
+        }
+    </script>
+
+</body>
+</html>

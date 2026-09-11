@@ -1,0 +1,4695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Project 20 — Web Sensor Dashboard</title>
+
+    <style>
+        :root {
+            --bg: #050807;
+            --panel: #0b100e;
+            --panel-2: #0f1713;
+            --green: #39ff88;
+            --cyan: #45e6ff;
+            --yellow: #ffe66d;
+            --red: #ff5577;
+            --blue: #66c7ff;
+            --orange: #ffad5c;
+            --text: #e9fff0;
+            --muted: #8ca396;
+            --border: rgba(57, 255, 136, 0.18);
+            --sidebar: 285px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+
+            background:
+                radial-gradient(
+                    circle at 15% 15%,
+                    rgba(57, 255, 136, 0.09),
+                    transparent 28%
+                ),
+                radial-gradient(
+                    circle at 85% 75%,
+                    rgba(69, 230, 255, 0.07),
+                    transparent 30%
+                ),
+                var(--bg);
+
+            color: var(--text);
+
+            font-family:
+                Inter,
+                ui-sans-serif,
+                system-ui,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+        }
+
+        body::before {
+            content: "";
+
+            position: fixed;
+            inset: 0;
+
+            pointer-events: none;
+
+            opacity: 0.18;
+
+            background-image:
+                linear-gradient(
+                    rgba(57, 255, 136, 0.045) 1px,
+                    transparent 1px
+                ),
+                linear-gradient(
+                    90deg,
+                    rgba(57, 255, 136, 0.045) 1px,
+                    transparent 1px
+                );
+
+            background-size: 42px 42px;
+
+            mask-image:
+                linear-gradient(
+                    to bottom,
+                    black,
+                    transparent 85%
+                );
+        }
+
+        button {
+            font: inherit;
+        }
+
+        /* =========================================================
+           SIDEBAR
+        ========================================================== */
+
+        .sidebar {
+            position: fixed;
+
+            top: 0;
+            left: 0;
+
+            width: var(--sidebar);
+            height: 100vh;
+
+            padding: 28px 20px;
+
+            border-right:
+                1px solid var(--border);
+
+            background:
+                linear-gradient(
+                    180deg,
+                    rgba(11, 16, 14, 0.98),
+                    rgba(5, 8, 7, 0.98)
+                );
+
+            z-index: 20;
+
+            overflow-y: auto;
+        }
+
+        .brand {
+            margin-bottom: 26px;
+        }
+
+        .brand-kicker {
+            color: var(--green);
+
+            font-size: 11px;
+            font-weight: 800;
+
+            letter-spacing: 0.2em;
+
+            text-transform: uppercase;
+        }
+
+        .brand h2 {
+            margin: 7px 0 0;
+
+            font-size: 21px;
+            line-height: 1.15;
+        }
+
+        .brand p {
+            margin: 8px 0 0;
+
+            color: var(--muted);
+
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .progress-area {
+            padding: 15px;
+
+            margin-bottom: 20px;
+
+            border:
+                1px solid var(--border);
+
+            border-radius: 14px;
+
+            background:
+                rgba(57, 255, 136, 0.035);
+        }
+
+        .progress-top {
+            display: flex;
+
+            justify-content: space-between;
+            align-items: center;
+
+            margin-bottom: 9px;
+
+            color: var(--muted);
+
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .progress-text {
+            color: var(--green);
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 5px;
+
+            overflow: hidden;
+
+            border-radius: 999px;
+
+            background:
+                rgba(255, 255, 255, 0.08);
+        }
+
+        .progress-fill {
+            width: 7.14%;
+            height: 100%;
+
+            border-radius: inherit;
+
+            background: var(--green);
+
+            box-shadow:
+                0 0 14px
+                rgba(57, 255, 136, 0.7);
+
+            transition:
+                width 0.3s ease;
+        }
+
+        .nav-label {
+            margin:
+                0 0 9px 8px;
+
+            color: #557066;
+
+            font-size: 10px;
+            font-weight: 800;
+
+            letter-spacing: 0.16em;
+
+            text-transform: uppercase;
+        }
+
+        .nav {
+            display: flex;
+
+            flex-direction: column;
+
+            gap: 5px;
+        }
+
+        .nav-item {
+            width: 100%;
+
+            padding: 9px 11px;
+
+            border:
+                1px solid transparent;
+
+            border-radius: 9px;
+
+            background: transparent;
+
+            color: var(--muted);
+
+            text-align: left;
+
+            cursor: pointer;
+
+            font-size: 12px;
+
+            transition:
+                color 0.2s ease,
+                background 0.2s ease,
+                border-color 0.2s ease,
+                transform 0.2s ease;
+        }
+
+        .nav-item:hover {
+            color: var(--text);
+
+            background:
+                rgba(57, 255, 136, 0.04);
+        }
+
+        .nav-item.active {
+            color: var(--green);
+
+            border-color: var(--border);
+
+            background:
+                rgba(57, 255, 136, 0.075);
+
+            box-shadow:
+                inset 3px 0 0 var(--green);
+        }
+
+        /* =========================================================
+           MAIN
+        ========================================================== */
+
+        .main {
+            min-height: 100vh;
+
+            margin-left: var(--sidebar);
+        }
+
+        .topbar {
+            position: sticky;
+
+            top: 0;
+
+            z-index: 10;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            padding: 17px 34px;
+
+            border-bottom:
+                1px solid
+                rgba(255, 255, 255, 0.06);
+
+            background:
+                rgba(5, 8, 7, 0.82);
+
+            backdrop-filter: blur(16px);
+        }
+
+        .topbar-left {
+            display: flex;
+
+            align-items: center;
+
+            gap: 10px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+
+            border-radius: 50%;
+
+            background: var(--green);
+
+            box-shadow:
+                0 0 12px var(--green);
+        }
+
+        .topbar-title {
+            color: var(--muted);
+
+            font-size: 12px;
+        }
+
+        .mobile-progress {
+            display: none;
+
+            color: var(--green);
+
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .content {
+            width:
+                min(
+                    1100px,
+                    calc(100% - 52px)
+                );
+
+            margin: 0 auto;
+
+            padding:
+                48px 0 90px;
+        }
+
+        .section {
+            display: none;
+
+            animation:
+                sectionIn
+                0.32s ease;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes sectionIn {
+            from {
+                opacity: 0;
+
+                transform:
+                    translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+
+                transform:
+                    translateY(0);
+            }
+        }
+
+        /* =========================================================
+           HERO
+        ========================================================== */
+
+        .hero {
+            position: relative;
+
+            overflow: hidden;
+
+            padding: 42px;
+
+            border:
+                1px solid var(--border);
+
+            border-radius: 24px;
+
+            background:
+                radial-gradient(
+                    circle at 85% 20%,
+                    rgba(57, 255, 136, 0.11),
+                    transparent 30%
+                ),
+                linear-gradient(
+                    135deg,
+                    rgba(57, 255, 136, 0.045),
+                    rgba(69, 230, 255, 0.025)
+                ),
+                var(--panel);
+
+            box-shadow:
+                0 0 70px
+                rgba(57, 255, 136, 0.035),
+
+                inset 0 1px 0
+                rgba(255, 255, 255, 0.03);
+        }
+
+        .hero::after {
+            content: "PROJECT_20";
+
+            position: absolute;
+
+            right: 28px;
+            bottom: 17px;
+
+            color:
+                rgba(57, 255, 136, 0.06);
+
+            font-family: monospace;
+
+            font-size: 56px;
+            font-weight: 900;
+
+            pointer-events: none;
+        }
+
+        .eyebrow {
+            margin-bottom: 10px;
+
+            color: var(--green);
+
+            font-family: monospace;
+
+            font-size: 12px;
+            font-weight: 800;
+
+            letter-spacing: 0.14em;
+
+            text-transform: uppercase;
+        }
+
+        h1 {
+            max-width: 820px;
+
+            margin: 0;
+
+            font-size:
+                clamp(
+                    36px,
+                    5vw,
+                    66px
+                );
+
+            line-height: 0.98;
+
+            letter-spacing: -0.045em;
+        }
+
+        .hero-subtitle {
+            max-width: 780px;
+
+            margin:
+                22px 0 0;
+
+            color: var(--muted);
+
+            font-size: 17px;
+
+            line-height: 1.75;
+        }
+
+        .terminal {
+            position: relative;
+
+            z-index: 1;
+
+            margin-top: 30px;
+
+            padding: 18px 20px;
+
+            border:
+                1px solid
+                rgba(57, 255, 136, 0.18);
+
+            border-radius: 13px;
+
+            background: #030504;
+
+            color: #a8ffca;
+
+            font-family:
+                "SFMono-Regular",
+                Consolas,
+                monospace;
+
+            font-size: 13px;
+
+            line-height: 1.8;
+        }
+
+        .terminal .dim {
+            color: #557066;
+        }
+
+        .terminal .prompt {
+            color: var(--green);
+        }
+
+        /* =========================================================
+           TYPOGRAPHY
+        ========================================================== */
+
+        .section-header {
+            margin-bottom: 26px;
+        }
+
+        .section-number {
+            margin-bottom: 7px;
+
+            color: var(--green);
+
+            font-family: monospace;
+
+            font-size: 11px;
+            font-weight: 800;
+
+            letter-spacing: 0.16em;
+
+            text-transform: uppercase;
+        }
+
+        h2 {
+            margin: 0;
+
+            font-size:
+                clamp(
+                    28px,
+                    4vw,
+                    42px
+                );
+
+            line-height: 1.05;
+
+            letter-spacing: -0.035em;
+        }
+
+        h3 {
+            margin:
+                0 0 10px;
+
+            font-size: 18px;
+        }
+
+        p {
+            color: #b4c8bc;
+
+            line-height: 1.75;
+        }
+
+        /* =========================================================
+           CARDS
+        ========================================================== */
+
+        .grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    2,
+                    minmax(0, 1fr)
+                );
+
+            gap: 16px;
+        }
+
+        .card {
+            padding: 22px;
+
+            border:
+                1px solid var(--border);
+
+            border-radius: 17px;
+
+            background:
+                rgba(11, 16, 14, 0.82);
+        }
+
+        .card.full {
+            grid-column: 1 / -1;
+        }
+
+        .card.green {
+            border-color:
+                rgba(57, 255, 136, 0.3);
+
+            background:
+                rgba(57, 255, 136, 0.035);
+        }
+
+        .card.blue {
+            border-color:
+                rgba(102, 199, 255, 0.28);
+
+            background:
+                rgba(102, 199, 255, 0.03);
+        }
+
+        .card.yellow {
+            border-color:
+                rgba(255, 230, 109, 0.28);
+
+            background:
+                rgba(255, 230, 109, 0.03);
+        }
+
+        .card.red {
+            border-color:
+                rgba(255, 85, 119, 0.3);
+
+            background:
+                rgba(255, 85, 119, 0.03);
+        }
+
+        .card.orange {
+            border-color:
+                rgba(255, 173, 92, 0.28);
+
+            background:
+                rgba(255, 173, 92, 0.03);
+        }
+
+        .tag {
+            display: inline-flex;
+
+            margin-bottom: 12px;
+
+            padding:
+                5px 9px;
+
+            border:
+                1px solid var(--border);
+
+            border-radius: 999px;
+
+            color: var(--green);
+
+            font-family: monospace;
+
+            font-size: 10px;
+            font-weight: 800;
+
+            letter-spacing: 0.08em;
+
+            text-transform: uppercase;
+        }
+
+        .tag.blue {
+            color: var(--blue);
+
+            border-color:
+                rgba(102, 199, 255, 0.25);
+        }
+
+        .tag.yellow {
+            color: var(--yellow);
+
+            border-color:
+                rgba(255, 230, 109, 0.25);
+        }
+
+        .tag.red {
+            color: var(--red);
+
+            border-color:
+                rgba(255, 85, 119, 0.25);
+        }
+
+        .tag.orange {
+            color: var(--orange);
+
+            border-color:
+                rgba(255, 173, 92, 0.25);
+        }
+
+        /* =========================================================
+           LIST
+        ========================================================== */
+
+        .list {
+            display: grid;
+
+            gap: 9px;
+
+            margin: 0;
+
+            padding: 0;
+
+            list-style: none;
+        }
+
+        .list li {
+            position: relative;
+
+            padding-left: 20px;
+
+            color: #b4c8bc;
+
+            line-height: 1.65;
+        }
+
+        .list li::before {
+            content: "›";
+
+            position: absolute;
+
+            left: 0;
+
+            color: var(--green);
+
+            font-weight: 900;
+        }
+
+        /* =========================================================
+           CALLOUTS
+        ========================================================== */
+
+        .callout {
+            margin: 18px 0;
+
+            padding:
+                18px 20px;
+
+            border-left:
+                3px solid var(--green);
+
+            border-radius:
+                0 12px 12px 0;
+
+            background:
+                rgba(57, 255, 136, 0.045);
+        }
+
+        .callout strong {
+            color: var(--green);
+        }
+
+        .callout.warning {
+            border-left-color:
+                var(--yellow);
+
+            background:
+                rgba(255, 230, 109, 0.045);
+        }
+
+        .callout.warning strong {
+            color: var(--yellow);
+        }
+
+        .callout.danger {
+            border-left-color:
+                var(--red);
+
+            background:
+                rgba(255, 85, 119, 0.045);
+        }
+
+        .callout.danger strong {
+            color: var(--red);
+        }
+
+        .callout.info {
+            border-left-color:
+                var(--cyan);
+
+            background:
+                rgba(69, 230, 255, 0.045);
+        }
+
+        .callout.info strong {
+            color: var(--cyan);
+        }
+
+        /* =========================================================
+           FLOW
+        ========================================================== */
+
+        .flow {
+            display: flex;
+
+            flex-wrap: wrap;
+
+            align-items: center;
+
+            justify-content: center;
+
+            gap: 10px;
+
+            margin: 25px 0;
+        }
+
+        .flow-box {
+            min-width: 145px;
+
+            padding:
+                15px 16px;
+
+            border:
+                1px solid var(--border);
+
+            border-radius: 12px;
+
+            background:
+                var(--panel-2);
+
+            text-align: center;
+        }
+
+        .flow-box strong {
+            display: block;
+
+            margin-bottom: 5px;
+
+            color: var(--green);
+
+            font-size: 13px;
+        }
+
+        .flow-box span {
+            color: var(--muted);
+
+            font-size: 11px;
+        }
+
+        .arrow {
+            color: var(--green);
+
+            font-family: monospace;
+
+            font-size: 20px;
+        }
+
+        /* =========================================================
+           WIRING
+        ========================================================== */
+
+        .wiring {
+            padding: 24px;
+
+            border:
+                1px solid var(--border);
+
+            border-radius: 17px;
+
+            background: #030504;
+
+            overflow-x: auto;
+        }
+
+        .wiring pre {
+            margin: 0;
+
+            color: #a8ffca;
+
+            font-family:
+                "SFMono-Regular",
+                Consolas,
+                monospace;
+
+            font-size: 13px;
+
+            line-height: 1.8;
+        }
+
+        /* =========================================================
+           TABLE
+        ========================================================== */
+
+        .pin-table {
+            width: 100%;
+
+            border-collapse: collapse;
+
+            margin-top: 20px;
+        }
+
+        .pin-table th,
+        .pin-table td {
+            padding:
+                12px 14px;
+
+            border-bottom:
+                1px solid
+                rgba(255, 255, 255, 0.07);
+
+            text-align: left;
+
+            font-size: 13px;
+        }
+
+        .pin-table th {
+            color: var(--green);
+
+            font-size: 11px;
+
+            letter-spacing: 0.08em;
+
+            text-transform: uppercase;
+        }
+
+        .pin-table td {
+            color: #b4c8bc;
+        }
+
+        .pin {
+            color: var(--cyan);
+
+            font-family: monospace;
+        }
+
+        /* =========================================================
+           STEPS
+        ========================================================== */
+
+        .steps {
+            display: grid;
+
+            gap: 12px;
+        }
+
+        .step {
+            display: flex;
+
+            gap: 15px;
+
+            padding: 17px;
+
+            border:
+                1px solid
+                rgba(255, 255, 255, 0.07);
+
+            border-radius: 13px;
+
+            background:
+                rgba(255, 255, 255, 0.018);
+        }
+
+        .step-number {
+            flex:
+                0 0 30px;
+
+            width: 30px;
+            height: 30px;
+
+            border:
+                1px solid var(--border);
+
+            border-radius: 50%;
+
+            color: var(--green);
+
+            display: grid;
+
+            place-items: center;
+
+            font-family: monospace;
+
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .step-content strong {
+            display: block;
+
+            margin-bottom: 5px;
+
+            color: var(--text);
+        }
+
+        .step-content span {
+            color: var(--muted);
+
+            font-size: 13px;
+
+            line-height: 1.6;
+        }
+
+        /* =========================================================
+           CODE
+        ========================================================== */
+
+        .code-wrap {
+            position: relative;
+
+            margin: 18px 0;
+
+            border:
+                1px solid
+                rgba(57, 255, 136, 0.15);
+
+            border-radius: 15px;
+
+            background: #020403;
+
+            overflow: hidden;
+        }
+
+        .code-head {
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            padding:
+                9px 13px;
+
+            border-bottom:
+                1px solid
+                rgba(255, 255, 255, 0.06);
+
+            background:
+                rgba(255, 255, 255, 0.025);
+        }
+
+        .code-lang {
+            color: #557066;
+
+            font-family: monospace;
+
+            font-size: 10px;
+            font-weight: 800;
+
+            letter-spacing: 0.12em;
+
+            text-transform: uppercase;
+        }
+
+        .copy-btn {
+            padding:
+                5px 9px;
+
+            border:
+                1px solid
+                rgba(57, 255, 136, 0.18);
+
+            border-radius: 7px;
+
+            background: transparent;
+
+            color: var(--muted);
+
+            cursor: pointer;
+
+            font-family: monospace;
+
+            font-size: 10px;
+        }
+
+        .copy-btn:hover {
+            color: var(--green);
+
+            border-color:
+                rgba(57, 255, 136, 0.4);
+        }
+
+        pre.code {
+            margin: 0;
+
+            padding: 19px;
+
+            color: #b8ffd1;
+
+            font-family:
+                "SFMono-Regular",
+                Consolas,
+                "Liberation Mono",
+                monospace;
+
+            font-size: 12px;
+
+            line-height: 1.75;
+
+            white-space: pre;
+
+            overflow-x: auto;
+        }
+
+        .inline-code {
+            padding:
+                2px 6px;
+
+            border:
+                1px solid
+                rgba(57, 255, 136, 0.15);
+
+            border-radius: 5px;
+
+            background:
+                rgba(57, 255, 136, 0.05);
+
+            color: var(--green);
+
+            font-family: monospace;
+
+            font-size: 0.92em;
+        }
+
+        /* =========================================================
+           SENSOR CARDS
+        ========================================================== */
+
+        .sensor-grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    3,
+                    minmax(0, 1fr)
+                );
+
+            gap: 14px;
+
+            margin: 24px 0;
+        }
+
+        .sensor-card {
+            padding: 20px;
+
+            border:
+                1px solid
+                rgba(255, 255, 255, 0.07);
+
+            border-radius: 16px;
+
+            background:
+                var(--panel-2);
+
+            text-align: center;
+        }
+
+        .sensor-icon {
+            font-size: 35px;
+
+            margin-bottom: 9px;
+        }
+
+        .sensor-value {
+            color: var(--green);
+
+            font-family: monospace;
+
+            font-size: 25px;
+            font-weight: 900;
+        }
+
+        .sensor-label {
+            margin-top: 5px;
+
+            color: var(--muted);
+
+            font-size: 11px;
+
+            text-transform: uppercase;
+
+            letter-spacing: 0.1em;
+        }
+
+        /* =========================================================
+           VOCAB
+        ========================================================== */
+
+        .vocab {
+            display: grid;
+
+            grid-template-columns:
+                190px 1fr;
+
+            border:
+                1px solid
+                rgba(255, 255, 255, 0.07);
+
+            border-radius: 15px;
+
+            overflow: hidden;
+        }
+
+        .vocab > div {
+            padding:
+                13px 15px;
+
+            border-bottom:
+                1px solid
+                rgba(255, 255, 255, 0.06);
+        }
+
+        .vocab > div:nth-child(odd) {
+            color: var(--green);
+
+            font-family: monospace;
+
+            font-size: 12px;
+            font-weight: 800;
+
+            background:
+                rgba(57, 255, 136, 0.025);
+        }
+
+        .vocab > div:nth-child(even) {
+            color: var(--muted);
+
+            font-size: 13px;
+        }
+
+        /* =========================================================
+           EXPECTED
+        ========================================================== */
+
+        .expected {
+            padding: 20px;
+
+            border:
+                1px solid
+                rgba(57, 255, 136, 0.18);
+
+            border-radius: 15px;
+
+            background: #030504;
+        }
+
+        .expected pre {
+            margin: 0;
+
+            color: #a8ffca;
+
+            font-family: monospace;
+
+            font-size: 12px;
+
+            line-height: 1.8;
+
+            white-space: pre-wrap;
+        }
+
+        /* =========================================================
+           PIPELINE
+        ========================================================== */
+
+        .pipeline {
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    5,
+                    minmax(0, 1fr)
+                );
+
+            gap: 10px;
+
+            margin: 25px 0;
+        }
+
+        .pipeline-item {
+            position: relative;
+
+            padding: 18px 12px;
+
+            border:
+                1px solid var(--border);
+
+            border-radius: 13px;
+
+            background:
+                rgba(57, 255, 136, 0.025);
+
+            text-align: center;
+        }
+
+        .pipeline-item strong {
+            display: block;
+
+            margin-bottom: 6px;
+
+            color: var(--green);
+
+            font-size: 12px;
+        }
+
+        .pipeline-item span {
+            color: var(--muted);
+
+            font-size: 10px;
+
+            line-height: 1.5;
+        }
+
+        /* =========================================================
+           CHALLENGE
+        ========================================================== */
+
+        .challenge {
+            padding: 25px;
+
+            border:
+                1px solid
+                rgba(69, 230, 255, 0.2);
+
+            border-radius: 18px;
+
+            background:
+                radial-gradient(
+                    circle at 90% 10%,
+                    rgba(69, 230, 255, 0.08),
+                    transparent 30%
+                ),
+                rgba(69, 230, 255, 0.025);
+        }
+
+        .challenge h3 {
+            color: var(--cyan);
+        }
+
+        /* =========================================================
+           NAVIGATION
+        ========================================================== */
+
+        .nav-controls {
+            display: flex;
+
+            justify-content: space-between;
+
+            gap: 12px;
+
+            margin-top: 38px;
+
+            padding-top: 22px;
+
+            border-top:
+                1px solid
+                rgba(255, 255, 255, 0.07);
+        }
+
+        .nav-btn {
+            min-width: 130px;
+
+            padding:
+                12px 18px;
+
+            border:
+                1px solid
+                rgba(57, 255, 136, 0.2);
+
+            border-radius: 10px;
+
+            background:
+                rgba(57, 255, 136, 0.035);
+
+            color: var(--text);
+
+            cursor: pointer;
+
+            transition:
+                transform 0.2s ease,
+                border-color 0.2s ease,
+                background 0.2s ease;
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            transform:
+                translateY(-1px);
+
+            border-color:
+                rgba(57, 255, 136, 0.45);
+
+            background:
+                rgba(57, 255, 136, 0.08);
+        }
+
+        .nav-btn.next {
+            color: var(--green);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.3;
+
+            cursor: not-allowed;
+        }
+
+        .tip {
+            color: var(--muted);
+
+            font-size: 12px;
+        }
+
+        .highlight {
+            color: var(--green);
+
+            font-weight: 700;
+        }
+
+        .cyan {
+            color: var(--cyan);
+        }
+
+        .yellow {
+            color: var(--yellow);
+        }
+
+        .red {
+            color: var(--red);
+        }
+
+        .blue {
+            color: var(--blue);
+        }
+
+        .orange {
+            color: var(--orange);
+        }
+
+        /* =========================================================
+           MOBILE
+        ========================================================== */
+
+        @media (max-width: 900px) {
+
+            .sidebar {
+                display: none;
+            }
+
+            .main {
+                margin-left: 0;
+            }
+
+            .topbar {
+                padding:
+                    14px 18px;
+            }
+
+            .mobile-progress {
+                display: block;
+            }
+
+            .content {
+                width:
+                    min(
+                        calc(100% - 30px),
+                        760px
+                    );
+
+                padding-top: 28px;
+            }
+
+            .hero {
+                padding:
+                    28px 23px;
+            }
+
+            .hero::after {
+                font-size: 35px;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .card.full {
+                grid-column: auto;
+            }
+
+            .sensor-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .pipeline {
+                grid-template-columns: 1fr;
+            }
+
+            .vocab {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 560px) {
+
+            h1 {
+                font-size: 38px;
+            }
+
+            .hero-subtitle {
+                font-size: 14px;
+            }
+
+            .content {
+                width:
+                    calc(100% - 22px);
+            }
+
+            .nav-controls {
+                position: sticky;
+
+                bottom: 0;
+
+                z-index: 5;
+
+                margin-left: -11px;
+                margin-right: -11px;
+
+                padding:
+                    12px 11px;
+
+                background:
+                    rgba(5, 8, 7, 0.92);
+
+                backdrop-filter: blur(12px);
+            }
+
+            .nav-btn {
+                min-width: 0;
+
+                flex: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- =========================================================
+         SIDEBAR
+    ========================================================== -->
+
+    <aside class="sidebar">
+
+        <div class="brand">
+
+            <div class="brand-kicker">
+                Quantum Core // ESP32
+            </div>
+
+            <h2>
+                Project 20
+            </h2>
+
+            <p>
+                Web Sensor Dashboard<br>
+                Wireless environmental telemetry
+            </p>
+
+        </div>
+
+        <div class="progress-area">
+
+            <div class="progress-top">
+
+                <span>
+                    GUIDE PROGRESS
+                </span>
+
+                <span
+                    class="progress-text"
+                >
+                    1 / 14
+                </span>
+
+            </div>
+
+            <div class="progress-track">
+
+                <div
+                    class="progress-fill"
+                ></div>
+
+            </div>
+
+        </div>
+
+        <div class="nav-label">
+            Navigation
+        </div>
+
+        <nav class="nav">
+
+            <button
+                class="nav-item active"
+                data-section="0"
+            >
+                01 · Mission
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="1"
+            >
+                02 · What You Have
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="2"
+            >
+                03 · What We Learn
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="3"
+            >
+                04 · Wiring
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="4"
+            >
+                05 · Create Project
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="5"
+            >
+                06 · Complete Code
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="6"
+            >
+                07 · Understand Code
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="7"
+            >
+                08 · Build + Upload
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="8"
+            >
+                09 · Test It
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="9"
+            >
+                10 · Experiment
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="10"
+            >
+                11 · Challenge
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="11"
+            >
+                12 · Troubleshooting
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="12"
+            >
+                13 · Vocabulary
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="13"
+            >
+                14 · Next Project
+            </button>
+
+        </nav>
+
+    </aside>
+
+
+    <!-- =========================================================
+         MAIN
+    ========================================================== -->
+
+    <main class="main">
+
+        <header class="topbar">
+
+            <div class="topbar-left">
+
+                <span class="status-dot"></span>
+
+                <span class="topbar-title">
+                    ESP32 LAB // WIRELESS SENSOR TELEMETRY
+                </span>
+
+            </div>
+
+            <span class="mobile-progress">
+                01 / 14
+            </span>
+
+        </header>
+
+
+        <div class="content">
+
+
+            <!-- =====================================================
+                 SECTION 01 — MISSION
+            ====================================================== -->
+
+            <section class="section active">
+
+                <div class="hero">
+
+                    <div class="eyebrow">
+                        Project 20 // Web Sensors
+                    </div>
+
+                    <h1>
+                        Web Sensor Dashboard
+                    </h1>
+
+                    <p class="hero-subtitle">
+                        Brooo, we are taking the ESP32 from a simple
+                        web-controlled device to a real wireless
+                        environmental telemetry system. 🌡️☀️⚡
+                    </p>
+
+                    <p class="hero-subtitle">
+                        We are combining the DHT11 Temperature/Humidity
+                        Sensor and the LDR Light Sensor, then sending
+                        their measurements over Wi-Fi to a dashboard
+                        running directly on your smartphone.
+                    </p>
+
+                    <div class="terminal">
+
+                        <div>
+                            <span class="dim">
+                                OLD SYSTEM:
+                            </span>
+
+                            <span class="prompt">
+                                >
+                            </span>
+
+                            ESP32 → USB → Serial Monitor
+                        </div>
+
+                        <div>
+                            <span class="dim">
+                                NEW SYSTEM:
+                            </span>
+
+                            <span class="prompt">
+                                >
+                            </span>
+
+                            Sensors → ESP32 → Wi-Fi → Phone
+                        </div>
+
+                        <div>
+                            <span class="dim">
+                                MISSION:
+                            </span>
+
+                            <span class="prompt">
+                                >
+                            </span>
+
+                            Build a wireless environmental dashboard.
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="callout info">
+
+                    <strong>
+                        The big upgrade:
+                    </strong>
+
+                    Project 19 taught us how the ESP32 can dynamically
+                    generate a webpage from its internal state.
+                    Project 20 replaces simple ON/OFF state with
+                    actual sensor measurements.
+
+                </div>
+
+                <div class="sensor-grid">
+
+                    <div class="sensor-card">
+
+                        <div class="sensor-icon">
+                            🌡️
+                        </div>
+
+                        <div class="sensor-value">
+                            24.5°C
+                        </div>
+
+                        <div class="sensor-label">
+                            Temperature
+                        </div>
+
+                    </div>
+
+                    <div class="sensor-card">
+
+                        <div class="sensor-icon">
+                            💧
+                        </div>
+
+                        <div class="sensor-value">
+                            45%
+                        </div>
+
+                        <div class="sensor-label">
+                            Humidity
+                        </div>
+
+                    </div>
+
+                    <div class="sensor-card">
+
+                        <div class="sensor-icon">
+                            ☀️
+                        </div>
+
+                        <div class="sensor-value">
+                            2370
+                        </div>
+
+                        <div class="sensor-label">
+                            Light Level
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- =====================================================
+                 SECTION 02 — MATERIALS
+            ====================================================== -->
+
+            <section class="section">
+
+                <div class="section-header">
+
+                    <div class="section-number">
+                        02 // HARDWARE
+                    </div>
+
+                    <h2>
+                        What You Have
+                    </h2>
+
+                </div>
+
+                <div class="grid">
+
+                    <div class="card">
+
+                        <span class="tag">
+                            COMPUTER
+                        </span>
+
+                        <ul class="list">
+
+                            <li>
+                                Windows laptop / PC
+                            </li>
+
+                            <li>
+                                USB cable
+                            </li>
+
+                        </ul>
+
+                    </div>
+
+                    <div class="card">
+
+                        <span class="tag">
+                            ESP32
+                        </span>
+
+                        <ul class="list">
+
+                            <li>
+                                ESP32 DevKit V1
+                            </li>
+
+                            <li>
+                                Breadboard
+                            </li>
+
+                        </ul>
+
+                    </div>
+
+                    <div class="card blue">
+
+                        <span class="tag blue">
+                            DIGITAL SENSOR
+                        </span>
+
+                        <ul class="list">
+
+                            <li>
+                                DHT11 Temperature/Humidity Sensor
+                            </li>
+
+                            <li>
+                                Jumper wires
+                            </li>
+
+                        </ul>
+
+                    </div>
+
+                    <div class="card orange">
+
+                        <span class="tag orange">
+                            ANALOG SENSOR
+                        </span>
+
+                        <ul class="list">
+
+                            <li>
+                                LDR / Photoresistor
+                            </li>
+
+                            <li>
+                                10kΩ resistor
+                            </li>
+
+                        </ul>
+
+                    </div>
+
+                    <div class="card full green">
+
+                        <span class="tag">
+                            NETWORK CLIENT
+                        </span>
+
+                        <h3>
+                            📱 Your Smartphone
+                        </h3>
+
+                        <p>
+                            The phone will connect to the same Wi-Fi
+                            network as the ESP32 and open the ESP32's
+                            local IP address.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- =====================================================
+                 SECTION 03 — LEARNING
+            ====================================================== -->
+
+            <section class="section">
+
+                <div class="section-header">
+
+                    <div class="section-number">
+                        03 // CONCEPTS
+                    </div>
+
+                    <h2>
+                        What Are We Learning?
+                    </h2>
+
+                </div>
+
+                <div class="grid">
+
+                    <div class="card green">
+
+                        <span class="tag">
+                            01 · DATA CASTING
+                        </span>
+
+                        <h3>
+                            Turning Numbers Into Text
+                        </h3>
+
+                        <p>
+                            A sensor reading such as
+                            <span class="inline-code">
+                                24.5
+                            </span>
+                            is a numeric value.
+                        </p>
+
+                        <p>
+                            Our HTML is text.
+                            So we use
+                            <span class="inline-code">
+                                String()
+                            </span>
+                            to convert the number into text that can
+                            be inserted into the HTML string.
+                        </p>
+
+                        <div class="code-wrap">
+
+                            <div class="code-head">
+
+                                <span class="code-lang">
+                                    C++
+                                </span>
+
+                                <button class="copy-btn">
+                                    Copy
+                                </button>
+
+                            </div>
+
+<pre class="code">String(temp)</pre>
+
+                        </div>
+
+                        <p>
+                            Conceptually:
+                        </p>
+
+                        <div class="flow">
+
+                            <div class="flow-box">
+
+                                <strong>
+                                    24.5
+                                </strong>
+
+                                <span>
+                                    float
+                                </span>
+
+                            </div>
+
+                            <span class="arrow">
+                                →
+                            </span>
+
+                            <div class="flow-box">
+
+                                <strong>
+                                    "24.5"
+                                </strong>
+
+                                <span>
+                                    text
+                                </span>
+
+                            </div>
+
+                            <span class="arrow">
+                                →
+                            </span>
+
+                            <div class="flow-box">
+
+                                <strong>
+                                    HTML
+                                </strong>
+
+                                <span>
+                                    browser
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="card blue">
+
+                        <span class="tag blue">
+                            02 · META REFRESH
+                        </span>
+
+                        <h3>
+                            Automatic Page Reloading
+                        </h3>
+
+                        <p>
+                            In Project 19, you manually refreshed the
+                            webpage to see new hardware state.
+                        </p>
+
+                        <p>
+                            A weather dashboard should not require
+                            you to constantly tap Refresh.
+                        </p>
+
+                        <p>
+                            The HTML
+                            <span class="inline-code">
+                                meta refresh
+                            </span>
+                            tag tells the browser to request the page
+                            again after a specified number of seconds.
+                        </p>
+
+                        <div class="code-wrap">
+
+                            <div class="code-head">
+
+                                <span class="code-lang">
+                                    HTML
+                                </span>
+
+                                <button class="copy-btn">
+                                    Copy
+                                </button>
+
+                            </div>
+
+<pre class="code">&lt;meta http-equiv="refresh" content="5"&gt;</pre>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="card full">
+
+                        <span class="tag">
+                            THE DATA PIPELINE
+                        </span>
+
+                        <div class="pipeline">
+
+                            <div class="pipeline-item">
+
+                                <strong>
+                                    SENSOR
+                                </strong>
+
+                                <span>
+                                    Measures physical world
+                                </span>
+
+                            </div>
+
+                            <div class="pipeline-item">
+
+                                <strong>
+                                    ESP32
+                                </strong>
+
+                                <span>
+                                    Reads measurements
+                                </span>
+
+                            </div>
+
+                            <div class="pipeline-item">
+
+                                <strong>
+                                    HTML
+                                </strong>
+
+                                <span>
+                                    Converts data to text
+                                </span>
+
+                            </div>
+
+                            <div class="pipeline-item">
+
+                                <strong>
+                                    Wi-Fi
+                                </strong>
+
+                                <span>
+                                    Delivers webpage
+                                </span>
+
+                            </div>
+
+                            <div class="pipeline-item">
+
+                                <strong>
+                                    PHONE
+                                </strong>
+
+                                <span>
+                                    Displays telemetry
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- =====================================================
+                 SECTION 04 — WIRING
+            ====================================================== -->
+
+            <section class="section">
+
+                <div class="section-header">
+
+                    <div class="section-number">
+                        04 // WIRING
+                    </div>
+
+                    <h2>
+                        Connect the Sensors
+                    </h2>
+
+                </div>
+
+                <div class="card blue">
+
+                    <span class="tag blue">
+                        DHT11
+                    </span>
+
+                    <h3>
+                        🌡️ Temperature + Humidity
+                    </h3>
+
+                    <table class="pin-table">
+
+                        <thead>
+
+                            <tr>
+                                <th>
+                                    DHT11
+                                </th>
+
+                                <th>
+                                    ESP32
+                                </th>
+                            </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                            <tr>
+                                <td>
+                                    VCC / +
+                                </td>
+
+                                <td class="pin">
+                                    3V3
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    DATA / S
+                                </td>
+
+                                <td class="pin">
+                                    D4
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    GND / -
+                                </td>
+
+                                <td class="pin">
+                                    Blue GND rail
+                                </td>
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+                <div class="card orange">
+
+                    <span class="tag orange">
+                        LDR
+                    </span>
+
+                    <h3>
+                        ☀️ Light-Level Voltage Divider
+                    </h3>
+
+                    <p>
+                        The LDR and 10kΩ resistor form a voltage divider.
+                        The ESP32 reads the resulting voltage through
+                        its analog input on D34.
+                    </p>
+
+                    <table class="pin-table">
+
+                        <thead>
+
+                            <tr>
+                                <th>
+                                    Component
+                                </th>
+
+                                <th>
+                                    Connection
+                                </th>
+                            </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                            <tr>
+                                <td>
+                                    LDR leg 1
+                                </td>
+
+                                <td class="pin">
+                                    3V3
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    LDR leg 2
+                                </td>
+
+                                <td class="pin">
+                                    Shared row
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    10kΩ resistor leg 1
+                                </td>
+
+                                <td class="pin">
+                                    Same shared row
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    10kΩ resistor leg 2
+                                </td>
+
+                                <td class="pin">
+                                    GND
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    ESP32 analog input
+                                </td>
+
+                                <td class="pin">
+                                    D34 → shared row
+                                </td>
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+                <div class="wiring">
+
+<pre>
+                    ESP32
+                 ┌───────────┐
+                 │           │
+       3V3 ──────┤───────────┼────► DHT11 VCC
+         │       │           │
+         │       │           │
+         └──────►│───────────┼────► LDR Leg 1
+                 │           │
+       D4  ──────┤───────────┼────► DHT11 DATA
+                 │           │
+      D34  ──────┤───────────┼────► Shared LDR Row
+                 │           │
+       GND ──────┤───────────┼────► Blue GND Rail
+                 └───────────┘
+                                  │
+                                  │
+                       ┌──────────┴──────────┐
+                       │                     │
+                    LDR Leg 2            10kΩ Resistor
+                       │                     │
+                       └────── SHARED ───────┘
+                                             │
+                                             ▼
+                                       Blue GND Rail
+</pre>
+
+                </div>
+
+                <div class="callout warning">
+
+                    <strong>
+                        DHT11 wiring note:
+                    </strong>
+
+                    DHT11 modules often have three pins and may already
+                    contain their pull-up circuitry. A bare four-pin
+                    DHT11 may require a pull-up resistor depending on
+                    the exact sensor/module. Verify the pinout of your
+                    specific sensor before powering it.
+
+                </div>
+
+            </section>
+
+
+            <!-- =====================================================
+                 SECTION 05 — CREATE PROJECT
+            ====================================================== -->
+
+            <section class="section">
+
+                <div class="section-header">
+
+                    <div class="section-number">
+                        05 // PLATFORMIO
+                    </div>
+
+                    <h2>
+                        Create the Project
+                    </h2>
+
+                </div>
+
+                <div class="steps">
+
+                    <div class="step">
+
+                        <div class="step-number">
+                            1
+                        </div>
+
+                        <div class="step-content">
+
+                            <strong>
+                                Open VS Code
+                            </strong>
+
+                            <span>
+                                Launch VS Code and open PlatformIO.
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <div class="step">
+
+                        <div class="step-number">
+                            2
+                        </div>
+
+                        <div class="step-content">
+
+                            <strong>
+                                Create a New Project
+                            </strong>
+
+                            <span>
+                                Choose PlatformIO → New Project.
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <div class="step">
+
+                        <div class="step-number">
+                            3
+                        </div>
+
+                        <div class="step-content">
+
+                            <strong>
+                                Name the project
+                            </strong>
+
+                            <span>
+                                Use
+                                <span class="inline-code">
+                                    ESP32-20-WebSensors
+                                </span>
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <div class="step">
+
+                        <div class="step-number">
+                            4
+                        </div>
+
+                        <div class="step-content">
+
+                            <strong>
+                                Select the board
+                            </strong>
+
+                            <span>
+                                DOIT ESP32 DEVKIT V1
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <div class="step">
+
+                        <div class="step-number">
+                            5
+                        </div>
+
+                        <div class="step-content">
+
+                            <strong>
+                                Select Arduino
+                            </strong>
+
+                            <span>
+                                Choose Arduino as the framework.
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="callout warning">
+
+                    <strong>
+                        STOP before opening main.cpp:
+                    </strong>
+
+                    This project uses the DHT11 library.
+                    We need to tell PlatformIO to download the
+                    required dependencies first.
+
+                </div>
+
+                <h3>
+                    Update platformio.ini
+                </h3>
+
+                <div class="code-wrap">
+
+                    <div class="code-head">
+
+                        <span class="code-lang">
+                            INI · TOML
+                        </span>
+
+                        <button class="copy-btn">
+                            Copy
+                        </button>
+
+                    </div>
+
+<pre class="code">[env:esp32doit-devkit-v1]
+platform = espressif32
+board = esp32doit-devkit-v1
+framework = arduino
+monitor_speed = 115200
+
+lib_deps =
+    adafruit/DHT sensor library
+    adafruit/Adafruit Unified Sensor</pre>
+
+                </div>
+
+                <div class="callout">
+
+                    <strong>
+                        Save with Ctrl + S.
+                    </strong>
+
+                    PlatformIO can now download the DHT11 library and
+                    the Adafruit Unified Sensor dependency when you
+                    build the project.
+
+                </div>
+
+                <div class="callout danger">
+
+                    <strong>
+                        Wi-Fi security:
+                    </strong>
+
+                    Keep
+                    <span class="inline-code">
+                        YOUR_WIFI_NAME
+                    </span>
+                    and
+                    <span class="inline-code">
+                        YOUR_PASSWORD
+                    </span>
+                    in the source until you test locally.
+                    Never commit your real Wi-Fi password to a
+                    public repository.
+
+                </div>
+
+            </section>
+
+
+            <!-- =====================================================
+                 SECTION 06 — COMPLETE CODE
+            ====================================================== -->
+
+            <section class="section">
+
+                <div class="section-header">
+
+                    <div class="section-number">
+                        06 // SOURCE CODE
+                    </div>
+
+                    <h2>
+                        Complete Code
+                    </h2>
+
+                </div>
+
+                <div class="callout warning">
+
+                    <strong>
+                        Before uploading:
+                    </strong>
+
+                    Replace the Wi-Fi placeholders with your actual
+                    local network credentials.
+
+                </div>
+
+                <div class="code-wrap">
+
+                    <div class="code-head">
+
+                        <span class="code-lang">
+                            C++ · Arduino
+                        </span>
+
+                        <button class="copy-btn">
+                            Copy
+                        </button>
+
+                    </div>
+
+<pre class="code">/*
+ * ============================================================
+ * MY BRO'S TWENTIETH ESP32 PROGRAM: WEB SENSOR DASHBOARD
+ * ============================================================
+ */
+
+#include &lt;WiFi.h&gt;
+#include &lt;WebServer.h&gt;
+#include "DHT.h"
+
+// Wi-Fi credentials
+const char* ssid = "YOUR_WIFI_NAME";
+const char* password = "YOUR_PASSWORD";
+
+WebServer server(80);
+
+// ============================================================
+// DHT11 CONFIGURATION
+// ============================================================
+
+const int DHT_PIN = 4;
+
+#define DHT_TYPE DHT11
+
+DHT dht(DHT_PIN, DHT_TYPE);
+
+// ============================================================
+// LDR CONFIGURATION
+// ============================================================
+
+const int LDR_PIN = 34;
+
+// ============================================================
+// LIVE DASHBOARD ROUTE
+// ============================================================
+
+void handle_Homepage() {
+
+    // --------------------------------------------------------
+    // 1. READ THE SENSORS
+    // --------------------------------------------------------
+
+    float temp = dht.readTemperature();
+    float hum = dht.readHumidity();
+
+    int light = analogRead(LDR_PIN);
+
+    // --------------------------------------------------------
+    // 2. START BUILDING THE HTML
+    // --------------------------------------------------------
+
+    String html =
+        "&lt;!DOCTYPE html&gt;"
+        "&lt;html&gt;"
+        "&lt;head&gt;"
+        "&lt;meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"&gt;";
+
+    // Automatically reload the webpage every 5 seconds
+    html +=
+        "&lt;meta http-equiv=\"refresh\" content=\"5\"&gt;";
+
+    html +=
+        "&lt;style&gt;"
+        "body {"
+        "font-family: sans-serif;"
+        "text-align: center;"
+        "margin-top: 50px;"
+        "background-color: #f0f8ff;"
+        "}"
+        "&lt;/style&gt;"
+        "&lt;/head&gt;"
+        "&lt;body&gt;";
+
+    html +=
+        "&lt;h1&gt;🌍 Smart Home Environment&lt;/h1&gt;";
+
+    // --------------------------------------------------------
+    // 3. CHECK FOR DHT11 ERRORS
+    // --------------------------------------------------------
+
+    if (isnan(temp) || isnan(hum)) {
+
+        html +=
+            "&lt;h2&gt;"
+            "&lt;span style=\"color:red;\"&gt;"
+            "Sensor Error! Check DHT11 Wires."
+            "&lt;/span&gt;"
+            "&lt;/h2&gt;";
+
+    }
+    else {
+
+        // ----------------------------------------------------
+        // 4. INSERT SENSOR DATA INTO THE HTML
+        // ----------------------------------------------------
+
+        html +=
+            "&lt;h2&gt;"
+            "Temperature: "
+            "&lt;span style=\"color:blue;\"&gt;"
+            + String(temp)
+            + " &amp;deg;C"
+            "&lt;/span&gt;"
+            "&lt;/h2&gt;";
+
+        html +=
+            "&lt;h2&gt;"
+            "Humidity: "
+            "&lt;span style=\"color:blue;\"&gt;"
+            + String(hum)
+            + " %"
+            "&lt;/span&gt;"
+            "&lt;/h2&gt;";
+    }
+
+    // --------------------------------------------------------
+    // 5. DISPLAY THE LDR VALUE
+    // --------------------------------------------------------
+
+    html +=
+        "&lt;h2&gt;"
+        "Light Level: "
+        "&lt;span style=\"color:orange;\"&gt;"
+        + String(light)
+        + "&lt;/span&gt;"
+        "&lt;/h2&gt;";
+
+    // --------------------------------------------------------
+    // 6. EXPLAIN THE AUTO-REFRESH
+    // --------------------------------------------------------
+
+    html +=
+        "&lt;p&gt;"
+        "&lt;i&gt;"
+        "Page auto-refreshes every 5 seconds..."
+        "&lt;/i&gt;"
+        "&lt;/p&gt;";
+
+    html +=
+        "&lt;/body&gt;"
+        "&lt;/html&gt;";
+
+    // --------------------------------------------------------
+    // 7. SEND THE PAGE TO THE PHONE
+    // --------------------------------------------------------
+
+    server.send(
+        200,
+        "text/html",
+        html
+    );
+}
+
+// ============================================================
+// SETUP
+// ============================================================
+
+void setup() {
+
+    Serial.begin(115200);
+
+    // Start the DHT11
+    dht.begin();
+
+    // Start Wi-Fi connection
+    WiFi.begin(
+        ssid,
+        password
+    );
+
+    while (
+        WiFi.status() != WL_CONNECTED
+    ) {
+
+        delay(500);
+
+        Serial.print(".");
+    }
+
+    Serial.println(
+        "\n🔥 Wi-Fi Connected!"
+    );
+
+    Serial.print(
+        "Open this IP: http://"
+    );
+
+    Serial.println(
+        WiFi.localIP()
+    );
+
+    // Register homepage
+    server.on(
+        "/",
+        handle_Homepage
+    );
+
+    // Start the web server
+    server.begin();
+}
+
+// ============================================================
+// LOOP
+// ============================================================
+
+void loop() {
+
+    // Always listen for browser requests
+    server.handleClient();
+}</pre>
+
+                </div>
+
+                <div class="tip">
+                    Save the file with Ctrl + S before building.
+                </div>
+
+            </section>
+
+
+            <!-- =====================================================
+                 SECTION 07 — UNDERSTAND CODE
+            ====================================================== -->
+
+            <section class="section">
+
+                <div class="section-header">
+
+                    <div class="section-number">
+                        07 // CODE BREAKDOWN
+                    </div>
+
+                    <h2>
+                        Understand the Code
+                    </h2>
+
+                </div>
+
+                <div class="grid">
+
+                    <div class="card blue">
+
+                        <span class="tag blue">
+                            DHT11
+                        </span>
+
+                        <h3>
+                            Reading Temperature
+                        </h3>
+
+                        <div class="code-wrap">
+
+                            <div class="code-head">
+
+                                <span class="code-lang">
+                                    C++
+                                </span>
+
+                                <button class="copy-btn">
+                                    Copy
+                                </button>
+
+                            </div>
+
+<pre class="code">float temp = dht.readTemperature();</pre>
+
+                        </div>
+
+                        <p>
+                            The DHT11 returns a decimal measurement,
+                            so we store it in a
+                            <span class="inline-code">
+                                float
+                            </span>.
+                        </p>
+
+                    </div>
+
+
+                    <div class="card blue">
+
+                        <span class="tag blue">
+                            HUMIDITY
+                        </span>
+
+                        <h3>
+                            Reading Humidity
+                        </h3>
+
+                        <div class="code-wrap">
+
+                            <div class="code-head">
+
+                                <span class="code-lang">
+                                    C++
+                                </span>
+
+                                <button class="copy-btn">
+                                    Copy
+                                </button>
+
+                            </div>
+
+<pre class="code">float hum = dht.readHumidity();</pre>
+
+                        </div>
+
+                        <p>
+                            Humidity is also stored as a decimal value,
+                            so a
+                            <span class="inline-code">
+                                float
+                            </span>
+                            is appropriate.
+                        </p>
+
+                    </div>
+
+
+                    <div class="card orange">
+
+                        <span class="tag orange">
+                            LDR
+                        </span>
+
+                        <h3>
+                            Reading Light
+                        </h3>
+
+                        <div class="code-wrap">
+
+                            <div class="code-head">
+
+                                <span class="code-lang">
+                                    C++
+                                </span>
+
+                                <button class="copy-btn">
+                                    Copy
+                                </button>
+
+                            </div>
+
+<pre class="code">int light = analogRead(LDR_PIN);</pre>
+
+                        </div>
+
+                        <p>
+                            The ESP32 reads the analog voltage and
+                            returns a numeric value. In this project
+                            that value is represented by the ESP32's
+                            ADC reading.
+                        </p>
+
+                    </div>
+
+
+                    <div class="card green">
+
+                        <span class="tag">
+                            STRING()
+                        </span>
+
+                        <h3>
+                            Data Casting
+                        </h3>
+
+                        <div class="code-wrap">
+
+                            <div class="code-head">
+
+                                <span class="code-lang">
+                                    C++
+                                </span>
+
+                                <button class="copy-btn">
+                                    Copy
+                                </button>
+
+                            </div>
+
+<pre class="code">String(temp)</pre>
+
+                        </div>
+
+                        <p>
+                            This converts the numeric value into a
+                            String representation so it can be
+                            concatenated into the HTML.
+                        </p>
+
+                    </div>
+
+                    <div class="card full">
+
+                        <span class="tag">
+                            CONCATENATION
+                        </span>
+
+                        <h3>
+                            Gluing HTML Together
+                        </h3>
+
+                        <p>
+                            The
+                            <span class="inline-code">
+                                +
+                            </span>
+                            operator joins pieces of text.
+                        </p>
+
+                        <div class="code-wrap">
+
+                            <div class="code-head">
+
+                                <span class="code-lang">
+                                    C++
+                                </span>
+
+                                <button class="copy-btn">
+                                    Copy
+                                </button>
+
+                            </div>
+
+<pre class="code">html +=
+    "Temperature: "
+    + String(temp)
+    + " °C";</pre>
+
+                        </div>
+
+                        <p>
+                            Think of the final HTML as a puzzle assembled
+                            piece by piece by the ESP32.
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <div class="callout warning">
+
+                    <strong>
+                        Sensor errors:
+                    </strong>
+
+                    <span class="inline-code">
+                        isnan()
+                    </span>
+                    checks whether the DHT11 result is an invalid
+                    numeric value. That lets the program display an
+                    error message instead of blindly presenting bad
+                    sensor data.
+
+                </div>
+
+            </section>
+
+
+            <!-- =====================================================
+                 SECTION 08 — BUILD
+            ====================================================== -->
+
+            <section class="section">
+
+                <div class="section-header">
+
+                    <div class="section-number">
+                        08 // DEPLOY
+                    </div>
+
+                    <h2>
+                        Build + Upload + Serial Monitor
+                    </h2>
+
+                </div>
+
+                <div class="steps">
+
+                    <div class="step">
+
+                        <div class="step-number">
+                            1
+                        </div>
+
+                        <div class="step-content">
+
+                            <strong>
+                                Build
+                            </strong>
+
+                            <span>
+                                Click the PlatformIO Build checkmark.
+                                PlatformIO should download the DHT
+                                libraries if they are not already
+                                installed for this project.
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <div class="step">
+
+                        <div class="step-number">
+                            2
+                        </div>
+
+                        <div class="step-content">
+
+                            <strong>
+                                Upload
+                            </strong>
+
+                            <span>
+                                Click Upload and wait for flashing
+                                to complete.
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <div class="step">
+
+                        <div class="step-number">
+                            3
+                        </div>
+
+                        <div class="step-content">
+
+                            <strong>
+                                Open Serial Monitor
+                            </strong>
+
+                            <span>
+                                Use
+                                <span class="inline-code">
+                                    115200
+                                </span>
+                                baud.
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <div class="step">
+
+                        <div class="step-number">
+                            4
+                        </div>
+
+                        <div class="step-content">
+
+                            <strong>
+                                Find the IP
+                            </strong>
+
+                            <span>
+                                Copy the IP address printed by the
+                                ESP32.
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="expected">
+
+<pre>🔥 Wi-Fi Connected!
+Open this IP: http://192.168.1.42</pre>
+
+                </div>
+
+                <div class="callout info">
+
+                    <strong>
+                        Remember:
+                    </strong>
+
+                    The IP address shown above is only an example.
+                    Your ESP32 will receive an address assigned by
+                    your local network.
+
+                </div>
+
+            </section>
+
+
+            <!-- =====================================================
+                 SECTION 09 — TEST
+            ====================================================== -->
+
+            <section class="section">
+
+                <div class="section-header">
+
+                    <div class="section-number">
+                        09 // TEST
+                    </div>
+
+                    <h2>
+                        What Should Happen?
+                    </h2>
+
+                </div>
+
+                <div class="sensor-grid">
+
+                    <div class="sensor-card">
+
+                        <div class="sensor-icon">
+                            🌡️
+                        </div>
+
+                        <div class="sensor-value">
+                            TEMP
+                        </div>
+
+                        <div class="sensor-label">
+                            DHT11
+                        </div>
+
+                    </div>
+
+                    <div class="sensor-card">
+
+                        <div class="sensor-icon">
+                            💧
+                        </div>
+
+                        <div class="sensor-value">
+                            HUM
+                        </div>
+
+                        <div class="sensor-label">
+                            DHT11
+                        </div>
+
+                    </div>
+
+                    <div class="sensor-card">
+
+                        <div class="sensor-icon">
+                            ☀️
+                        </div>
+
+                        <div class="sensor-value">
+                            LIGHT
+                        </div>
+
+                        <div class="sensor-label">
+                            LDR
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="steps">
+
+                    <div class="step">
+
+                        <div class="step-number">
+                            1
+                        </div>
+
+                        <div class="step-content">
+
+                            <strong>
+                                Open the ESP32 IP
+                            </strong>
+
+                            <span>
+                                Enter the address printed in Serial
+                                Monitor into your smartphone browser.
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <div class="step">
+
+                        <div class="step-number">
+                            2
+                        </div>
+
+                        <div class="step-content">
+
+                            <strong>
+                                Read the dashboard
+                            </strong>
+
+                            <span>
+                                You should see Temperature, Humidity,
+                                and Light Level.
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <div class="step">
+
+                        <div class="step-number">
+                            3
+                        </div>
+
+                        <div class="step-content">
+
+                            <strong>
+                                Cover the LDR
+                            </strong>
+
+                            <span>
+                                Use your finger to block light from
+                                reaching the photoresistor.
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <div class="step">
+
+                        <div class="step-number">
+                            4
+                        </div>
+
+                        <div class="step-content">
+
+                            <strong>
+                                Wait
+                            </strong>
+
+                            <span>
+                                Within roughly five seconds, the
+                                browser should request a fresh page.
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <div class="step">
+
+                        <div class="step-number">
+                            5
+                        </div>
+
+                        <div class="step-content">
+
+                            <strong>
+                                Watch the light reading
+                            </strong>
+
+                            <span>
+                                The LDR reading should change when
+                                the amount of light reaching it changes.
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <div class="step">
+
+                        <div class="step-number">
+                            6
+                        </div>
+
+                        <div class="step-content">
+
+                            <strong>
+                                Test the DHT11
+                            </strong>
+
+                            <span>
+                                You can gently blow warm breath near
+                                the sensor and observe changes over
+                                subsequent readings. Give the DHT11
+                                time to respond; it is a relatively
+                                slow sensor.
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="callout">
+
+                    <strong>
+                        You built telemetry.
+                    </strong>
+
+                    Physical measurements are now travelling through
+                    the ESP32's software and network stack and appearing
+                    on another device.
+
+                </div>
+
+            </section>
+
+
+            <!-- =====================================================
+                 SECTION 10 — EXPERIMENT
+            ====================================================== -->
+
+            <section class="section">
+
+                <div class="section-header">
+
+                    <div class="section-number">
+                        10 // EXPERIMENT
+                    </div>
+
+                    <h2>
+                        Make It Feel More Live
+                    </h2>
+
+                </div>
+
+                <p>
+                    Five seconds works, but for a dashboard it can
+                    feel slow.
+                </p>
+
+                <p>
+                    Let's reduce the refresh interval.
+                </p>
+
+                <div class="code-wrap">
+
+                    <div class="code-head">
+
+                        <span class="code-lang">
+                            BEFORE
+                        </span>
+
+                        <button class="copy-btn">
+                            Copy
+                        </button>
+
+                    </div>
+
+<pre class="code">html += "&lt;meta http-equiv=\"refresh\" content=\"5\"&gt;";</pre>
+
+                </div>
+
+                <div class="code-wrap">
+
+                    <div class="code-head">
+
+                        <span class="code-lang">
+                            AFTER
+                        </span>
+
+                        <button class="copy-btn">
+                            Copy
+                        </button>
+
+                    </div>
+
+<pre class="code">html += "&lt;meta http-equiv=\"refresh\" content=\"2\"&gt;";</pre>
+
+                </div>
+
+                <div class="grid">
+
+                    <div class="card green">
+
+                        <span class="tag">
+                            5 SECONDS
+                        </span>
+
+                        <h3>
+                            Less Network Activity
+                        </h3>
+
+                        <p>
+                            The browser waits longer between requests.
+                            This produces fewer page reloads.
+                        </p>
+
+                    </div>
+
+                    <div class="card blue">
+
+                        <span class="tag blue">
+                            2 SECONDS
+                        </span>
+
+                        <h3>
+                            Faster Updates
+                        </h3>
+
+                        <p>
+                            The browser requests new sensor data more
+                            frequently, making the dashboard feel
+                            more responsive.
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <div class="callout warning">
+
+                    <strong>
+                        But notice the trade-off:
+                    </strong>
+
+                    Every refresh downloads the entire HTML page again.
+                    Faster refreshes mean more repeated network traffic
+                    and more work for the ESP32 web server.
+
+                </div>
+
+                <div class="callout info">
+
+                    <strong>
+                        And this is exactly why Project 21 exists.
+                    </strong>
+
+                    We will stop reloading the entire page and instead
+                    use JavaScript to request only the data that changed.
+
+                </div>
+
+            </section>
+
+
+            <!-- =====================================================
+                 SECTION 11 — CHALLENGE
+            ====================================================== -->
+
+            <section class="section">
+
+                <div class="section-header">
+
+                    <div class="section-number">
+                        11 // CHALLENGE
+                    </div>
+
+                    <h2>
+                        Build a Temperature Warning
+                    </h2>
+
+                </div>
+
+                <div class="challenge">
+
+                    <h3>
+                        🔥 Challenge: OVERHEAT DETECTED
+                    </h3>
+
+                    <p>
+                        Now we are going to make the dashboard actually
+                        think about the sensor data.
+                    </p>
+
+                    <p>
+                        Your objective is to display a large red warning
+                        whenever the temperature becomes greater than
+                        <span class="inline-code">
+                            28.0
+                        </span>
+                        °C.
+                    </p>
+
+                    <ul class="list">
+
+                        <li>
+                            Place the logic inside
+                            <span class="inline-code">
+                                handle_Homepage()
+                            </span>.
+                        </li>
+
+                        <li>
+                            Use the existing
+                            <span class="inline-code">
+                                temp
+                            </span>
+                            variable.
+                        </li>
+
+                        <li>
+                            Check whether
+                            <span class="inline-code">
+                                temp &gt; 28.0
+                            </span>.
+                        </li>
+
+                        <li>
+                            If true, append warning HTML using
+                            <span class="inline-code">
+                                html +=
+                            </span>.
+                        </li>
+
+                        <li>
+                            Display:
+                            <strong class="red">
+                                WARNING: OVERHEAT DETECTED!
+                            </strong>
+                        </li>
+
+                    </ul>
+
+                </div>
+
+                <h3>
+                    Hint
+                </h3>
+
+                <p>
+                    Put your temperature check after the temperature
+                    and humidity have been added to the HTML.
+                </p>
+
+                <div class="code-wrap">
+
+                    <div class="code-head">
+
+                        <span class="code-lang">
+                            HINT · C++
+                        </span>
+
+                        <button class="copy-btn">
+                            Copy
+                        </button>
+
+                    </div>
+
+<pre class="code">if (temp &gt; 28.0) {
+    html +=
+        "&lt;h1 style=\"color:red;\"&gt;"
+        "WARNING: OVERHEAT DETECTED!"
+        "&lt;/h1&gt;";
+}</pre>
+
+                </div>
+
+                <div class="callout">
+
+                    <strong>
+                        You just crossed into application logic.
+                    </strong>
+
+                    The sensor provides data. Your software interprets
+                    the data and turns it into a meaningful decision
+                    for the user.
+
+                </div>
+
+            </section>
+
+
+            <!-- =====================================================
+                 SECTION 12 — TROUBLESHOOTING
+            ====================================================== -->
+
+            <section class="section">
+
+                <div class="section-header">
+
+                    <div class="section-number">
+                        12 // DEBUG
+                    </div>
+
+                    <h2>
+                        Troubleshooting
+                    </h2>
+
+                </div>
+
+                <div class="grid">
+
+                    <div class="card red">
+
+                        <span class="tag red">
+                            DHT11
+                        </span>
+
+                        <h3>
+                            "Sensor Error!"
+                        </h3>
+
+                        <ul class="list">
+
+                            <li>
+                                Check DHT11 VCC → 3V3.
+                            </li>
+
+                            <li>
+                                Check DATA → D4.
+                            </li>
+
+                            <li>
+                                Check GND.
+                            </li>
+
+                            <li>
+                                Verify your sensor's exact pinout.
+                            </li>
+
+                            <li>
+                                Check that the DHT library dependencies
+                                are present in platformio.ini.
+                            </li>
+
+                        </ul>
+
+                    </div>
+
+
+                    <div class="card yellow">
+
+                        <span class="tag yellow">
+                            PLATFORMIO
+                        </span>
+
+                        <h3>
+                            DHT.h not found
+                        </h3>
+
+                        <p>
+                            The project probably does not have the DHT
+                            library dependency configured.
+                        </p>
+
+                        <p>
+                            Check
+                            <span class="inline-code">
+                                platformio.ini
+                            </span>
+                            and make sure the
+                            <span class="inline-code">
+                                lib_deps
+                            </span>
+                            entries are present.
+                        </p>
+
+                    </div>
+
+
+                    <div class="card blue">
+
+                        <span class="tag blue">
+                            AUTO REFRESH
+                        </span>
+
+                        <h3>
+                            Page does not refresh
+                        </h3>
+
+                        <p>
+                            Check that the HTML contains:
+                        </p>
+
+                        <div class="code-wrap">
+
+                            <div class="code-head">
+
+                                <span class="code-lang">
+                                    HTML
+                                </span>
+
+                                <button class="copy-btn">
+                                    Copy
+                                </button>
+
+                            </div>
+
+<pre class="code">&lt;meta http-equiv="refresh" content="5"&gt;</pre>
+
+                        </div>
+
+                        <p>
+                            Remember that quotation marks inside a C++
+                            string need escaping with
+                            <span class="inline-code">
+                                \"
+                            </span>.
+                        </p>
+
+                    </div>
+
+
+                    <div class="card orange">
+
+                        <span class="tag orange">
+                            LDR
+                        </span>
+
+                        <h3>
+                            Light value looks wrong
+                        </h3>
+
+                        <ul class="list">
+
+                            <li>
+                                Check the 3V3 connection.
+                            </li>
+
+                            <li>
+                                Make sure the 10kΩ resistor connects
+                                from the shared row to GND.
+                            </li>
+
+                            <li>
+                                Make sure D34 connects to the shared row.
+                            </li>
+
+                            <li>
+                                Try covering the LDR and compare the
+                                reading.
+                            </li>
+
+                        </ul>
+
+                    </div>
+
+
+                    <div class="card full">
+
+                        <span class="tag">
+                            WI-FI
+                        </span>
+
+                        <h3>
+                            Phone cannot open the dashboard
+                        </h3>
+
+                        <ul class="list">
+
+                            <li>
+                                Confirm the ESP32 successfully connected
+                                to Wi-Fi.
+                            </li>
+
+                            <li>
+                                Check the IP address printed in Serial
+                                Monitor.
+                            </li>
+
+                            <li>
+                                Make sure your phone and ESP32 are on
+                                the same local network.
+                            </li>
+
+                            <li>
+                                Make sure the ESP32 is still powered.
+                            </li>
+
+                        </ul>
+
+                    </div>
+
+                </div>
+
+                <div class="callout danger">
+
+                    <strong>
+                        Network security:
+                    </strong>
+
+                    This is a local-network prototype. Do not expose
+                    the ESP32's web server directly to the public
+                    Internet without proper authentication,
+                    authorization, transport security, and network
+                    configuration.
+
+                </div>
+
+            </section>
+
+
+            <!-- =====================================================
+                 SECTION 13 — VOCABULARY
+            ====================================================== -->
+
+            <section class="section">
+
+                <div class="section-header">
+
+                    <div class="section-number">
+                        13 // VOCABULARY
+                    </div>
+
+                    <h2>
+                        New Vocabulary
+                    </h2>
+
+                </div>
+
+                <div class="vocab">
+
+                    <div>
+                        Data Casting
+                    </div>
+
+                    <div>
+                        Converting a value into another representation
+                        or type suitable for the operation being performed.
+                    </div>
+
+
+                    <div>
+                        String()
+                    </div>
+
+                    <div>
+                        Arduino/C++ String construction used here to
+                        create text from numeric sensor values.
+                    </div>
+
+
+                    <div>
+                        Concatenation
+                    </div>
+
+                    <div>
+                        Joining multiple pieces of text together.
+                    </div>
+
+
+                    <div>
+                        Meta Refresh
+                    </div>
+
+                    <div>
+                        An HTML mechanism that tells a browser to reload
+                        a document after a specified interval.
+                    </div>
+
+
+                    <div>
+                        Telemetry
+                    </div>
+
+                    <div>
+                        Measurement data collected from a system and
+                        transmitted elsewhere for monitoring or analysis.
+                    </div>
+
+
+                    <div>
+                        Sensor
+                    </div>
+
+                    <div>
+                        A device that detects a physical property and
+                        provides a corresponding signal or measurement.
+                    </div>
+
+
+                    <div>
+                        Dynamic HTML
+                    </div>
+
+                    <div>
+                        HTML whose content is generated using current
+                        program state or data.
+                    </div>
+
+                </div>
+
+                <div class="callout">
+
+                    <strong>
+                        Core vocabulary:
+                    </strong>
+
+                    You are now working with a real
+                    <span class="highlight">
+                        data pipeline
+                    </span>:
+                    physical measurement → software value →
+                    network transmission → human-readable dashboard.
+
+                </div>
+
+            </section>
+
+
+            <!-- =====================================================
+                 SECTION 14 — NEXT PROJECT
+            ====================================================== -->
+
+            <section class="section">
+
+                <div class="section-header">
+
+                    <div class="section-number">
+                        14 // NEXT.EXE
+                    </div>
+
+                    <h2>
+                        The Dashboard Is Alive.
+                    </h2>
+
+                </div>
+
+                <div class="hero">
+
+                    <div class="eyebrow">
+                        TELEMETRY SYSTEM ONLINE
+                    </div>
+
+                    <h1>
+                        Physical World → Web
+                    </h1>
+
+                    <p class="hero-subtitle">
+                        Brooo, you just built a proper little
+                        wireless telemetry system. 🔥
+                    </p>
+
+                    <p class="hero-subtitle">
+                        Your ESP32 reads the physical environment,
+                        turns those measurements into software data,
+                        generates an HTML dashboard, and sends it over
+                        Wi-Fi to another device.
+                    </p>
+
+                    <div class="terminal">
+
+                        <div>
+                            <span class="prompt">
+                                DHT11
+                            </span>
+                            → Temperature + Humidity
+                        </div>
+
+                        <div>
+                            <span class="prompt">
+                                LDR
+                            </span>
+                            → Light measurement
+                        </div>
+
+                        <div>
+                            <span class="prompt">
+                                ESP32
+                            </span>
+                            → Processes sensor data
+                        </div>
+
+                        <div>
+                            <span class="prompt">
+                                Wi-Fi
+                            </span>
+                            → Transports webpage
+                        </div>
+
+                        <div>
+                            <span class="prompt">
+                                PHONE
+                            </span>
+                            → Displays telemetry
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="grid" style="margin-top: 18px;">
+
+                    <div class="card green">
+
+                        <span class="tag">
+                            YOU LEARNED
+                        </span>
+
+                        <ul class="list">
+
+                            <li>
+                                DHT11 sensor integration
+                            </li>
+
+                            <li>
+                                LDR analog measurement
+                            </li>
+
+                            <li>
+                                String-based data conversion
+                            </li>
+
+                            <li>
+                                String concatenation
+                            </li>
+
+                            <li>
+                                Dynamic HTML generation
+                            </li>
+
+                            <li>
+                                Browser auto-refresh
+                            </li>
+
+                            <li>
+                                Wireless telemetry
+                            </li>
+
+                        </ul>
+
+                    </div>
+
+
+                    <div class="card blue">
+
+                        <span class="tag blue">
+                            THE LIMITATION
+                        </span>
+
+                        <h3>
+                            We Reload Everything
+                        </h3>
+
+                        <p>
+                            The dashboard works, but there is a cost.
+                        </p>
+
+                        <p>
+                            Every five seconds the browser requests the
+                            entire webpage again.
+                        </p>
+
+                        <p>
+                            The ESP32 rebuilds the HTML again.
+                            The browser downloads it again.
+                            The screen reloads again.
+                        </p>
+
+                        <p>
+                            That's a little clunky.
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <div class="callout info">
+
+                    <strong>
+                        Next mission:
+                    </strong>
+
+                    <span class="highlight">
+                        Project 21 — JavaScript ESP32 Control
+                    </span>
+
+                    We are going to introduce a tiny amount of
+                    JavaScript and teach the webpage to quietly ask
+                    the ESP32 for fresh data in the background.
+                    No full-page reload.
+                    No annoying screen blink.
+                    Just data updates.
+
+                </div>
+
+                <div class="card yellow">
+
+                    <span class="tag yellow">
+                        PROJECT 21
+                    </span>
+
+                    <h3>
+                        JavaScript ESP32 Control
+                    </h3>
+
+                    <p>
+                        ESP32 + WebServer + JavaScript
+                        → background requests
+                        → dynamic browser updates.
+                    </p>
+
+                    <p>
+                        And bro... that is the point where this stops
+                        feeling like a tiny Arduino webpage and starts
+                        feeling like an actual web application. ⚡
+                    </p>
+
+                </div>
+
+                <div class="callout">
+
+                    <strong>
+                        PROJECT 20 COMPLETE.
+                    </strong>
+
+                    Sensors are talking to software.
+                    Software is talking to the network.
+                    The network is talking to your phone.
+
+                    <br><br>
+
+                    <span class="highlight">
+                        Physical world → digital world. Mission complete.
+                    </span>
+
+                </div>
+
+            </section>
+
+
+            <!-- =====================================================
+                 NAVIGATION CONTROLS
+            ====================================================== -->
+
+            <div class="nav-controls">
+
+                <button
+                    class="nav-btn"
+                    id="prevBtn"
+                    disabled
+                >
+                    ← Previous
+                </button>
+
+                <span class="tip">
+                    Use ← / → keys
+                </span>
+
+                <button
+                    class="nav-btn next"
+                    id="nextBtn"
+                >
+                    Next →
+                </button>
+
+            </div>
+
+        </div>
+
+    </main>
+
+
+    <!-- =========================================================
+         JAVASCRIPT
+    ========================================================== -->
+
+    <script>
+
+        const sections = [
+            ...document.querySelectorAll(".section")
+        ];
+
+        const navItems = [
+            ...document.querySelectorAll(".nav-item")
+        ];
+
+        const progressFill =
+            document.querySelector(".progress-fill");
+
+        const progressText =
+            document.querySelector(".progress-text");
+
+        const mobileProgress =
+            document.querySelector(".mobile-progress");
+
+        const prevBtn =
+            document.getElementById("prevBtn");
+
+        const nextBtn =
+            document.getElementById("nextBtn");
+
+        let currentSection = 0;
+
+
+        /* =========================================================
+           SECTION NAVIGATION
+        ========================================================== */
+
+        function updateSection(index) {
+
+            index = Math.max(
+                0,
+                Math.min(
+                    index,
+                    sections.length - 1
+                )
+            );
+
+            currentSection = index;
+
+
+            sections.forEach(
+                (section, i) => {
+
+                    section.classList.toggle(
+                        "active",
+                        i === currentSection
+                    );
+
+                }
+            );
+
+
+            navItems.forEach(
+                (item, i) => {
+
+                    item.classList.toggle(
+                        "active",
+                        i === currentSection
+                    );
+
+                }
+            );
+
+
+            const progress =
+                (
+                    (currentSection + 1)
+                    /
+                    sections.length
+                )
+                *
+                100;
+
+
+            progressFill.style.width =
+                `${progress}%`;
+
+
+            progressText.textContent =
+                `${currentSection + 1} / ${sections.length}`;
+
+
+            mobileProgress.textContent =
+                `${String(
+                    currentSection + 1
+                ).padStart(2, "0")} / ${sections.length}`;
+
+
+            prevBtn.disabled =
+                currentSection === 0;
+
+
+            nextBtn.disabled =
+                currentSection ===
+                sections.length - 1;
+
+
+            window.scrollTo({
+                top: 0,
+                behavior: "smooth"
+            });
+
+
+            localStorage.setItem(
+                "qc-esp32-project-20-section",
+                currentSection
+            );
+        }
+
+
+        /* =========================================================
+           SIDEBAR NAVIGATION
+        ========================================================== */
+
+        navItems.forEach(
+            item => {
+
+                item.addEventListener(
+                    "click",
+                    () => {
+
+                        updateSection(
+                            Number(
+                                item.dataset.section
+                            )
+                        );
+
+                    }
+                );
+
+            }
+        );
+
+
+        /* =========================================================
+           PREVIOUS / NEXT
+        ========================================================== */
+
+        prevBtn.addEventListener(
+            "click",
+            () => {
+
+                updateSection(
+                    currentSection - 1
+                );
+
+            }
+        );
+
+
+        nextBtn.addEventListener(
+            "click",
+            () => {
+
+                updateSection(
+                    currentSection + 1
+                );
+
+            }
+        );
+
+
+        /* =========================================================
+           KEYBOARD NAVIGATION
+        ========================================================== */
+
+        document.addEventListener(
+            "keydown",
+            event => {
+
+                if (
+                    event.target.tagName === "INPUT" ||
+                    event.target.tagName === "TEXTAREA"
+                ) {
+                    return;
+                }
+
+
+                if (
+                    event.key === "ArrowLeft"
+                ) {
+
+                    updateSection(
+                        currentSection - 1
+                    );
+
+                }
+
+
+                if (
+                    event.key === "ArrowRight"
+                ) {
+
+                    updateSection(
+                        currentSection + 1
+                    );
+
+                }
+
+            }
+        );
+
+
+        /* =========================================================
+           COPY BUTTONS
+        ========================================================== */
+
+        document
+            .querySelectorAll(".copy-btn")
+            .forEach(
+                button => {
+
+                    button.addEventListener(
+                        "click",
+                        async () => {
+
+                            const code =
+                                button
+                                    .closest(
+                                        ".code-wrap"
+                                    )
+                                    .querySelector(
+                                        "pre.code"
+                                    )
+                                    .innerText;
+
+
+                            try {
+
+                                await navigator
+                                    .clipboard
+                                    .writeText(
+                                        code
+                                    );
+
+
+                                const original =
+                                    button.textContent;
+
+
+                                button.textContent =
+                                    "Copied ✓";
+
+
+                                button.style.color =
+                                    "var(--green)";
+
+
+                                setTimeout(
+                                    () => {
+
+                                        button.textContent =
+                                            original;
+
+                                        button.style.color =
+                                            "";
+
+                                    },
+                                    1400
+                                );
+
+                            }
+                            catch {
+
+                                button.textContent =
+                                    "Copy failed";
+
+
+                                setTimeout(
+                                    () => {
+
+                                        button.textContent =
+                                            "Copy";
+
+                                    },
+                                    1400
+                                );
+
+                            }
+
+                        }
+                    );
+
+                }
+            );
+
+
+        /* =========================================================
+           RESTORE SAVED PROGRESS
+        ========================================================== */
+
+        const savedSection =
+            Number(
+                localStorage.getItem(
+                    "qc-esp32-project-20-section"
+                )
+            );
+
+
+        if (
+            Number.isInteger(savedSection) &&
+            savedSection >= 0 &&
+            savedSection < sections.length
+        ) {
+
+            updateSection(
+                savedSection
+            );
+
+        }
+        else {
+
+            updateSection(0);
+
+        }
+
+    </script>
+
+</body>
+</html>

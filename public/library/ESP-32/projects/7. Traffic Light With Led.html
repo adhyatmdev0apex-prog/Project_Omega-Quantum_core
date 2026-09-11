@@ -1,0 +1,3477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Project 07 — Traffic Light | Quantum Core ESP32</title>
+
+    <style>
+        :root {
+            --bg: #050807;
+            --bg-2: #08100d;
+            --panel: rgba(10, 20, 16, 0.88);
+            --panel-2: rgba(12, 27, 21, 0.92);
+
+            --green: #39ff88;
+            --green-2: #13d96b;
+            --cyan: #35e8ff;
+            --yellow: #ffe66d;
+            --red: #ff5577;
+
+            --text: #e8fff1;
+            --muted: #91a99b;
+            --dim: #5d7066;
+
+            --border: rgba(57, 255, 136, 0.16);
+            --border-bright: rgba(57, 255, 136, 0.34);
+
+            --shadow:
+                0 0 30px rgba(57, 255, 136, 0.08),
+                inset 0 0 30px rgba(57, 255, 136, 0.025);
+
+            --sidebar-width: 285px;
+            --topbar-height: 68px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            min-height: 100vh;
+            background:
+                radial-gradient(
+                    circle at 15% 10%,
+                    rgba(57, 255, 136, 0.055),
+                    transparent 28%
+                ),
+                radial-gradient(
+                    circle at 85% 20%,
+                    rgba(53, 232, 255, 0.035),
+                    transparent 25%
+                ),
+                linear-gradient(
+                    135deg,
+                    var(--bg),
+                    var(--bg-2)
+                );
+            color: var(--text);
+            font-family:
+                Inter,
+                ui-sans-serif,
+                system-ui,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 999;
+            opacity: 0.035;
+            background-image:
+                linear-gradient(
+                    rgba(255, 255, 255, 0.04) 1px,
+                    transparent 1px
+                ),
+                linear-gradient(
+                    90deg,
+                    rgba(255, 255, 255, 0.04) 1px,
+                    transparent 1px
+                );
+            background-size: 42px 42px;
+        }
+
+        ::selection {
+            background: rgba(57, 255, 136, 0.22);
+            color: white;
+        }
+
+        button {
+            font: inherit;
+        }
+
+        .app {
+            min-height: 100vh;
+        }
+
+        /* =========================================================
+           SIDEBAR
+        ========================================================= */
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: var(--sidebar-width);
+            z-index: 100;
+
+            display: flex;
+            flex-direction: column;
+
+            background:
+                linear-gradient(
+                    180deg,
+                    rgba(6, 15, 11, 0.98),
+                    rgba(4, 10, 8, 0.97)
+                );
+
+            border-right: 1px solid var(--border);
+
+            box-shadow:
+                20px 0 50px rgba(0, 0, 0, 0.22),
+                inset -1px 0 0 rgba(255, 255, 255, 0.015);
+        }
+
+        .brand {
+            padding: 22px 22px 18px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .brand-top {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+        }
+
+        .brand-mark {
+            width: 35px;
+            height: 35px;
+            border-radius: 10px;
+
+            display: grid;
+            place-items: center;
+
+            color: var(--green);
+            font-weight: 900;
+            font-size: 15px;
+
+            border: 1px solid var(--border-bright);
+            background: rgba(57, 255, 136, 0.055);
+
+            box-shadow:
+                0 0 18px rgba(57, 255, 136, 0.09);
+        }
+
+        .brand-title {
+            font-size: 13px;
+            font-weight: 800;
+            letter-spacing: 0.11em;
+            text-transform: uppercase;
+        }
+
+        .brand-subtitle {
+            margin-top: 8px;
+            color: var(--dim);
+            font-family: monospace;
+            font-size: 9px;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+        }
+
+        .progress-area {
+            padding: 17px 22px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .progress-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            color: var(--muted);
+            font-family: monospace;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .progress-number {
+            color: var(--green);
+        }
+
+        .progress-track {
+            height: 4px;
+            margin-top: 11px;
+            overflow: hidden;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 7.14%;
+            border-radius: inherit;
+            background: linear-gradient(
+                90deg,
+                var(--green-2),
+                var(--green),
+                var(--cyan)
+            );
+            box-shadow: 0 0 14px rgba(57, 255, 136, 0.35);
+            transition: width 0.35s ease;
+        }
+
+        .nav {
+            flex: 1;
+            padding: 15px 10px;
+            overflow-y: auto;
+        }
+
+        .nav::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .nav::-webkit-scrollbar-thumb {
+            background: rgba(57, 255, 136, 0.12);
+            border-radius: 10px;
+        }
+
+        .nav-item {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 11px;
+
+            padding: 10px 12px;
+            margin-bottom: 3px;
+
+            border: 1px solid transparent;
+            border-radius: 10px;
+
+            color: var(--dim);
+            background: transparent;
+
+            cursor: pointer;
+            text-align: left;
+
+            transition:
+                color 0.2s ease,
+                background 0.2s ease,
+                border-color 0.2s ease,
+                transform 0.2s ease;
+        }
+
+        .nav-item:hover {
+            color: var(--muted);
+            background: rgba(57, 255, 136, 0.035);
+        }
+
+        .nav-item.active {
+            color: var(--green);
+            background: rgba(57, 255, 136, 0.065);
+            border-color: var(--border);
+            box-shadow:
+                inset 3px 0 0 var(--green),
+                0 0 20px rgba(57, 255, 136, 0.035);
+        }
+
+        .nav-number {
+            width: 24px;
+            flex-shrink: 0;
+
+            color: inherit;
+            font-family: monospace;
+            font-size: 9px;
+            opacity: 0.75;
+        }
+
+        .nav-label {
+            font-family: monospace;
+            font-size: 10px;
+            line-height: 1.35;
+            text-transform: uppercase;
+            letter-spacing: 0.045em;
+        }
+
+        .sidebar-bottom {
+            padding: 15px 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .keyboard-hint {
+            color: var(--dim);
+            font-family: monospace;
+            font-size: 9px;
+            line-height: 1.6;
+        }
+
+        .key {
+            display: inline-block;
+            padding: 2px 5px;
+            margin: 0 2px;
+
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+
+            color: var(--muted);
+            background: rgba(255, 255, 255, 0.035);
+        }
+
+        /* =========================================================
+           MAIN
+        ========================================================= */
+
+        .main {
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+        }
+
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+
+            height: var(--topbar-height);
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            padding: 0 34px;
+
+            background: rgba(5, 8, 7, 0.84);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+
+            backdrop-filter: blur(18px);
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+
+            color: var(--muted);
+            font-family: monospace;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 12px var(--green);
+            animation: pulse 1.8s infinite;
+        }
+
+        @keyframes pulse {
+            0%,
+            100% {
+                opacity: 0.55;
+            }
+
+            50% {
+                opacity: 1;
+            }
+        }
+
+        .topbar-right {
+            color: var(--dim);
+            font-family: monospace;
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .content {
+            width: min(1100px, calc(100% - 64px));
+            margin: 0 auto;
+            padding: 52px 0 100px;
+        }
+
+        /* =========================================================
+           HERO
+        ========================================================= */
+
+        .hero {
+            position: relative;
+            padding: 42px 40px;
+            margin-bottom: 28px;
+
+            overflow: hidden;
+
+            border: 1px solid var(--border);
+            border-radius: 22px;
+
+            background:
+                radial-gradient(
+                    circle at 85% 15%,
+                    rgba(57, 255, 136, 0.08),
+                    transparent 32%
+                ),
+                linear-gradient(
+                    135deg,
+                    rgba(12, 30, 22, 0.94),
+                    rgba(6, 15, 11, 0.94)
+                );
+
+            box-shadow: var(--shadow);
+        }
+
+        .hero::after {
+            content: "";
+            position: absolute;
+            width: 250px;
+            height: 250px;
+            right: -90px;
+            bottom: -110px;
+
+            border-radius: 50%;
+            border: 1px solid rgba(57, 255, 136, 0.08);
+
+            box-shadow:
+                0 0 0 35px rgba(57, 255, 136, 0.02),
+                0 0 0 70px rgba(57, 255, 136, 0.012);
+        }
+
+        .eyebrow {
+            color: var(--green);
+            font-family: monospace;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+        }
+
+        .hero h1 {
+            max-width: 800px;
+            margin-top: 12px;
+
+            font-size: clamp(31px, 5vw, 58px);
+            line-height: 0.98;
+            letter-spacing: -0.045em;
+            font-weight: 900;
+        }
+
+        .hero h1 span {
+            color: var(--green);
+            text-shadow: 0 0 30px rgba(57, 255, 136, 0.18);
+        }
+
+        .hero-line {
+            width: 90px;
+            height: 2px;
+            margin: 24px 0;
+
+            background: linear-gradient(
+                90deg,
+                var(--green),
+                transparent
+            );
+        }
+
+        .hero p {
+            max-width: 760px;
+            color: var(--muted);
+            font-size: 15px;
+            line-height: 1.8;
+        }
+
+        .hero-terminal {
+            margin-top: 27px;
+            padding: 15px 17px;
+
+            border: 1px solid rgba(57, 255, 136, 0.12);
+            border-radius: 11px;
+
+            background: rgba(0, 0, 0, 0.23);
+
+            color: var(--green);
+            font-family: monospace;
+            font-size: 11px;
+            line-height: 1.8;
+        }
+
+        .hero-terminal .prompt {
+            color: var(--cyan);
+        }
+
+        /* =========================================================
+           SECTIONS
+        ========================================================= */
+
+        .section {
+            display: none;
+            animation: sectionIn 0.3s ease;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes sectionIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .section-header {
+            margin-bottom: 22px;
+        }
+
+        .section-index {
+            color: var(--green);
+            font-family: monospace;
+            font-size: 10px;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+        }
+
+        .section-title {
+            margin-top: 7px;
+            font-size: clamp(25px, 4vw, 37px);
+            line-height: 1.1;
+            letter-spacing: -0.025em;
+        }
+
+        .section-description {
+            margin-top: 10px;
+            max-width: 780px;
+            color: var(--muted);
+            line-height: 1.7;
+            font-size: 14px;
+        }
+
+        .card {
+            margin-bottom: 17px;
+            padding: 25px;
+
+            border: 1px solid var(--border);
+            border-radius: 17px;
+
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(11, 25, 19, 0.88),
+                    rgba(6, 14, 10, 0.9)
+                );
+
+            box-shadow: var(--shadow);
+        }
+
+        .card h3 {
+            margin-bottom: 13px;
+            font-size: 17px;
+        }
+
+        .card p {
+            color: var(--muted);
+            line-height: 1.78;
+            font-size: 14px;
+        }
+
+        .card p + p {
+            margin-top: 12px;
+        }
+
+        .card strong {
+            color: var(--text);
+        }
+
+        .accent {
+            color: var(--green);
+        }
+
+        .cyan {
+            color: var(--cyan);
+        }
+
+        .yellow {
+            color: var(--yellow);
+        }
+
+        .red {
+            color: var(--red);
+        }
+
+        .spacer {
+            height: 7px;
+        }
+
+        /* =========================================================
+           INTRO QUOTE
+        ========================================================= */
+
+        .quote-box {
+            padding: 24px;
+
+            border-left: 2px solid var(--green);
+            border-radius: 0 13px 13px 0;
+
+            background: rgba(57, 255, 136, 0.035);
+        }
+
+        .quote-box p {
+            color: var(--text);
+            font-size: 15px;
+            line-height: 1.8;
+        }
+
+        .quote-box p + p {
+            margin-top: 15px;
+        }
+
+        .quote-large {
+            color: var(--green) !important;
+            font-size: 18px !important;
+            font-weight: 800;
+        }
+
+        /* =========================================================
+           LISTS
+        ========================================================= */
+
+        .items {
+            display: grid;
+            gap: 9px;
+            margin-top: 13px;
+        }
+
+        .item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+
+            padding: 11px 13px;
+
+            border: 1px solid rgba(255, 255, 255, 0.055);
+            border-radius: 10px;
+
+            color: var(--muted);
+            background: rgba(255, 255, 255, 0.018);
+
+            font-size: 13px;
+            line-height: 1.55;
+        }
+
+        .item-icon {
+            flex-shrink: 0;
+            color: var(--green);
+        }
+
+        /* =========================================================
+           STATE MACHINE VISUAL
+        ========================================================= */
+
+        .state-machine {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+            margin-top: 20px;
+        }
+
+        .state {
+            position: relative;
+            padding: 21px 16px;
+            text-align: center;
+
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 15px;
+
+            background: rgba(0, 0, 0, 0.2);
+
+            transition:
+                transform 0.2s ease,
+                border-color 0.2s ease,
+                box-shadow 0.2s ease;
+        }
+
+        .state:hover {
+            transform: translateY(-3px);
+        }
+
+        .state-number {
+            color: var(--dim);
+            font-family: monospace;
+            font-size: 9px;
+            letter-spacing: 0.1em;
+        }
+
+        .state-light {
+            width: 42px;
+            height: 42px;
+            margin: 13px auto;
+
+            border-radius: 50%;
+
+            border: 2px solid rgba(255, 255, 255, 0.12);
+
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.4);
+        }
+
+        .state.red-state .state-light {
+            background: rgba(255, 85, 119, 0.12);
+        }
+
+        .state.green-state .state-light {
+            background: rgba(57, 255, 136, 0.12);
+        }
+
+        .state.yellow-state .state-light {
+            background: rgba(255, 230, 109, 0.12);
+        }
+
+        .state-name {
+            font-weight: 800;
+            font-size: 14px;
+        }
+
+        .state-code {
+            margin-top: 5px;
+            color: var(--dim);
+            font-family: monospace;
+            font-size: 10px;
+        }
+
+        .state-arrow {
+            position: absolute;
+            top: 50%;
+            right: -13px;
+            transform: translateY(-50%);
+
+            z-index: 2;
+
+            color: var(--green);
+            font-family: monospace;
+            font-size: 15px;
+        }
+
+        /* =========================================================
+           WIRING
+        ========================================================= */
+
+        .wiring-box {
+            overflow-x: auto;
+            padding: 23px;
+
+            border: 1px solid rgba(57, 255, 136, 0.13);
+            border-radius: 13px;
+
+            background:
+                radial-gradient(
+                    circle at center,
+                    rgba(57, 255, 136, 0.035),
+                    transparent 65%
+                ),
+                #030605;
+        }
+
+        .wiring-box pre {
+            min-width: 650px;
+
+            color: #bfffd5;
+            font-family: "Cascadia Code", "Fira Code", monospace;
+            font-size: 12px;
+            line-height: 1.7;
+        }
+
+        /* =========================================================
+           PROJECT STEPS
+        ========================================================= */
+
+        .steps {
+            display: grid;
+            gap: 10px;
+        }
+
+        .step {
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+
+            padding: 15px;
+
+            border: 1px solid rgba(255, 255, 255, 0.055);
+            border-radius: 12px;
+
+            background: rgba(255, 255, 255, 0.018);
+        }
+
+        .step-number {
+            width: 27px;
+            height: 27px;
+            flex-shrink: 0;
+
+            display: grid;
+            place-items: center;
+
+            border: 1px solid var(--border-bright);
+            border-radius: 8px;
+
+            color: var(--green);
+            background: rgba(57, 255, 136, 0.05);
+
+            font-family: monospace;
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .step-content {
+            padding-top: 3px;
+        }
+
+        .step-content strong {
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .step-content span {
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        /* =========================================================
+           CODE
+        ========================================================= */
+
+        .code-wrap {
+            position: relative;
+            margin-top: 16px;
+        }
+
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            padding: 9px 13px;
+
+            border: 1px solid rgba(57, 255, 136, 0.11);
+            border-bottom: none;
+            border-radius: 11px 11px 0 0;
+
+            background: rgba(57, 255, 136, 0.035);
+        }
+
+        .code-language {
+            color: var(--green);
+            font-family: monospace;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .copy-btn {
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            border-radius: 6px;
+
+            padding: 5px 8px;
+
+            color: var(--muted);
+            background: rgba(255, 255, 255, 0.035);
+
+            cursor: pointer;
+
+            font-family: monospace;
+            font-size: 9px;
+            text-transform: uppercase;
+
+            transition:
+                color 0.2s ease,
+                border-color 0.2s ease;
+        }
+
+        .copy-btn:hover {
+            color: var(--green);
+            border-color: var(--border-bright);
+        }
+
+        pre.code {
+            margin: 0;
+
+            max-height: 650px;
+            overflow: auto;
+
+            padding: 20px;
+
+            border: 1px solid rgba(57, 255, 136, 0.11);
+            border-radius: 0 0 11px 11px;
+
+            background: #020504;
+
+            color: #caffd9;
+
+            font-family:
+                "Cascadia Code",
+                "Fira Code",
+                Consolas,
+                monospace;
+
+            font-size: 12px;
+            line-height: 1.7;
+
+            tab-size: 4;
+        }
+
+        pre.code::-webkit-scrollbar {
+            width: 7px;
+            height: 7px;
+        }
+
+        pre.code::-webkit-scrollbar-thumb {
+            background: rgba(57, 255, 136, 0.12);
+            border-radius: 10px;
+        }
+
+        code.inline {
+            padding: 3px 6px;
+
+            border: 1px solid rgba(57, 255, 136, 0.13);
+            border-radius: 5px;
+
+            color: var(--green);
+            background: rgba(57, 255, 136, 0.045);
+
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+
+        /* =========================================================
+           FLOW
+        ========================================================= */
+
+        .flow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 9px;
+
+            margin-top: 20px;
+        }
+
+        .flow-box {
+            padding: 12px 14px;
+
+            border: 1px solid var(--border);
+            border-radius: 9px;
+
+            color: var(--green);
+            background: rgba(57, 255, 136, 0.04);
+
+            font-family: monospace;
+            font-size: 10px;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .flow-arrow {
+            color: var(--dim);
+            font-family: monospace;
+        }
+
+        /* =========================================================
+           EXPECTED RESULT
+        ========================================================= */
+
+        .sequence {
+            display: grid;
+            gap: 9px;
+            margin-top: 16px;
+        }
+
+        .sequence-row {
+            display: grid;
+            grid-template-columns: 42px 1fr auto;
+            align-items: center;
+            gap: 13px;
+
+            padding: 13px 15px;
+
+            border: 1px solid rgba(255, 255, 255, 0.055);
+            border-radius: 11px;
+
+            background: rgba(255, 255, 255, 0.018);
+        }
+
+        .sequence-number {
+            color: var(--dim);
+            font-family: monospace;
+            font-size: 10px;
+        }
+
+        .sequence-description {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .sequence-state {
+            padding: 6px 9px;
+
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+
+            font-family: monospace;
+            font-size: 9px;
+            font-weight: 700;
+        }
+
+        /* =========================================================
+           EXPERIMENT
+        ========================================================= */
+
+        .experiment {
+            border-color: rgba(255, 230, 109, 0.16);
+
+            background:
+                radial-gradient(
+                    circle at 90% 10%,
+                    rgba(255, 230, 109, 0.045),
+                    transparent 30%
+                ),
+                rgba(20, 18, 8, 0.35);
+        }
+
+        .experiment-tag {
+            display: inline-block;
+
+            margin-bottom: 10px;
+            padding: 5px 8px;
+
+            border: 1px solid rgba(255, 230, 109, 0.16);
+            border-radius: 5px;
+
+            color: var(--yellow);
+            background: rgba(255, 230, 109, 0.04);
+
+            font-family: monospace;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+        }
+
+        /* =========================================================
+           CHALLENGE
+        ========================================================= */
+
+        .challenge {
+            border-color: rgba(53, 232, 255, 0.15);
+
+            background:
+                radial-gradient(
+                    circle at 88% 12%,
+                    rgba(53, 232, 255, 0.055),
+                    transparent 32%
+                ),
+                rgba(5, 15, 17, 0.45);
+        }
+
+        .challenge-title {
+            color: var(--cyan);
+        }
+
+        .hint {
+            margin-top: 16px;
+            padding: 14px 16px;
+
+            border-left: 2px solid var(--cyan);
+            border-radius: 0 9px 9px 0;
+
+            color: #aeeff7;
+            background: rgba(53, 232, 255, 0.035);
+
+            font-size: 13px;
+            line-height: 1.65;
+        }
+
+        /* =========================================================
+           TROUBLESHOOTING
+        ========================================================= */
+
+        .trouble {
+            display: grid;
+            gap: 10px;
+        }
+
+        .trouble-row {
+            display: grid;
+            grid-template-columns: 35px 1fr;
+            gap: 12px;
+
+            padding: 14px;
+
+            border: 1px solid rgba(255, 85, 119, 0.09);
+            border-radius: 11px;
+
+            background: rgba(255, 85, 119, 0.018);
+        }
+
+        .trouble-icon {
+            width: 27px;
+            height: 27px;
+
+            display: grid;
+            place-items: center;
+
+            border-radius: 7px;
+
+            color: var(--red);
+            background: rgba(255, 85, 119, 0.055);
+
+            font-family: monospace;
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .trouble-row strong {
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .trouble-row span {
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.55;
+        }
+
+        /* =========================================================
+           VOCABULARY
+        ========================================================= */
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 620px;
+        }
+
+        th,
+        td {
+            padding: 13px 14px;
+            text-align: left;
+
+            border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+        }
+
+        th {
+            color: var(--green);
+            background: rgba(57, 255, 136, 0.035);
+
+            font-family: monospace;
+            font-size: 9px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        td {
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.55;
+        }
+
+        td:first-child {
+            width: 28%;
+            color: var(--text);
+            font-family: monospace;
+        }
+
+        /* =========================================================
+           NAVIGATION
+        ========================================================= */
+
+        .bottom-nav {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+
+            margin-top: 28px;
+        }
+
+        .nav-btn {
+            min-width: 150px;
+
+            padding: 13px 17px;
+
+            border: 1px solid var(--border);
+            border-radius: 10px;
+
+            color: var(--muted);
+            background: rgba(57, 255, 136, 0.025);
+
+            cursor: pointer;
+
+            transition:
+                color 0.2s ease,
+                border-color 0.2s ease,
+                background 0.2s ease,
+                transform 0.2s ease;
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            color: var(--green);
+            border-color: var(--border-bright);
+            background: rgba(57, 255, 136, 0.055);
+            transform: translateY(-2px);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.25;
+            cursor: not-allowed;
+        }
+
+        .nav-btn small {
+            display: block;
+
+            margin-bottom: 4px;
+
+            color: var(--dim);
+
+            font-family: monospace;
+            font-size: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .nav-btn.next {
+            text-align: right;
+        }
+
+        /* =========================================================
+           MOBILE
+        ========================================================= */
+
+        .mobile-header {
+            display: none;
+        }
+
+        @media (max-width: 900px) {
+            :root {
+                --sidebar-width: 0px;
+            }
+
+            .sidebar {
+                display: none;
+            }
+
+            .main {
+                margin-left: 0;
+            }
+
+            .mobile-header {
+                position: sticky;
+                top: 0;
+                z-index: 80;
+
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+
+                height: 58px;
+                padding: 0 16px;
+
+                background: rgba(5, 8, 7, 0.92);
+                border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+
+                backdrop-filter: blur(18px);
+            }
+
+            .mobile-title {
+                color: var(--green);
+                font-family: monospace;
+                font-size: 10px;
+                font-weight: 700;
+                letter-spacing: 0.1em;
+            }
+
+            .mobile-progress {
+                color: var(--muted);
+                font-family: monospace;
+                font-size: 9px;
+            }
+
+            .topbar {
+                display: none;
+            }
+
+            .content {
+                width: min(100% - 28px, 720px);
+                padding-top: 28px;
+            }
+
+            .hero {
+                padding: 30px 24px;
+            }
+
+            .card {
+                padding: 20px;
+            }
+
+            .state-machine {
+                grid-template-columns: 1fr;
+            }
+
+            .state-arrow {
+                display: none;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .hero h1 {
+                font-size: 36px;
+            }
+
+            .hero p {
+                font-size: 13px;
+            }
+
+            .bottom-nav {
+                flex-direction: column;
+            }
+
+            .nav-btn {
+                width: 100%;
+            }
+
+            .nav-btn.next {
+                text-align: left;
+            }
+
+            .sequence-row {
+                grid-template-columns: 30px 1fr;
+            }
+
+            .sequence-state {
+                grid-column: 2;
+                justify-self: start;
+            }
+
+            pre.code {
+                font-size: 10px;
+            }
+
+            .wiring-box pre {
+                font-size: 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="app">
+
+    <!-- =========================================================
+         DESKTOP SIDEBAR
+    ========================================================== -->
+
+    <aside class="sidebar">
+
+        <div class="brand">
+            <div class="brand-top">
+                <div class="brand-mark">QC</div>
+
+                <div>
+                    <div class="brand-title">
+                        Quantum Core
+                    </div>
+
+                    <div class="brand-subtitle">
+                        ESP32 // Project 07
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="progress-area">
+
+            <div class="progress-row">
+                <span>Mission Progress</span>
+                <span class="progress-number" id="progressText">
+                    1 / 14
+                </span>
+            </div>
+
+            <div class="progress-track">
+                <div
+                    class="progress-fill"
+                    id="progressFill"
+                ></div>
+            </div>
+
+        </div>
+
+        <nav class="nav" id="sideNav">
+
+            <button class="nav-item active" data-section="0">
+                <span class="nav-number">01</span>
+                <span class="nav-label">What You Have</span>
+            </button>
+
+            <button class="nav-item" data-section="1">
+                <span class="nav-number">02</span>
+                <span class="nav-label">What We're Learning</span>
+            </button>
+
+            <button class="nav-item" data-section="2">
+                <span class="nav-number">03</span>
+                <span class="nav-label">Wiring</span>
+            </button>
+
+            <button class="nav-item" data-section="3">
+                <span class="nav-number">04</span>
+                <span class="nav-label">Create Project</span>
+            </button>
+
+            <button class="nav-item" data-section="4">
+                <span class="nav-number">05</span>
+                <span class="nav-label">Complete Code</span>
+            </button>
+
+            <button class="nav-item" data-section="5">
+                <span class="nav-number">06</span>
+                <span class="nav-label">Understand Code</span>
+            </button>
+
+            <button class="nav-item" data-section="6">
+                <span class="nav-number">07</span>
+                <span class="nav-label">Build + Upload</span>
+            </button>
+
+            <button class="nav-item" data-section="7">
+                <span class="nav-number">08</span>
+                <span class="nav-label">What Should Happen</span>
+            </button>
+
+            <button class="nav-item" data-section="8">
+                <span class="nav-number">09</span>
+                <span class="nav-label">Experiment</span>
+            </button>
+
+            <button class="nav-item" data-section="9">
+                <span class="nav-number">10</span>
+                <span class="nav-label">Challenge</span>
+            </button>
+
+            <button class="nav-item" data-section="10">
+                <span class="nav-number">11</span>
+                <span class="nav-label">Troubleshooting</span>
+            </button>
+
+            <button class="nav-item" data-section="11">
+                <span class="nav-number">12</span>
+                <span class="nav-label">Vocabulary</span>
+            </button>
+
+            <button class="nav-item" data-section="12">
+                <span class="nav-number">13</span>
+                <span class="nav-label">What You Learned</span>
+            </button>
+
+            <button class="nav-item" data-section="13">
+                <span class="nav-number">14</span>
+                <span class="nav-label">Next Project</span>
+            </button>
+
+        </nav>
+
+        <div class="sidebar-bottom">
+            <div class="keyboard-hint">
+                Navigate with
+                <span class="key">←</span>
+                <span class="key">→</span>
+                arrow keys
+            </div>
+        </div>
+
+    </aside>
+
+    <!-- =========================================================
+         MAIN
+    ========================================================== -->
+
+    <main class="main">
+
+        <div class="mobile-header">
+            <div class="mobile-title">
+                QC // ESP32 // P07
+            </div>
+
+            <div
+                class="mobile-progress"
+                id="mobileProgress"
+            >
+                01 / 14
+            </div>
+        </div>
+
+        <header class="topbar">
+
+            <div class="topbar-left">
+                <span class="status-dot"></span>
+                SYSTEM ONLINE
+                <span>/</span>
+                ESP32 DEVELOPMENT
+            </div>
+
+            <div class="topbar-right">
+                PROJECT_07 // STATE_MACHINE
+            </div>
+
+        </header>
+
+        <div class="content">
+
+            <!-- =================================================
+                 HERO
+            ================================================== -->
+
+            <section class="hero">
+
+                <div class="eyebrow">
+                    ESP32 DEVELOPMENT // PROJECT 07
+                </div>
+
+                <h1>
+                    <span>TRAFFIC</span>
+                    LIGHT
+                </h1>
+
+                <div class="hero-line"></div>
+
+                <p>
+                    You're about to learn one of the most important
+                    concepts in robotics, video games, embedded systems,
+                    and programming:
+                    <strong>The State Machine.</strong>
+                </p>
+
+                <div class="hero-terminal">
+                    <span class="prompt">my-bro@esp32:~$</span>
+                    mission load project_07
+                    <br>
+                    <span class="prompt">></span>
+                    STATE MACHINE CORE INITIALIZED
+                    <br>
+                    <span class="prompt">></span>
+                    RED → GREEN → YELLOW → RED
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 01
+            ================================================== -->
+
+            <section class="section active" data-section="0">
+
+                <div class="section-header">
+                    <div class="section-index">
+                        01 // HARDWARE
+                    </div>
+
+                    <h2 class="section-title">
+                        What You Have
+                    </h2>
+
+                    <p class="section-description">
+                        This project expands the hardware from the
+                        previous projects by adding two more LEDs.
+                    </p>
+                </div>
+
+                <div class="card">
+
+                    <div class="items">
+
+                        <div class="item">
+                            <span class="item-icon">▸</span>
+                            <span>💻 Windows laptop/PC</span>
+                        </div>
+
+                        <div class="item">
+                            <span class="item-icon">▸</span>
+                            <span>🔌 USB cable</span>
+                        </div>
+
+                        <div class="item">
+                            <span class="item-icon">▸</span>
+                            <span>🟦 ESP32 DevKit V1</span>
+                        </div>
+
+                        <div class="item">
+                            <span class="item-icon">▸</span>
+                            <span>🍞 1x Breadboard</span>
+                        </div>
+
+                        <div class="item">
+                            <span class="item-icon">▸</span>
+                            <span>
+                                💡 3x LEDs —
+                                Red, Yellow/Orange, Green
+                            </span>
+                        </div>
+
+                        <div class="item">
+                            <span class="item-icon">▸</span>
+                            <span>🔘 1x Push button</span>
+                        </div>
+
+                        <div class="item">
+                            <span class="item-icon">▸</span>
+                            <span>🔗 Jumper wires</span>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 02
+            ================================================== -->
+
+            <section class="section" data-section="1">
+
+                <div class="section-header">
+
+                    <div class="section-index">
+                        02 // CORE CONCEPT
+                    </div>
+
+                    <h2 class="section-title">
+                        What Are We Learning?
+                    </h2>
+
+                    <p class="section-description">
+                        Today we're learning about
+                        <strong>State Machines</strong>
+                        and chained decisions using
+                        <code class="inline">else if</code>.
+                    </p>
+
+                </div>
+
+                <div class="card">
+
+                    <h3>
+                        🧠 The State Machine
+                    </h3>
+
+                    <p>
+                        Imagine a vending machine.
+                    </p>
+
+                    <p>
+                        When you walk up to it, it is in an
+                        <strong>Idle</strong> state.
+                    </p>
+
+                    <p>
+                        When you put in a coin, it switches to a
+                        <strong>Ready</strong> state.
+                    </p>
+
+                    <p>
+                        When you press a button, it switches to a
+                        <strong>Dispensing</strong> state.
+                    </p>
+
+                    <p>
+                        It can only be in one of these states at a time.
+                    </p>
+
+                </div>
+
+                <div class="card">
+
+                    <h3>
+                        🚦 Our Three States
+                    </h3>
+
+                    <p>
+                        We're going to create a memory box called
+                        <code class="inline">trafficState</code>.
+                        It will hold one number:
+                        <strong>0, 1, or 2.</strong>
+                    </p>
+
+                    <div class="state-machine">
+
+                        <div class="state red-state">
+
+                            <div class="state-number">
+                                STATE 0
+                            </div>
+
+                            <div class="state-light"></div>
+
+                            <div class="state-name red">
+                                RED
+                            </div>
+
+                            <div class="state-code">
+                                trafficState == 0
+                            </div>
+
+                            <span class="state-arrow">
+                                →
+                            </span>
+
+                        </div>
+
+                        <div class="state green-state">
+
+                            <div class="state-number">
+                                STATE 1
+                            </div>
+
+                            <div class="state-light"></div>
+
+                            <div class="state-name accent">
+                                GREEN
+                            </div>
+
+                            <div class="state-code">
+                                trafficState == 1
+                            </div>
+
+                            <span class="state-arrow">
+                                →
+                            </span>
+
+                        </div>
+
+                        <div class="state yellow-state">
+
+                            <div class="state-number">
+                                STATE 2
+                            </div>
+
+                            <div class="state-light"></div>
+
+                            <div class="state-name yellow">
+                                YELLOW
+                            </div>
+
+                            <div class="state-code">
+                                trafficState == 2
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <p style="margin-top: 20px;">
+                        Every button press adds
+                        <strong>1</strong>
+                        to the state.
+                    </p>
+
+                    <p>
+                        If the state becomes greater than
+                        <strong>2</strong>,
+                        we reset it back to
+                        <strong>0</strong>.
+                    </p>
+
+                </div>
+
+                <div class="card">
+
+                    <h3>
+                        🔗 Chained Decisions — <code class="inline">else if</code>
+                    </h3>
+
+                    <p>
+                        In Project 06, we used independent
+                        <code class="inline">if</code>
+                        statements.
+                    </p>
+
+                    <p>
+                        Today, we need the ESP32 to choose exactly
+                        <strong>one</strong>
+                        behavior.
+                    </p>
+
+                    <div class="quote-box" style="margin-top: 18px;">
+
+                        <p>
+                            <strong>IF</strong>
+                            state is 0 → do Red.
+                        </p>
+
+                        <p>
+                            <strong>ELSE IF</strong>
+                            state is 1 → do Green.
+                        </p>
+
+                        <p>
+                            <strong>ELSE IF</strong>
+                            state is 2 → do Yellow.
+                        </p>
+
+                    </div>
+
+                    <p style="margin-top: 18px;">
+                        Because the decisions are chained together
+                        with <code class="inline">else</code>,
+                        the ESP32 will only execute one matching branch.
+                    </p>
+
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 03
+            ================================================== -->
+
+            <section class="section" data-section="2">
+
+                <div class="section-header">
+
+                    <div class="section-index">
+                        03 // HARDWARE
+                    </div>
+
+                    <h2 class="section-title">
+                        Wiring
+                    </h2>
+
+                    <p class="section-description">
+                        We now have three LEDs and one button.
+                        Every component shares the same ground rail.
+                    </p>
+
+                </div>
+
+                <div class="card">
+
+                    <h3>
+                        🚦 LEDs
+                    </h3>
+
+                    <div class="items">
+
+                        <div class="item">
+                            <span class="item-icon">●</span>
+                            <span>
+                                <strong>Green LED:</strong>
+                                Long leg → D2,
+                                Short leg → Blue GND rail.
+                            </span>
+                        </div>
+
+                        <div class="item">
+                            <span class="item-icon">●</span>
+                            <span>
+                                <strong>Yellow LED:</strong>
+                                Long leg → D4,
+                                Short leg → Blue GND rail.
+                            </span>
+                        </div>
+
+                        <div class="item">
+                            <span class="item-icon">●</span>
+                            <span>
+                                <strong>Red LED:</strong>
+                                Long leg → D5,
+                                Short leg → Blue GND rail.
+                            </span>
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="card">
+
+                    <h3>
+                        🔘 Button
+                    </h3>
+
+                    <div class="items">
+
+                        <div class="item">
+                            <span class="item-icon">▸</span>
+                            <span>
+                                One button leg → <strong>D14</strong>
+                            </span>
+                        </div>
+
+                        <div class="item">
+                            <span class="item-icon">▸</span>
+                            <span>
+                                Opposite button leg →
+                                <strong>Blue GND rail</strong>
+                            </span>
+                        </div>
+
+                        <div class="item">
+                            <span class="item-icon">▸</span>
+                            <span>
+                                Connect an ESP32 GND pin to the
+                                Blue GND rail.
+                            </span>
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="wiring-box">
+
+<pre>
+ ESP32          BREADBOARD
+
+  D2 ────────► Green LED
+  D4 ────────► Yellow LED
+  D5 ────────► Red LED
+
+ D14 ────────► Button
+
+ GND ────────► [Blue Power Rail]
+                      ▲
+                      │
+                      │
+             ┌────────┼────────┐
+             │        │        │
+           LEDs     Button    GND
+</pre>
+
+                </div>
+
+                <div class="card" style="margin-top: 17px;">
+
+                    <p>
+                        <strong>Important:</strong>
+                        All three LEDs and the button connect to
+                        the same Blue GND rail.
+                    </p>
+
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 04
+            ================================================== -->
+
+            <section class="section" data-section="3">
+
+                <div class="section-header">
+
+                    <div class="section-index">
+                        04 // SOFTWARE
+                    </div>
+
+                    <h2 class="section-title">
+                        Create the Project
+                    </h2>
+
+                    <p class="section-description">
+                        Time to create the PlatformIO project.
+                    </p>
+
+                </div>
+
+                <div class="card">
+
+                    <div class="steps">
+
+                        <div class="step">
+                            <div class="step-number">1</div>
+
+                            <div class="step-content">
+                                <strong>Open VS Code</strong>
+                                <span>
+                                    Go to PlatformIO 🧩.
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="step">
+                            <div class="step-number">2</div>
+
+                            <div class="step-content">
+                                <strong>New Project</strong>
+                                <span>
+                                    Click <strong>New Project</strong>.
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="step">
+                            <div class="step-number">3</div>
+
+                            <div class="step-content">
+                                <strong>Project Name</strong>
+                                <span>
+                                    Name it:
+                                    <code class="inline">
+                                        ESP32-07-TrafficLight
+                                    </code>
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="step">
+                            <div class="step-number">4</div>
+
+                            <div class="step-content">
+                                <strong>Board</strong>
+                                <span>
+                                    Select
+                                    <strong>
+                                        DOIT ESP32 DEVKIT V1
+                                    </strong>.
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="step">
+                            <div class="step-number">5</div>
+
+                            <div class="step-content">
+                                <strong>Framework</strong>
+                                <span>
+                                    Select
+                                    <strong>Arduino</strong>.
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="step">
+                            <div class="step-number">6</div>
+
+                            <div class="step-content">
+                                <strong>Finish</strong>
+                                <span>
+                                    Click <strong>Finish</strong>.
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="step">
+                            <div class="step-number">7</div>
+
+                            <div class="step-content">
+                                <strong>Open main.cpp</strong>
+                                <span>
+                                    Open
+                                    <code class="inline">
+                                        src/main.cpp
+                                    </code>.
+                                </span>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 05
+            ================================================== -->
+
+            <section class="section" data-section="4">
+
+                <div class="section-header">
+
+                    <div class="section-index">
+                        05 // CODE
+                    </div>
+
+                    <h2 class="section-title">
+                        Complete Code
+                    </h2>
+
+                    <p class="section-description">
+                        This combines the Button Toggle logic from
+                        Project 05 with the Multiple LEDs from
+                        Project 03.
+                    </p>
+
+                </div>
+
+                <div class="card">
+
+                    <p>
+                        Delete the default code and paste this into
+                        <code class="inline">src/main.cpp</code>.
+                    </p>
+
+                    <div class="code-wrap">
+
+                        <div class="code-header">
+                            <span class="code-language">
+                                C++ // Arduino
+                            </span>
+
+                            <button class="copy-btn">
+                                Copy
+                            </button>
+                        </div>
+
+<pre class="code">/*
+ * ============================================================
+ * MY BRO'S SEVENTH ESP32 PROGRAM: THE TRAFFIC LIGHT
+ * ============================================================
+ */
+
+// Name our pins
+const int PIN_GREEN = 2;
+const int PIN_YELLOW = 4;
+const int PIN_RED = 5;
+const int BUTTON_PIN = 14;
+
+// 1. STATE MACHINE VARIABLES
+// This variable stores our current "State" (0 = Red, 1 = Green, 2 = Yellow)
+int trafficState = 0;
+
+// This remembers the button so we only count the "click", not holding it down
+int lastButtonState = HIGH;
+
+void setup() {
+    // Configure our LEDs as outputs
+    pinMode(PIN_GREEN, OUTPUT);
+    pinMode(PIN_YELLOW, OUTPUT);
+    pinMode(PIN_RED, OUTPUT);
+
+    // Configure our button as an input with internal power
+    pinMode(BUTTON_PIN, INPUT_PULLUP);
+}
+
+void loop() {
+    int currentButtonState = digitalRead(BUTTON_PIN);
+
+    // --------------------------------------------------------
+    // PART 1: LISTEN FOR THE BUTTON CLICK (STATE CHANGE)
+    // --------------------------------------------------------
+    if (lastButtonState == HIGH && currentButtonState == LOW) {
+
+        // Move to the next state by adding 1
+        trafficState = trafficState + 1;
+
+        // If we go past 2, loop back to 0!
+        if (trafficState > 2) {
+            trafficState = 0;
+        }
+
+        delay(50); // Debounce to stop button glitching
+    }
+
+    // Save the button state for the next loop
+    lastButtonState = currentButtonState;
+
+
+    // --------------------------------------------------------
+    // PART 2: EXECUTE THE STATE (CONTROL THE LIGHTS)
+    // --------------------------------------------------------
+    if (trafficState == 0) {
+        // STATE 0: RED LIGHT
+        digitalWrite(PIN_RED, HIGH);
+        digitalWrite(PIN_YELLOW, LOW);
+        digitalWrite(PIN_GREEN, LOW);
+    }
+    else if (trafficState == 1) {
+        // STATE 1: GREEN LIGHT
+        digitalWrite(PIN_RED, LOW);
+        digitalWrite(PIN_YELLOW, LOW);
+        digitalWrite(PIN_GREEN, HIGH);
+    }
+    else if (trafficState == 2) {
+        // STATE 2: YELLOW LIGHT
+        digitalWrite(PIN_RED, LOW);
+        digitalWrite(PIN_YELLOW, HIGH);
+        digitalWrite(PIN_GREEN, LOW);
+    }
+}</pre>
+
+                    </div>
+
+                    <p style="margin-top: 17px;">
+                        Save your code with
+                        <strong>Ctrl + S</strong>.
+                    </p>
+
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 06
+            ================================================== -->
+
+            <section class="section" data-section="5">
+
+                <div class="section-header">
+
+                    <div class="section-index">
+                        06 // CODE ANALYSIS
+                    </div>
+
+                    <h2 class="section-title">
+                        Understand the Code
+                    </h2>
+
+                    <p class="section-description">
+                        This program has two major jobs:
+                        detect the button click and execute the
+                        current state.
+                    </p>
+
+                </div>
+
+                <div class="card">
+
+                    <h3>
+                        PART 1 — The Trigger
+                    </h3>
+
+                    <div class="code-wrap">
+
+                        <div class="code-header">
+                            <span class="code-language">
+                                State Update
+                            </span>
+
+                            <button class="copy-btn">
+                                Copy
+                            </button>
+                        </div>
+
+<pre class="code">trafficState = trafficState + 1;</pre>
+
+                    </div>
+
+                    <p style="margin-top: 15px;">
+                        Every time you click the button, we take
+                        whatever number is currently inside the
+                        <code class="inline">trafficState</code>
+                        box, add
+                        <strong>1</strong>,
+                        and put the result back into the box.
+                    </p>
+
+                </div>
+
+                <div class="card">
+
+                    <h3>
+                        🔄 Wrapping Around
+                    </h3>
+
+                    <div class="code-wrap">
+
+                        <div class="code-header">
+                            <span class="code-language">
+                                State Reset
+                            </span>
+
+                            <button class="copy-btn">
+                                Copy
+                            </button>
+                        </div>
+
+<pre class="code">if (trafficState > 2) {
+    trafficState = 0;
+}</pre>
+
+                    </div>
+
+                    <p style="margin-top: 15px;">
+                        Our valid states are only
+                        <strong>0, 1, and 2</strong>.
+                    </p>
+
+                    <p>
+                        So if adding 1 creates state 3,
+                        we immediately reset it to 0.
+                    </p>
+
+                    <div class="flow">
+
+                        <div class="flow-box">
+                            0
+                        </div>
+
+                        <div class="flow-arrow">
+                            →
+                        </div>
+
+                        <div class="flow-box">
+                            1
+                        </div>
+
+                        <div class="flow-arrow">
+                            →
+                        </div>
+
+                        <div class="flow-box">
+                            2
+                        </div>
+
+                        <div class="flow-arrow">
+                            →
+                        </div>
+
+                        <div class="flow-box">
+                            0
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="card">
+
+                    <h3>
+                        PART 2 — Execute the State
+                    </h3>
+
+                    <p>
+                        This is where
+                        <code class="inline">else if</code>
+                        becomes powerful.
+                    </p>
+
+                    <p>
+                        The ESP32 checks:
+                    </p>
+
+                    <div class="quote-box" style="margin-top: 15px;">
+
+                        <p>
+                            Is
+                            <code class="inline">
+                                trafficState == 0
+                            </code>?
+                            If yes → Red.
+                        </p>
+
+                        <p>
+                            Otherwise, is
+                            <code class="inline">
+                                trafficState == 1
+                            </code>?
+                            If yes → Green.
+                        </p>
+
+                        <p>
+                            Otherwise, is
+                            <code class="inline">
+                                trafficState == 2
+                            </code>?
+                            If yes → Yellow.
+                        </p>
+
+                    </div>
+
+                    <p style="margin-top: 17px;">
+                        Because these branches are chained,
+                        only one state is executed at a time.
+                    </p>
+
+                </div>
+
+                <div class="card">
+
+                    <h3>
+                        🧩 Why Every LED Gets a Command
+                    </h3>
+
+                    <p>
+                        Each state explicitly turns one LED
+                        <strong>HIGH</strong>
+                        and the other two
+                        <strong>LOW</strong>.
+                    </p>
+
+                    <p>
+                        This is important because otherwise an LED
+                        could remain ON from the previous state.
+                    </p>
+
+                    <div class="code-wrap">
+
+                        <div class="code-header">
+                            <span class="code-language">
+                                Example
+                            </span>
+                        </div>
+
+<pre class="code">digitalWrite(PIN_RED, HIGH);
+digitalWrite(PIN_YELLOW, LOW);
+digitalWrite(PIN_GREEN, LOW);</pre>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 07
+            ================================================== -->
+
+            <section class="section" data-section="6">
+
+                <div class="section-header">
+
+                    <div class="section-index">
+                        07 // DEPLOYMENT
+                    </div>
+
+                    <h2 class="section-title">
+                        Build + Upload
+                    </h2>
+
+                    <p class="section-description">
+                        Time to send your state machine into the
+                        ESP32.
+                    </p>
+
+                </div>
+
+                <div class="card">
+
+                    <div class="flow">
+
+                        <div class="flow-box">
+                            WRITE CODE
+                        </div>
+
+                        <div class="flow-arrow">
+                            →
+                        </div>
+
+                        <div class="flow-box">
+                            BUILD
+                        </div>
+
+                        <div class="flow-arrow">
+                            →
+                        </div>
+
+                        <div class="flow-box">
+                            UPLOAD
+                        </div>
+
+                        <div class="flow-arrow">
+                            →
+                        </div>
+
+                        <div class="flow-box">
+                            ESP32 RUNS
+                        </div>
+
+                        <div class="flow-arrow">
+                            →
+                        </div>
+
+                        <div class="flow-box">
+                            HARDWARE RESPONDS
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="card">
+
+                    <div class="steps">
+
+                        <div class="step">
+                            <div class="step-number">1</div>
+
+                            <div class="step-content">
+                                <strong>Connect USB</strong>
+
+                                <span>
+                                    Connect your ESP32 to the computer.
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="step">
+                            <div class="step-number">2</div>
+
+                            <div class="step-content">
+                                <strong>Build ✓</strong>
+
+                                <span>
+                                    Click the PlatformIO
+                                    <strong>Build</strong>
+                                    button.
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="step">
+                            <div class="step-number">3</div>
+
+                            <div class="step-content">
+                                <strong>Upload →</strong>
+
+                                <span>
+                                    Click the
+                                    <strong>Upload</strong>
+                                    button.
+                                </span>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 08
+            ================================================== -->
+
+            <section class="section" data-section="7">
+
+                <div class="section-header">
+
+                    <div class="section-index">
+                        08 // EXPECTED RESULT
+                    </div>
+
+                    <h2 class="section-title">
+                        What Should Happen?
+                    </h2>
+
+                    <p class="section-description">
+                        Your button now controls the state machine.
+                    </p>
+
+                </div>
+
+                <div class="card">
+
+                    <div class="sequence">
+
+                        <div class="sequence-row">
+
+                            <span class="sequence-number">
+                                01
+                            </span>
+
+                            <span class="sequence-description">
+                                ESP32 starts.
+                                <strong>Red</strong> is ON.
+                            </span>
+
+                            <span
+                                class="sequence-state red"
+                            >
+                                STATE 0
+                            </span>
+
+                        </div>
+
+                        <div class="sequence-row">
+
+                            <span class="sequence-number">
+                                02
+                            </span>
+
+                            <span class="sequence-description">
+                                Click the button once.
+                                Red OFF → <strong>Green ON</strong>.
+                            </span>
+
+                            <span
+                                class="sequence-state accent"
+                            >
+                                STATE 1
+                            </span>
+
+                        </div>
+
+                        <div class="sequence-row">
+
+                            <span class="sequence-number">
+                                03
+                            </span>
+
+                            <span class="sequence-description">
+                                Click again.
+                                Green OFF → <strong>Yellow ON</strong>.
+                            </span>
+
+                            <span
+                                class="sequence-state yellow"
+                            >
+                                STATE 2
+                            </span>
+
+                        </div>
+
+                        <div class="sequence-row">
+
+                            <span class="sequence-number">
+                                04
+                            </span>
+
+                            <span class="sequence-description">
+                                Click again.
+                                State wraps back to <strong>Red</strong>.
+                            </span>
+
+                            <span
+                                class="sequence-state red"
+                            >
+                                STATE 0
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="card">
+
+                    <div class="quote-box">
+
+                        <p class="quote-large">
+                            You are officially the traffic cop
+                            of this intersection! 🚦
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 09
+            ================================================== -->
+
+            <section class="section" data-section="8">
+
+                <div class="section-header">
+
+                    <div class="section-index">
+                        09 // EXPERIMENT
+                    </div>
+
+                    <h2 class="section-title">
+                        Change the Sequence
+                    </h2>
+
+                    <p class="section-description">
+                        Let's make the traffic light behave like a
+                        racing-game starting light.
+                    </p>
+
+                </div>
+
+                <div class="card experiment">
+
+                    <div class="experiment-tag">
+                        EXPERIMENT // SEQUENCE
+                    </div>
+
+                    <h3>
+                        🏎️ Red → Yellow → Green
+                    </h3>
+
+                    <p>
+                        Right now, the sequence is:
+                    </p>
+
+                    <div class="flow">
+
+                        <div class="flow-box">
+                            RED
+                        </div>
+
+                        <div class="flow-arrow">→</div>
+
+                        <div class="flow-box">
+                            GREEN
+                        </div>
+
+                        <div class="flow-arrow">→</div>
+
+                        <div class="flow-box">
+                            YELLOW
+                        </div>
+
+                    </div>
+
+                    <p style="margin-top: 20px;">
+                        Some racing games use:
+                    </p>
+
+                    <div class="flow">
+
+                        <div class="flow-box">
+                            RED
+                        </div>
+
+                        <div class="flow-arrow">→</div>
+
+                        <div class="flow-box">
+                            YELLOW
+                        </div>
+
+                        <div class="flow-arrow">→</div>
+
+                        <div class="flow-box">
+                            GREEN
+                        </div>
+
+                    </div>
+
+                    <p style="margin-top: 20px;">
+                        Change the code in
+                        <strong>Part 2</strong>
+                        so that:
+                    </p>
+
+                    <div class="items">
+
+                        <div class="item">
+                            <span class="item-icon">01</span>
+                            <span>
+                                State 1 turns on the
+                                <strong>Yellow</strong> LED.
+                            </span>
+                        </div>
+
+                        <div class="item">
+                            <span class="item-icon">02</span>
+                            <span>
+                                State 2 turns on the
+                                <strong>Green</strong> LED.
+                            </span>
+                        </div>
+
+                    </div>
+
+                    <p style="margin-top: 17px;">
+                        Save and upload to test your new racing
+                        start sequence!
+                    </p>
+
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 10
+            ================================================== -->
+
+            <section class="section" data-section="9">
+
+                <div class="section-header">
+
+                    <div class="section-index">
+                        10 // CHALLENGE
+                    </div>
+
+                    <h2 class="section-title">
+                        Automate the Traffic Light
+                    </h2>
+
+                    <p class="section-description">
+                        Now we're removing the human from the loop.
+                    </p>
+
+                </div>
+
+                <div class="card challenge">
+
+                    <h3 class="challenge-title">
+                        🔥 CHALLENGE — Automatic Traffic Light
+                    </h3>
+
+                    <p>
+                        Right now, the traffic light only changes
+                        when you press the button.
+                    </p>
+
+                    <p>
+                        But real traffic lights run automatically.
+                    </p>
+
+                    <p>
+                        Your objective is to remove the button
+                        entirely and make the traffic light run
+                        using a timer.
+                    </p>
+
+                    <div class="items">
+
+                        <div class="item">
+                            <span class="item-icon cyan">✓</span>
+                            <span>
+                                You don't need any button wires.
+                            </span>
+                        </div>
+
+                        <div class="item">
+                            <span class="item-icon cyan">✓</span>
+                            <span>
+                                Red should stay ON for
+                                <strong>3 seconds</strong>.
+                            </span>
+                        </div>
+
+                        <div class="item">
+                            <span class="item-icon cyan">✓</span>
+                            <span>
+                                Green should stay ON for
+                                <strong>3 seconds</strong>.
+                            </span>
+                        </div>
+
+                        <div class="item">
+                            <span class="item-icon cyan">✓</span>
+                            <span>
+                                Yellow should stay ON for
+                                <strong>1 second</strong>.
+                            </span>
+                        </div>
+
+                    </div>
+
+                    <div class="hint">
+
+                        💡 <strong>Hint:</strong>
+                        You actually did something similar back in
+                        Project 03 with the Loading Animation using
+                        <code class="inline">delay()</code>.
+                        You don't need
+                        <code class="inline">trafficState</code>
+                        or
+                        <code class="inline">lastButtonState</code>
+                        if you're simply using delays in a row.
+
+                    </div>
+
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 11
+            ================================================== -->
+
+            <section class="section" data-section="10">
+
+                <div class="section-header">
+
+                    <div class="section-index">
+                        11 // DEBUGGING
+                    </div>
+
+                    <h2 class="section-title">
+                        Troubleshooting
+                    </h2>
+
+                    <p class="section-description">
+                        If the state machine behaves strangely,
+                        check these first.
+                    </p>
+
+                </div>
+
+                <div class="card">
+
+                    <div class="trouble">
+
+                        <div class="trouble-row">
+
+                            <div class="trouble-icon">!</div>
+
+                            <div>
+                                <strong>
+                                    Button skips a light
+                                </strong>
+
+                                <span>
+                                    This usually means the button is
+                                    bouncing or you held it slightly
+                                    too long. Make sure
+                                    <code class="inline">
+                                        delay(50);
+                                    </code>
+                                    is inside the click-detection
+                                    block and that
+                                    <code class="inline">
+                                        lastButtonState =
+                                        currentButtonState;
+                                    </code>
+                                    is outside it, at the end of
+                                    Part 1.
+                                </span>
+                            </div>
+
+                        </div>
+
+                        <div class="trouble-row">
+
+                            <div class="trouble-icon">!</div>
+
+                            <div>
+                                <strong>
+                                    Two lights are ON at the same time
+                                </strong>
+
+                                <span>
+                                    Check every
+                                    <code class="inline">
+                                        else if
+                                    </code>
+                                    block. Each state should
+                                    explicitly make one pin HIGH and
+                                    the other two LOW.
+                                </span>
+                            </div>
+
+                        </div>
+
+                        <div class="trouble-row">
+
+                            <div class="trouble-icon">!</div>
+
+                            <div>
+                                <strong>
+                                    A light doesn't work
+                                </strong>
+
+                                <span>
+                                    Make sure all three LED pins are
+                                    configured as
+                                    <code class="inline">
+                                        OUTPUT
+                                    </code>
+                                    inside
+                                    <code class="inline">
+                                        setup()
+                                    </code>.
+                                </span>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 12
+            ================================================== -->
+
+            <section class="section" data-section="11">
+
+                <div class="section-header">
+
+                    <div class="section-index">
+                        12 // VOCABULARY
+                    </div>
+
+                    <h2 class="section-title">
+                        New Vocabulary
+                    </h2>
+
+                    <p class="section-description">
+                        These two terms are extremely important as
+                        your programs become more complex.
+                    </p>
+
+                </div>
+
+                <div class="card">
+
+                    <div class="table-wrap">
+
+                        <table>
+
+                            <thead>
+                                <tr>
+                                    <th>Word</th>
+                                    <th>Meaning</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+
+                                <tr>
+                                    <td>
+                                        State Machine
+                                    </td>
+
+                                    <td>
+                                        A system that can only be in
+                                        one specific state at a time
+                                        and transitions between states
+                                        based on rules.
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td>
+                                        else if
+                                    </td>
+
+                                    <td>
+                                        A way to chain conditions
+                                        together. If the first
+                                        condition is false, the next
+                                        condition is tested.
+                                    </td>
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 13
+            ================================================== -->
+
+            <section class="section" data-section="12">
+
+                <div class="section-header">
+
+                    <div class="section-index">
+                        13 // MILESTONE
+                    </div>
+
+                    <h2 class="section-title">
+                        What You Just Learned
+                    </h2>
+
+                    <p class="section-description">
+                        This is a serious programming milestone.
+                    </p>
+
+                </div>
+
+                <div class="card">
+
+                    <div class="quote-box">
+
+                        <p class="quote-large">
+                            Incredible job, my bro! 🚦
+                        </p>
+
+                    </div>
+
+                    <div class="spacer"></div>
+
+                    <p>
+                        You just built your first
+                        <strong>State Machine</strong>.
+                    </p>
+
+                    <p>
+                        This is how actual engineers design complex
+                        systems.
+                    </p>
+
+                    <p>
+                        Instead of writing messy spaghetti code,
+                        you separated the logic into two clean steps:
+                    </p>
+
+                    <div class="flow">
+
+                        <div class="flow-box">
+                            UPDATE STATE
+                        </div>
+
+                        <div class="flow-arrow">
+                            →
+                        </div>
+
+                        <div class="flow-box">
+                            EXECUTE STATE
+                        </div>
+
+                    </div>
+
+                    <p style="margin-top: 20px;">
+                        You also learned how to use
+                        <code class="inline">else if</code>
+                        chains to make sure the ESP32 follows one
+                        strict set of commands at a time.
+                    </p>
+
+                    <p>
+                        This pattern appears everywhere:
+                        games, robots, vending machines,
+                        elevators, factory systems, and much more.
+                    </p>
+
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 14
+            ================================================== -->
+
+            <section class="section" data-section="13">
+
+                <div class="section-header">
+
+                    <div class="section-index">
+                        14 // NEXT MISSION
+                    </div>
+
+                    <h2 class="section-title">
+                        Project 08
+                    </h2>
+
+                    <p class="section-description">
+                        The next project fixes a major problem with
+                        how we usually handle time.
+                    </p>
+
+                </div>
+
+                <div class="card">
+
+                    <h3>
+                        ⏱️ <code class="inline">millis()</code> LED
+                    </h3>
+
+                    <p>
+                        Our traffic light currently depends on
+                        <code class="inline">delay()</code>.
+                    </p>
+
+                    <p>
+                        But when you use:
+                    </p>
+
+                    <div class="code-wrap">
+
+                        <div class="code-header">
+                            <span class="code-language">
+                                Blocking Timer
+                            </span>
+                        </div>
+
+<pre class="code">delay(3000);</pre>
+
+                    </div>
+
+                    <p style="margin-top: 15px;">
+                        the ESP32 is effectively frozen during those
+                        three seconds. It can't read buttons,
+                        check sensors, or respond to other events.
+                    </p>
+
+                    <p>
+                        That's called
+                        <strong>blocking timing</strong>.
+                    </p>
+
+                </div>
+
+                <div class="card challenge">
+
+                    <h3 class="challenge-title">
+                        🚀 Next Mission
+                    </h3>
+
+                    <p>
+                        In
+                        <strong>
+                            Project 08 —
+                            <code class="inline">millis()</code> LED
+                        </strong>,
+                        we're going to learn one of the most powerful
+                        timing techniques in embedded programming:
+                        <strong>non-blocking timing</strong>.
+                    </p>
+
+                    <p>
+                        The ESP32 will track time while still being
+                        fully awake and able to respond to other
+                        things.
+                    </p>
+
+                    <div class="quote-box" style="margin-top: 20px;">
+
+                        <p class="quote-large">
+                            Say "next" when you're ready to make
+                            your ESP32 stay awake while keeping time. ⚡
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 BOTTOM NAV
+            ================================================== -->
+
+            <div class="bottom-nav">
+
+                <button
+                    class="nav-btn"
+                    id="prevBtn"
+                    disabled
+                >
+                    <small>
+                        Previous
+                    </small>
+
+                    ← Previous
+                </button>
+
+                <button
+                    class="nav-btn next"
+                    id="nextBtn"
+                >
+                    <small>
+                        Next
+                    </small>
+
+                    Next →
+                </button>
+
+            </div>
+
+        </div>
+
+    </main>
+
+</div>
+
+<script>
+    const sections = [
+        ...document.querySelectorAll(".section")
+    ];
+
+    const navItems = [
+        ...document.querySelectorAll(".nav-item")
+    ];
+
+    const progressFill =
+        document.getElementById("progressFill");
+
+    const progressText =
+        document.getElementById("progressText");
+
+    const mobileProgress =
+        document.getElementById("mobileProgress");
+
+    const prevBtn =
+        document.getElementById("prevBtn");
+
+    const nextBtn =
+        document.getElementById("nextBtn");
+
+    let currentSection = 0;
+
+    function updateSection(index) {
+
+        if (index < 0) {
+            index = 0;
+        }
+
+        if (index >= sections.length) {
+            index = sections.length - 1;
+        }
+
+        currentSection = index;
+
+        sections.forEach((section, i) => {
+            section.classList.toggle(
+                "active",
+                i === currentSection
+            );
+        });
+
+        navItems.forEach((item, i) => {
+            item.classList.toggle(
+                "active",
+                i === currentSection
+            );
+        });
+
+        const progress =
+            ((currentSection + 1) / sections.length) * 100;
+
+        progressFill.style.width =
+            `${progress}%`;
+
+        progressText.textContent =
+            `${currentSection + 1} / ${sections.length}`;
+
+        mobileProgress.textContent =
+            `${String(currentSection + 1).padStart(2, "0")} / ${sections.length}`;
+
+        prevBtn.disabled =
+            currentSection === 0;
+
+        nextBtn.disabled =
+            currentSection === sections.length - 1;
+
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
+
+        localStorage.setItem(
+            "qc-esp32-project-07-section",
+            currentSection
+        );
+    }
+
+    navItems.forEach((item) => {
+
+        item.addEventListener("click", () => {
+
+            const index =
+                Number(item.dataset.section);
+
+            updateSection(index);
+        });
+
+    });
+
+    prevBtn.addEventListener("click", () => {
+        updateSection(currentSection - 1);
+    });
+
+    nextBtn.addEventListener("click", () => {
+        updateSection(currentSection + 1);
+    });
+
+    document.addEventListener("keydown", (event) => {
+
+        if (
+            event.target.tagName === "INPUT" ||
+            event.target.tagName === "TEXTAREA"
+        ) {
+            return;
+        }
+
+        if (event.key === "ArrowLeft") {
+            updateSection(currentSection - 1);
+        }
+
+        if (event.key === "ArrowRight") {
+            updateSection(currentSection + 1);
+        }
+    });
+
+    document
+        .querySelectorAll(".copy-btn")
+        .forEach((button) => {
+
+            button.addEventListener("click", async () => {
+
+                const code =
+                    button
+                        .closest(".code-wrap")
+                        .querySelector("pre.code")
+                        .innerText;
+
+                try {
+
+                    await navigator.clipboard.writeText(code);
+
+                    const original =
+                        button.textContent;
+
+                    button.textContent =
+                        "Copied ✓";
+
+                    button.style.color =
+                        "var(--green)";
+
+                    setTimeout(() => {
+
+                        button.textContent =
+                            original;
+
+                        button.style.color =
+                            "";
+
+                    }, 1400);
+
+                } catch (error) {
+
+                    button.textContent =
+                        "Copy failed";
+
+                    setTimeout(() => {
+                        button.textContent =
+                            "Copy";
+                    }, 1400);
+
+                }
+
+            });
+
+        });
+
+    const savedSection =
+        Number(
+            localStorage.getItem(
+                "qc-esp32-project-07-section"
+            )
+        );
+
+    if (
+        Number.isInteger(savedSection) &&
+        savedSection >= 0 &&
+        savedSection < sections.length
+    ) {
+        updateSection(savedSection);
+    } else {
+        updateSection(0);
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,3989 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Project 31 — OTA Updates</title>
+
+    <style>
+        :root {
+            --bg: #050807;
+            --panel: #0a100d;
+            --panel-2: #0d1511;
+            --green: #00ff88;
+            --cyan: #00e5ff;
+            --yellow: #ffd166;
+            --red: #ff5577;
+            --text: #e9fff3;
+            --muted: #8aa99a;
+            --border: rgba(0, 255, 136, 0.14);
+            --sidebar: 285px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
+            background:
+                radial-gradient(
+                    circle at 20% 10%,
+                    rgba(0, 255, 136, 0.08),
+                    transparent 28%
+                ),
+                radial-gradient(
+                    circle at 85% 80%,
+                    rgba(0, 229, 255, 0.06),
+                    transparent 30%
+                ),
+                var(--bg);
+            color: var(--text);
+            font-family:
+                Inter,
+                ui-sans-serif,
+                system-ui,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            pointer-events: none;
+            opacity: 0.18;
+            background-image:
+                linear-gradient(
+                    rgba(0, 255, 136, 0.035) 1px,
+                    transparent 1px
+                ),
+                linear-gradient(
+                    90deg,
+                    rgba(0, 255, 136, 0.035) 1px,
+                    transparent 1px
+                );
+            background-size: 32px 32px;
+        }
+
+        button,
+        input,
+        textarea {
+            font: inherit;
+        }
+
+        .mobile-header {
+            display: none;
+        }
+
+        /* =====================================================
+           SIDEBAR
+           ===================================================== */
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            z-index: 20;
+            width: var(--sidebar);
+            padding: 26px 18px;
+            overflow-y: auto;
+            border-right: 1px solid var(--border);
+            background:
+                linear-gradient(
+                    180deg,
+                    rgba(7, 13, 10, 0.98),
+                    rgba(5, 9, 7, 0.96)
+                );
+            backdrop-filter: blur(18px);
+        }
+
+        .brand {
+            padding: 4px 10px 24px;
+        }
+
+        .brand-kicker {
+            color: var(--green);
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+        }
+
+        .brand-title {
+            margin-top: 7px;
+            font-size: 23px;
+            font-weight: 900;
+            letter-spacing: -0.04em;
+        }
+
+        .brand-subtitle {
+            margin-top: 5px;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .progress-area {
+            padding: 14px 10px 20px;
+        }
+
+        .progress-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 9px;
+            color: var(--muted);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .progress-text {
+            color: var(--green);
+        }
+
+        .progress-track {
+            height: 4px;
+            overflow: hidden;
+            border-radius: 99px;
+            background: rgba(255, 255, 255, 0.07);
+        }
+
+        .progress-fill {
+            width: 6.67%;
+            height: 100%;
+            border-radius: inherit;
+            background:
+                linear-gradient(
+                    90deg,
+                    var(--green),
+                    var(--cyan)
+                );
+            box-shadow:
+                0 0 15px rgba(0, 255, 136, 0.55);
+            transition: width 0.3s ease;
+        }
+
+        .nav {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            padding: 10px 11px;
+            border: 1px solid transparent;
+            border-radius: 10px;
+            background: transparent;
+            color: var(--muted);
+            text-align: left;
+            cursor: pointer;
+            transition:
+                background 0.2s ease,
+                border-color 0.2s ease,
+                color 0.2s ease,
+                transform 0.2s ease;
+        }
+
+        .nav-item:hover {
+            color: var(--text);
+            background: rgba(0, 255, 136, 0.045);
+            transform: translateX(2px);
+        }
+
+        .nav-item.active {
+            border-color: rgba(0, 255, 136, 0.18);
+            background: rgba(0, 255, 136, 0.08);
+            color: var(--green);
+            box-shadow:
+                inset 3px 0 0 var(--green),
+                0 0 25px rgba(0, 255, 136, 0.035);
+        }
+
+        .nav-number {
+            width: 24px;
+            color: #587365;
+            font-family: monospace;
+            font-size: 11px;
+        }
+
+        .nav-item.active .nav-number {
+            color: var(--green);
+        }
+
+        .nav-label {
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        /* =====================================================
+           MAIN
+           ===================================================== */
+
+        .main {
+            min-height: 100vh;
+            margin-left: var(--sidebar);
+        }
+
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            min-height: 64px;
+            padding: 12px 34px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(5, 8, 7, 0.76);
+            backdrop-filter: blur(18px);
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 12px var(--green);
+        }
+
+        .topbar-right {
+            color: #567264;
+            font-family: monospace;
+            font-size: 11px;
+        }
+
+        .content {
+            width: min(1100px, calc(100% - 48px));
+            margin: 0 auto;
+            padding: 42px 0 80px;
+        }
+
+        .section {
+            display: none;
+            animation: sectionIn 0.35s ease;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes sectionIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* =====================================================
+           HERO
+           ===================================================== */
+
+        .hero {
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 26px;
+            padding: 42px;
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            background:
+                radial-gradient(
+                    circle at 80% 15%,
+                    rgba(0, 255, 136, 0.09),
+                    transparent 30%
+                ),
+                linear-gradient(
+                    145deg,
+                    rgba(12, 23, 17, 0.96),
+                    rgba(7, 13, 10, 0.96)
+                );
+            box-shadow:
+                0 20px 80px rgba(0, 0, 0, 0.35),
+                inset 0 1px 0 rgba(255, 255, 255, 0.025);
+        }
+
+        .hero::after {
+            content: "31";
+            position: absolute;
+            right: 22px;
+            bottom: -28px;
+            color: rgba(0, 255, 136, 0.035);
+            font-family: monospace;
+            font-size: 180px;
+            font-weight: 900;
+            line-height: 1;
+            pointer-events: none;
+        }
+
+        .eyebrow {
+            margin-bottom: 12px;
+            color: var(--green);
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            position: relative;
+            z-index: 1;
+            max-width: 850px;
+            margin: 0;
+            font-size: clamp(36px, 6vw, 68px);
+            line-height: 0.98;
+            letter-spacing: -0.055em;
+        }
+
+        .hero-subtitle {
+            position: relative;
+            z-index: 1;
+            max-width: 750px;
+            margin: 20px 0 0;
+            color: #a5c1b1;
+            font-size: 16px;
+            line-height: 1.75;
+        }
+
+        .terminal {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 28px;
+            padding: 13px 15px;
+            border: 1px solid rgba(0, 255, 136, 0.13);
+            border-radius: 11px;
+            background: #030504;
+            color: var(--green);
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        .terminal::before {
+            content: ">";
+            color: var(--cyan);
+        }
+
+        /* =====================================================
+           TYPOGRAPHY
+           ===================================================== */
+
+        h2 {
+            margin: 0 0 16px;
+            font-size: 30px;
+            letter-spacing: -0.04em;
+        }
+
+        h3 {
+            margin: 0 0 10px;
+            font-size: 18px;
+        }
+
+        p {
+            color: #a5bbae;
+            line-height: 1.78;
+        }
+
+        strong {
+            color: var(--text);
+        }
+
+        code {
+            padding: 2px 6px;
+            border: 1px solid rgba(0, 255, 136, 0.1);
+            border-radius: 5px;
+            background: rgba(0, 255, 136, 0.05);
+            color: var(--green);
+            font-family:
+                "Cascadia Code",
+                Consolas,
+                monospace;
+            font-size: 0.9em;
+        }
+
+        .section-intro {
+            max-width: 850px;
+            margin-bottom: 26px;
+            color: var(--muted);
+        }
+
+        .highlight {
+            color: var(--green);
+            font-weight: 800;
+        }
+
+        .cyan {
+            color: var(--cyan);
+        }
+
+        .yellow {
+            color: var(--yellow);
+        }
+
+        .red {
+            color: var(--red);
+        }
+
+        /* =====================================================
+           CARDS
+           ===================================================== */
+
+        .grid {
+            display: grid;
+            grid-template-columns:
+                repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .grid.three {
+            grid-template-columns:
+                repeat(3, minmax(0, 1fr));
+        }
+
+        .card {
+            padding: 21px;
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(11, 19, 15, 0.9),
+                    rgba(7, 12, 9, 0.9)
+                );
+        }
+
+        .card-icon {
+            margin-bottom: 13px;
+            font-size: 22px;
+        }
+
+        .card-title {
+            margin-bottom: 7px;
+            font-size: 15px;
+            font-weight: 850;
+        }
+
+        .card-text {
+            margin: 0;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.7;
+        }
+
+        /* =====================================================
+           LISTS
+           ===================================================== */
+
+        .list {
+            display: grid;
+            gap: 10px;
+            padding: 0;
+            margin: 0;
+            list-style: none;
+        }
+
+        .list li {
+            position: relative;
+            padding: 12px 14px 12px 38px;
+            border: 1px solid rgba(255, 255, 255, 0.045);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.018);
+            color: #a8bdaf;
+            line-height: 1.6;
+        }
+
+        .list li::before {
+            content: "✓";
+            position: absolute;
+            left: 14px;
+            color: var(--green);
+            font-weight: 900;
+        }
+
+        /* =====================================================
+           NOTES
+           ===================================================== */
+
+        .note {
+            margin: 18px 0;
+            padding: 16px 18px;
+            border-left: 3px solid var(--green);
+            border-radius: 9px;
+            background: rgba(0, 255, 136, 0.045);
+        }
+
+        .note.warning {
+            border-left-color: var(--yellow);
+            background: rgba(255, 209, 102, 0.045);
+        }
+
+        .note.danger {
+            border-left-color: var(--red);
+            background: rgba(255, 85, 119, 0.045);
+        }
+
+        .note-title {
+            margin-bottom: 5px;
+            color: var(--green);
+            font-size: 12px;
+            font-weight: 900;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .note.warning .note-title {
+            color: var(--yellow);
+        }
+
+        .note.danger .note-title {
+            color: var(--red);
+        }
+
+        .note p {
+            margin: 0;
+            font-size: 13px;
+        }
+
+        /* =====================================================
+           STEPS
+           ===================================================== */
+
+        .steps {
+            display: grid;
+            gap: 12px;
+            counter-reset: step;
+        }
+
+        .step {
+            position: relative;
+            padding: 17px 18px 17px 60px;
+            border: 1px solid rgba(0, 255, 136, 0.09);
+            border-radius: 13px;
+            background: rgba(255, 255, 255, 0.018);
+            counter-increment: step;
+        }
+
+        .step::before {
+            content: counter(step);
+            position: absolute;
+            top: 15px;
+            left: 18px;
+            display: grid;
+            place-items: center;
+            width: 27px;
+            height: 27px;
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            border-radius: 50%;
+            background: rgba(0, 255, 136, 0.07);
+            color: var(--green);
+            font-family: monospace;
+            font-size: 11px;
+            font-weight: 900;
+        }
+
+        .step strong {
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .step p {
+            margin: 0;
+            font-size: 13px;
+        }
+
+        /* =====================================================
+           CODE BLOCKS
+           ===================================================== */
+
+        .code-wrap {
+            position: relative;
+            margin: 18px 0;
+            overflow: hidden;
+            border: 1px solid rgba(0, 255, 136, 0.13);
+            border-radius: 13px;
+            background: #020403;
+        }
+
+        .code-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 9px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.018);
+        }
+
+        .code-language {
+            color: #5c796a;
+            font-family: monospace;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+        }
+
+        .copy-btn {
+            padding: 5px 9px;
+            border: 1px solid rgba(0, 255, 136, 0.13);
+            border-radius: 7px;
+            background: rgba(0, 255, 136, 0.035);
+            color: #779587;
+            cursor: pointer;
+            font-family: monospace;
+            font-size: 10px;
+            transition:
+                color 0.2s ease,
+                border-color 0.2s ease;
+        }
+
+        .copy-btn:hover {
+            border-color: rgba(0, 255, 136, 0.35);
+            color: var(--green);
+        }
+
+        pre.code {
+            margin: 0;
+            padding: 20px;
+            overflow-x: auto;
+            color: #ccebd9;
+            font-family:
+                "Cascadia Code",
+                "Fira Code",
+                Consolas,
+                monospace;
+            font-size: 12px;
+            line-height: 1.75;
+            tab-size: 4;
+        }
+
+        /* =====================================================
+           FLOW
+           ===================================================== */
+
+        .flow {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .flow-step {
+            position: relative;
+            padding: 15px 18px;
+            border: 1px solid rgba(0, 255, 136, 0.1);
+            border-radius: 11px;
+            background: rgba(0, 255, 136, 0.025);
+            color: #a8c1b2;
+            font-family: monospace;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .flow-step:not(:last-child)::after {
+            content: "↓";
+            position: absolute;
+            bottom: -18px;
+            left: 50%;
+            z-index: 2;
+            color: var(--green);
+            transform: translateX(-50%);
+        }
+
+        .flow-gap {
+            height: 8px;
+        }
+
+        /* =====================================================
+           OTA ARCHITECTURE
+           ===================================================== */
+
+        .architecture {
+            display: grid;
+            grid-template-columns:
+                repeat(3, minmax(0, 1fr));
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .architecture-node {
+            position: relative;
+            padding: 18px;
+            border: 1px solid rgba(0, 255, 136, 0.12);
+            border-radius: 13px;
+            background: rgba(255, 255, 255, 0.018);
+            text-align: center;
+        }
+
+        .architecture-node .node-icon {
+            margin-bottom: 8px;
+            font-size: 23px;
+        }
+
+        .architecture-node .node-title {
+            color: var(--green);
+            font-size: 12px;
+            font-weight: 900;
+        }
+
+        .architecture-node .node-text {
+            margin-top: 6px;
+            color: var(--muted);
+            font-size: 11px;
+            line-height: 1.55;
+        }
+
+        /* =====================================================
+           DIAGRAM
+           ===================================================== */
+
+        .diagram {
+            min-height: 250px;
+            padding: 20px;
+            overflow-x: auto;
+            border: 1px dashed rgba(0, 255, 136, 0.15);
+            border-radius: 13px;
+            background: #030504;
+            color: #9fbea9;
+            font-family: monospace;
+            font-size: 12px;
+            line-height: 1.65;
+            white-space: pre;
+        }
+
+        .diagram .accent {
+            color: var(--green);
+        }
+
+        .diagram .cyan {
+            color: var(--cyan);
+        }
+
+        /* =====================================================
+           TABLES
+           ===================================================== */
+
+        .table-wrap {
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            border-radius: 13px;
+        }
+
+        table {
+            width: 100%;
+            min-width: 650px;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 13px 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            background: rgba(0, 255, 136, 0.045);
+            color: var(--green);
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        td {
+            color: #a7bcaf;
+            font-size: 12px;
+            line-height: 1.55;
+        }
+
+        tr:last-child td {
+            border-bottom: 0;
+        }
+
+        /* =====================================================
+           SPECIAL BOXES
+           ===================================================== */
+
+        .mini-title {
+            margin: 28px 0 12px;
+            color: var(--green);
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 0.17em;
+            text-transform: uppercase;
+        }
+
+        .success-box {
+            padding: 24px;
+            border: 1px solid rgba(0, 255, 136, 0.22);
+            border-radius: 16px;
+            background:
+                radial-gradient(
+                    circle at 90% 10%,
+                    rgba(0, 255, 136, 0.08),
+                    transparent 32%
+                ),
+                rgba(0, 255, 136, 0.035);
+        }
+
+        .success-title {
+            margin-bottom: 9px;
+            color: var(--green);
+            font-size: 22px;
+            font-weight: 900;
+        }
+
+        .challenge {
+            padding: 24px;
+            border: 1px solid rgba(255, 209, 102, 0.16);
+            border-radius: 16px;
+            background:
+                radial-gradient(
+                    circle at 90% 0%,
+                    rgba(255, 209, 102, 0.06),
+                    transparent 30%
+                ),
+                rgba(255, 209, 102, 0.025);
+        }
+
+        .challenge h3 {
+            color: var(--yellow);
+        }
+
+        .vocab-card {
+            min-height: 150px;
+        }
+
+        .vocab-word {
+            margin-bottom: 9px;
+            color: var(--green);
+            font-family: monospace;
+            font-size: 14px;
+            font-weight: 900;
+        }
+
+        /* =====================================================
+           BOTTOM NAV
+           ===================================================== */
+
+        .bottom-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: 38px;
+            padding-top: 22px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .nav-btn {
+            min-width: 130px;
+            padding: 11px 15px;
+            border: 1px solid rgba(0, 255, 136, 0.14);
+            border-radius: 9px;
+            background: rgba(0, 255, 136, 0.035);
+            color: #a0b9aa;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 800;
+            transition:
+                background 0.2s ease,
+                color 0.2s ease,
+                border-color 0.2s ease;
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            border-color: rgba(0, 255, 136, 0.35);
+            background: rgba(0, 255, 136, 0.08);
+            color: var(--green);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.25;
+            cursor: not-allowed;
+        }
+
+        .page-indicator {
+            color: #526c5e;
+            font-family: monospace;
+            font-size: 11px;
+        }
+
+        /* =====================================================
+           MOBILE
+           ===================================================== */
+
+        @media (max-width: 900px) {
+
+            .sidebar {
+                display: none;
+            }
+
+            .mobile-header {
+                position: sticky;
+                top: 0;
+                z-index: 30;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                min-height: 58px;
+                padding: 10px 16px;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+                background: rgba(5, 8, 7, 0.9);
+                backdrop-filter: blur(18px);
+            }
+
+            .mobile-brand {
+                color: var(--green);
+                font-family: monospace;
+                font-size: 12px;
+                font-weight: 900;
+            }
+
+            .mobile-progress {
+                color: var(--muted);
+                font-family: monospace;
+                font-size: 11px;
+            }
+
+            .main {
+                margin-left: 0;
+            }
+
+            .topbar {
+                display: none;
+            }
+
+            .content {
+                width: min(100% - 28px, 900px);
+                padding-top: 25px;
+            }
+
+            .hero {
+                padding: 28px 22px;
+            }
+
+            .hero::after {
+                font-size: 120px;
+            }
+
+            .grid,
+            .grid.three,
+            .architecture {
+                grid-template-columns: 1fr;
+            }
+
+            .bottom-nav {
+                position: sticky;
+                bottom: 0;
+                z-index: 15;
+                margin-right: -14px;
+                margin-left: -14px;
+                padding: 12px 14px;
+                border-top: 1px solid rgba(0, 255, 136, 0.1);
+                background: rgba(5, 8, 7, 0.92);
+                backdrop-filter: blur(15px);
+            }
+
+            .nav-btn {
+                min-width: 100px;
+            }
+        }
+
+        @media (max-width: 500px) {
+
+            h2 {
+                font-size: 25px;
+            }
+
+            h1 {
+                font-size: 40px;
+            }
+
+            .hero-subtitle {
+                font-size: 14px;
+            }
+
+            .card {
+                padding: 17px;
+            }
+
+            pre.code {
+                font-size: 10.5px;
+            }
+
+            .page-indicator {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ========================================================
+         MOBILE HEADER
+         ======================================================== -->
+
+    <div class="mobile-header">
+
+        <div class="mobile-brand">
+            QUANTUM CORE // ESP32
+        </div>
+
+        <div
+            class="mobile-progress"
+            id="mobileProgress"
+        >
+            01 / 15
+        </div>
+
+    </div>
+
+
+    <!-- ========================================================
+         SIDEBAR
+         ======================================================== -->
+
+    <aside class="sidebar">
+
+        <div class="brand">
+
+            <div class="brand-kicker">
+                Quantum Core
+            </div>
+
+            <div class="brand-title">
+                ESP32 LAB
+            </div>
+
+            <div class="brand-subtitle">
+                Project 31 // OTA Updates
+            </div>
+
+        </div>
+
+
+        <div class="progress-area">
+
+            <div class="progress-row">
+
+                <span>
+                    Progress
+                </span>
+
+                <span
+                    class="progress-text"
+                    id="progressText"
+                >
+                    1 / 15
+                </span>
+
+            </div>
+
+            <div class="progress-track">
+
+                <div
+                    class="progress-fill"
+                    id="progressFill"
+                ></div>
+
+            </div>
+
+        </div>
+
+
+        <nav class="nav">
+
+            <button
+                class="nav-item active"
+                data-section="0"
+            >
+                <span class="nav-number">01</span>
+                <span class="nav-label">Mission</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="1"
+            >
+                <span class="nav-number">02</span>
+                <span class="nav-label">What You Have</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="2"
+            >
+                <span class="nav-number">03</span>
+                <span class="nav-label">What We Learn</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="3"
+            >
+                <span class="nav-number">04</span>
+                <span class="nav-label">Wiring</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="4"
+            >
+                <span class="nav-number">05</span>
+                <span class="nav-label">Create Project</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="5"
+            >
+                <span class="nav-number">06</span>
+                <span class="nav-label">Seed Code</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="6"
+            >
+                <span class="nav-number">07</span>
+                <span class="nav-label">USB Upload</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="7"
+            >
+                <span class="nav-number">08</span>
+                <span class="nav-label">Cut the Cord</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="8"
+            >
+                <span class="nav-number">09</span>
+                <span class="nav-label">Wireless Upload</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="9"
+            >
+                <span class="nav-number">10</span>
+                <span class="nav-label">Experiment</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="10"
+            >
+                <span class="nav-number">11</span>
+                <span class="nav-label">Security Challenge</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="11"
+            >
+                <span class="nav-number">12</span>
+                <span class="nav-label">Troubleshooting</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="12"
+            >
+                <span class="nav-number">13</span>
+                <span class="nav-label">Vocabulary</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="13"
+            >
+                <span class="nav-number">14</span>
+                <span class="nav-label">What You Learned</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="14"
+            >
+                <span class="nav-number">15</span>
+                <span class="nav-label">Next Project</span>
+            </button>
+
+        </nav>
+
+    </aside>
+
+
+    <!-- ========================================================
+         MAIN
+         ======================================================== -->
+
+    <main class="main">
+
+        <header class="topbar">
+
+            <div class="topbar-left">
+
+                <span class="status-dot"></span>
+
+                ESP32 / OTA / NETWORK FLASHING
+
+            </div>
+
+            <div class="topbar-right">
+                PROJECT_31
+            </div>
+
+        </header>
+
+
+        <div class="content">
+
+
+            <!-- ==================================================
+                 SECTION 01 — MISSION
+                 ================================================== -->
+
+            <section class="section active">
+
+                <div class="hero">
+
+                    <div class="eyebrow">
+                        Project 31 // Wireless Deployment
+                    </div>
+
+                    <h1>
+                        CUT THE
+                        <br>
+                        USB CORD.
+                    </h1>
+
+                    <p class="hero-subtitle">
+                        Until now, every firmware update required a
+                        physical USB connection. Today, your ESP32
+                        learns how to receive compatible firmware
+                        updates over Wi-Fi using
+                        <strong>OTA — Over-The-Air updates.</strong>
+                    </p>
+
+                    <div class="terminal">
+                        USB FLASHING → WI-FI FLASHING
+                    </div>
+
+                </div>
+
+
+                <h2>
+                    From tethered hardware to wireless deployment 📡
+                </h2>
+
+                <p class="section-intro">
+                    Imagine an ESP32 mounted outside as a weather
+                    station. Or installed high on a wall. Or attached
+                    to a machine where reaching the USB port is
+                    annoying.
+                </p>
+
+
+                <div class="success-box">
+
+                    <div class="success-title">
+                        The mission
+                    </div>
+
+                    <p>
+                        First, upload a special
+                        <strong>seed program</strong>
+                        over USB. That program connects the ESP32 to
+                        Wi-Fi and starts the OTA listener.
+                        After that, PlatformIO can send new firmware
+                        wirelessly to the board.
+                    </p>
+
+                </div>
+
+
+                <div class="architecture">
+
+                    <div class="architecture-node">
+
+                        <div class="node-icon">
+                            💻
+                        </div>
+
+                        <div class="node-title">
+                            LAPTOP
+                        </div>
+
+                        <div class="node-text">
+                            Compiles the new firmware and sends it
+                            through the network.
+                        </div>
+
+                    </div>
+
+
+                    <div class="architecture-node">
+
+                        <div class="node-icon">
+                            📡
+                        </div>
+
+                        <div class="node-title">
+                            WI-FI NETWORK
+                        </div>
+
+                        <div class="node-text">
+                            Carries the compiled firmware from the
+                            computer to the ESP32.
+                        </div>
+
+                    </div>
+
+
+                    <div class="architecture-node">
+
+                        <div class="node-icon">
+                            🟦
+                        </div>
+
+                        <div class="node-title">
+                            ESP32
+                        </div>
+
+                        <div class="node-text">
+                            Receives the update, writes it to the
+                            OTA application partition, and reboots.
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- ==================================================
+                 SECTION 02 — WHAT YOU HAVE
+                 ================================================== -->
+
+            <section class="section">
+
+                <h2>
+                    🧰 What You Have
+                </h2>
+
+                <p class="section-intro">
+                    Hardware is minimal because the interesting part
+                    today happens at the network and firmware level.
+                </p>
+
+
+                <div class="grid">
+
+                    <div class="card">
+
+                        <div class="card-icon">
+                            💻
+                        </div>
+
+                        <div class="card-title">
+                            Windows Laptop / PC
+                        </div>
+
+                        <p class="card-text">
+                            Runs VS Code, PlatformIO, the compiler,
+                            and the OTA upload process.
+                        </p>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="card-icon">
+                            🔌
+                        </div>
+
+                        <div class="card-title">
+                            USB Cable
+                        </div>
+
+                        <p class="card-text">
+                            Used for the initial seed upload and
+                            recovery when OTA is unavailable.
+                        </p>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="card-icon">
+                            🟦
+                        </div>
+
+                        <div class="card-title">
+                            ESP32 DevKit V1
+                        </div>
+
+                        <p class="card-text">
+                            The target device receiving the firmware
+                            over the Wi-Fi network.
+                        </p>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="card-icon">
+                            🔋
+                        </div>
+
+                        <div class="card-title">
+                            USB Wall Power Adapter
+                        </div>
+
+                        <p class="card-text">
+                            Lets the ESP32 stay powered away from the
+                            computer during the wireless upload.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="note warning">
+
+                    <div class="note-title">
+                        The USB cable isn't gone forever
+                    </div>
+
+                    <p>
+                        OTA removes the need for USB during normal
+                        wireless deployment, but USB remains an
+                        important recovery path for first-time setup,
+                        network changes, or firmware that can no longer
+                        run the OTA service.
+                    </p>
+
+                </div>
+
+            </section>
+
+
+            <!-- ==================================================
+                 SECTION 03 — WHAT WE LEARN
+                 ================================================== -->
+
+            <section class="section">
+
+                <h2>
+                    🧠 What Are We Learning?
+                </h2>
+
+                <p class="section-intro">
+                    Three concepts make today's wireless deployment
+                    system work.
+                </p>
+
+
+                <div class="grid">
+
+                    <div class="card">
+
+                        <div class="card-icon">
+                            🌱
+                        </div>
+
+                        <div class="card-title">
+                            1. The Seed Program
+                        </div>
+
+                        <p class="card-text">
+                            The ESP32 does not magically accept OTA
+                            updates from a blank firmware image.
+                            A compatible application must first be
+                            installed that initializes networking and
+                            the OTA service.
+                        </p>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="card-icon">
+                            📛
+                        </div>
+
+                        <div class="card-title">
+                            2. mDNS
+                        </div>
+
+                        <p class="card-text">
+                            Multicast DNS can advertise a hostname such
+                            as
+                            <code>quantum-esp32.local</code>
+                            on a local network, making the device
+                            easier to discover without manually
+                            remembering its current IP address.
+                        </p>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="card-icon">
+                            🚪
+                        </div>
+
+                        <div class="card-title">
+                            3. ArduinoOTA.handle()
+                        </div>
+
+                        <p class="card-text">
+                            The OTA service needs regular processing
+                            through
+                            <code>ArduinoOTA.handle()</code>
+                            inside the main loop.
+                        </p>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="card-icon">
+                            💾
+                        </div>
+
+                        <div class="card-title">
+                            4. Firmware Flashing
+                        </div>
+
+                        <p class="card-text">
+                            PlatformIO compiles your source code into
+                            firmware, then the OTA process transfers
+                            that compiled image to the ESP32.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="mini-title">
+                    Mental model
+                </div>
+
+
+                <div class="flow">
+
+                    <div class="flow-step">
+                        🌱 USB installs the OTA-capable seed
+                    </div>
+
+                    <div class="flow-gap"></div>
+
+                    <div class="flow-step">
+                        📡 ESP32 joins Wi-Fi
+                    </div>
+
+                    <div class="flow-gap"></div>
+
+                    <div class="flow-step">
+                        🚪 OTA service listens for updates
+                    </div>
+
+                    <div class="flow-gap"></div>
+
+                    <div class="flow-step">
+                        💻 PlatformIO sends new firmware
+                    </div>
+
+                    <div class="flow-gap"></div>
+
+                    <div class="flow-step">
+                        🔄 ESP32 installs and reboots
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- ==================================================
+                 SECTION 04 — WIRING
+                 ================================================== -->
+
+            <section class="section">
+
+                <h2>
+                    🔌 Wiring
+                </h2>
+
+                <p class="section-intro">
+                    No breadboard is required. For the first upload,
+                    connect the ESP32 to your computer using USB.
+                </p>
+
+
+                <div class="grid">
+
+                    <div class="card">
+
+                        <div class="card-icon">
+                            🔌
+                        </div>
+
+                        <div class="card-title">
+                            Step 1
+                        </div>
+
+                        <p class="card-text">
+                            Connect the ESP32 to your laptop with the
+                            USB cable.
+                        </p>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="card-icon">
+                            ⚡
+                        </div>
+
+                        <div class="card-title">
+                            Step 2
+                        </div>
+
+                        <p class="card-text">
+                            After the seed firmware is installed,
+                            move the USB power connection to a wall
+                            adapter.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="diagram">
+<span class="accent">INITIAL SETUP</span>
+
+Laptop
+  │
+  │ USB
+  ▼
+┌─────────────────┐
+│     ESP32       │
+│                 │
+│  OTA SEED CODE  │
+└─────────────────┘
+
+
+<span class="accent">AFTER OTA IS READY</span>
+
+Wall Adapter
+     │
+     │ USB power
+     ▼
+┌─────────────────┐
+│     ESP32       │
+│                 │
+│  Wi-Fi + OTA    │
+└─────────────────┘
+
+Laptop ──────── <span class="cyan">Wi-Fi ────────► ESP32</span>
+                </div>
+
+
+                <div class="note">
+
+                    <div class="note-title">
+                        No GPIO wiring today
+                    </div>
+
+                    <p>
+                        This project is about firmware deployment,
+                        networking, and the OTA service rather than
+                        external electronics.
+                    </p>
+
+                </div>
+
+            </section>
+
+
+            <!-- ==================================================
+                 SECTION 05 — CREATE PROJECT
+                 ================================================== -->
+
+            <section class="section">
+
+                <h2>
+                    💻 Create the Project
+                </h2>
+
+                <p class="section-intro">
+                    Create a fresh PlatformIO project for the OTA
+                    experiment.
+                </p>
+
+
+                <div class="steps">
+
+                    <div class="step">
+
+                        <strong>
+                            Open VS Code
+                        </strong>
+
+                        <p>
+                            Launch VS Code and open PlatformIO.
+                        </p>
+
+                    </div>
+
+
+                    <div class="step">
+
+                        <strong>
+                            Create a New Project
+                        </strong>
+
+                        <p>
+                            Choose
+                            <strong>New Project</strong>.
+                        </p>
+
+                    </div>
+
+
+                    <div class="step">
+
+                        <strong>
+                            Name the project
+                        </strong>
+
+                        <p>
+                            Use:
+                            <code>ESP32-31-OTA</code>
+                        </p>
+
+                    </div>
+
+
+                    <div class="step">
+
+                        <strong>
+                            Select the board
+                        </strong>
+
+                        <p>
+                            Choose:
+                            <strong>DOIT ESP32 DEVKIT V1</strong>.
+                        </p>
+
+                    </div>
+
+
+                    <div class="step">
+
+                        <strong>
+                            Select Arduino
+                        </strong>
+
+                        <p>
+                            Choose the
+                            <strong>Arduino</strong>
+                            framework.
+                        </p>
+
+                    </div>
+
+
+                    <div class="step">
+
+                        <strong>
+                            Finish
+                        </strong>
+
+                        <p>
+                            Let PlatformIO create the project files.
+                        </p>
+
+                    </div>
+
+
+                    <div class="step">
+
+                        <strong>
+                            Open main.cpp
+                        </strong>
+
+                        <p>
+                            Open
+                            <code>src/main.cpp</code>
+                            and replace the default program with the
+                            seed code in the next section.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="success-box">
+
+                    <div class="success-title">
+                        Built-in OTA support
+                    </div>
+
+                    <p>
+                        The required Arduino OTA components are
+                        available through the ESP32 Arduino framework,
+                        so no separate third-party library is needed
+                        for this basic project.
+                    </p>
+
+                </div>
+
+            </section>
+
+
+            <!-- ==================================================
+                 SECTION 06 — SEED CODE
+                 ================================================== -->
+
+            <section class="section">
+
+                <h2>
+                    📄 Complete Code — The Seed Program
+                </h2>
+
+                <p class="section-intro">
+                    This is the program that plants the OTA capability
+                    onto the ESP32.
+                </p>
+
+
+                <div class="note danger">
+
+                    <div class="note-title">
+                        Replace your Wi-Fi credentials
+                    </div>
+
+                    <p>
+                        Replace the Wi-Fi placeholders before building.
+                        Never publish real passwords in a public
+                        repository.
+                    </p>
+
+                </div>
+
+
+                <div class="code-wrap">
+
+                    <div class="code-header">
+
+                        <span class="code-language">
+                            C++
+                        </span>
+
+                        <button class="copy-btn">
+                            Copy
+                        </button>
+
+                    </div>
+
+
+                    <pre class="code">/*
+ * ============================================================
+ * MY BRO'S THIRTY-FIRST ESP32 PROGRAM: OTA UPDATES
+ * ============================================================
+ */
+
+#include &lt;WiFi.h&gt;
+#include &lt;ESPmDNS.h&gt;
+#include &lt;WiFiUdp.h&gt;
+#include &lt;ArduinoOTA.h&gt;
+
+const char* ssid = "YOUR_WIFI_NAME";
+const char* password = "YOUR_PASSWORD";
+
+const int LED_PIN = 2;
+
+void setup() {
+
+    Serial.begin(115200);
+
+    pinMode(LED_PIN, OUTPUT);
+
+    // 1. CONNECT TO WI-FI
+    Serial.println("Booting...");
+
+    WiFi.mode(WIFI_STA);
+
+    WiFi.begin(
+        ssid,
+        password
+    );
+
+    while (
+        WiFi.waitForConnectResult() !=
+        WL_CONNECTED
+    ) {
+
+        Serial.println(
+            "Wi-Fi Connection Failed! Rebooting..."
+        );
+
+        delay(5000);
+
+        ESP.restart();
+    }
+
+
+    // 2. CONFIGURE OTA SETTINGS
+
+    ArduinoOTA.setHostname(
+        "quantum-esp32"
+    );
+
+
+    ArduinoOTA.onStart(
+        []() {
+
+            Serial.println(
+                "\n🚀 OTA Update Starting..."
+            );
+
+        }
+    );
+
+
+    ArduinoOTA.onEnd(
+        []() {
+
+            Serial.println(
+                "\n✅ OTA Update Complete!"
+            );
+
+        }
+    );
+
+
+    ArduinoOTA.onProgress(
+        [](unsigned int progress,
+           unsigned int total) {
+
+            Serial.printf(
+                "Progress: %u%%\r",
+                (progress / (total / 100))
+            );
+
+        }
+    );
+
+
+    // 3. START OTA LISTENER
+
+    ArduinoOTA.begin();
+
+
+    Serial.println(
+        "\n🔥 System Ready for Wireless Updates!"
+    );
+
+    Serial.print(
+        "IP Address: "
+    );
+
+    Serial.println(
+        WiFi.localIP()
+    );
+
+    Serial.print(
+        "Hostname: "
+    );
+
+    Serial.println(
+        "quantum-esp32.local"
+    );
+}
+
+
+void loop() {
+
+    // 4. PROCESS OTA REQUESTS
+    ArduinoOTA.handle();
+
+
+    // Simple heartbeat
+    digitalWrite(
+        LED_PIN,
+        HIGH
+    );
+
+    delay(100);
+
+    digitalWrite(
+        LED_PIN,
+        LOW
+    );
+
+    delay(1000);
+}</pre>
+
+                </div>
+
+
+                <div class="note warning">
+
+                    <div class="note-title">
+                        One line you absolutely need
+                    </div>
+
+                    <p>
+                        The most important line for the OTA loop is:
+                        <code>ArduinoOTA.handle();</code>.
+                        If your running firmware does not process the
+                        OTA service, it cannot respond to OTA upload
+                        requests.
+                    </p>
+
+                </div>
+
+
+                <div class="card">
+
+                    <h3>
+                        What the seed actually does
+                    </h3>
+
+                    <p>
+                        It connects to Wi-Fi, configures the OTA
+                        service, assigns a hostname, starts the OTA
+                        listener, and repeatedly services that
+                        listener from
+                        <code>loop()</code>.
+                    </p>
+
+                </div>
+
+            </section>
+
+
+            <!-- ==================================================
+                 SECTION 07 — USB UPLOAD
+                 ================================================== -->
+
+            <section class="section">
+
+                <h2>
+                    🚀 Step 1 — The Final USB Upload
+                </h2>
+
+                <p class="section-intro">
+                    This is the only stage where the USB cable is
+                    mandatory for this first setup.
+                </p>
+
+
+                <div class="steps">
+
+                    <div class="step">
+
+                        <strong>
+                            Save the code
+                        </strong>
+
+                        <p>
+                            Press
+                            <code>Ctrl + S</code>.
+                        </p>
+
+                    </div>
+
+
+                    <div class="step">
+
+                        <strong>
+                            Connect the ESP32
+                        </strong>
+
+                        <p>
+                            Plug the ESP32 into your laptop using USB.
+                        </p>
+
+                    </div>
+
+
+                    <div class="step">
+
+                        <strong>
+                            Build
+                        </strong>
+
+                        <p>
+                            Click
+                            <strong>Build ✓</strong>
+                            in PlatformIO.
+                        </p>
+
+                    </div>
+
+
+                    <div class="step">
+
+                        <strong>
+                            Upload
+                        </strong>
+
+                        <p>
+                            Click
+                            <strong>Upload →</strong>.
+                        </p>
+
+                    </div>
+
+
+                    <div class="step">
+
+                        <strong>
+                            Open Serial Monitor
+                        </strong>
+
+                        <p>
+                            Open the Serial Monitor at
+                            <code>115200</code>.
+                        </p>
+
+                    </div>
+
+
+                    <div class="step">
+
+                        <strong>
+                            Wait for Wi-Fi
+                        </strong>
+
+                        <p>
+                            Wait until the board reports that the
+                            system is ready for wireless updates.
+                        </p>
+
+                    </div>
+
+
+                    <div class="step">
+
+                        <strong>
+                            Record the IP address
+                        </strong>
+
+                        <p>
+                            Write down the IP address shown by the
+                            ESP32, for example
+                            <code>192.168.1.50</code>.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="code-wrap">
+
+                    <div class="code-header">
+
+                        <span class="code-language">
+                            Serial Monitor
+                        </span>
+
+                        <button class="copy-btn">
+                            Copy
+                        </button>
+
+                    </div>
+
+
+                    <pre class="code">Booting...
+🔥 System Ready for Wireless Updates!
+IP Address: 192.168.1.50
+Hostname: quantum-esp32.local</pre>
+
+                </div>
+
+
+                <div class="note">
+
+                    <div class="note-title">
+                        Why save the IP?
+                    </div>
+
+                    <p>
+                        PlatformIO can use the IP address directly as
+                        the OTA upload destination. You can later try
+                        the mDNS hostname if your local network and
+                        computer resolve
+                        <code>.local</code>
+                        hostnames correctly.
+                    </p>
+
+                </div>
+
+            </section>
+
+
+            <!-- ==================================================
+                 SECTION 08 — CUT THE CORD
+                 ================================================== -->
+
+            <section class="section">
+
+                <h2>
+                    🪄 Step 2 — Cut the Cord
+                </h2>
+
+                <p class="section-intro">
+                    The seed is installed. The ESP32 knows how to
+                    listen for OTA requests. Now remove the computer
+                    from the equation.
+                </p>
+
+
+                <div class="steps">
+
+                    <div class="step">
+
+                        <strong>
+                            Unplug USB from the laptop
+                        </strong>
+
+                        <p>
+                            The ESP32 will lose power.
+                        </p>
+
+                    </div>
+
+
+                    <div class="step">
+
+                        <strong>
+                            Connect USB to the wall adapter
+                        </strong>
+
+                        <p>
+                            Plug the same USB cable into a standard
+                            USB wall power adapter.
+                        </p>
+
+                    </div>
+
+
+                    <div class="step">
+
+                        <strong>
+                            Power the ESP32
+                        </strong>
+
+                        <p>
+                            Plug the wall adapter into the outlet.
+                        </p>
+
+                    </div>
+
+
+                    <div class="step">
+
+                        <strong>
+                            Wait for the heartbeat
+                        </strong>
+
+                        <p>
+                            The ESP32 reconnects to Wi-Fi and begins
+                            running the OTA-capable firmware.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="diagram">
+<span class="accent">BEFORE</span>
+
+┌──────────────┐      USB      ┌──────────────┐
+│   LAPTOP     │ ─────────────►│    ESP32     │
+└──────────────┘               └──────────────┘
+
+
+<span class="accent">AFTER</span>
+
+┌──────────────┐
+│ WALL POWER   │
+└──────┬───────┘
+       │ USB power
+       ▼
+┌──────────────┐
+│    ESP32     │
+│              │
+│ Wi-Fi + OTA  │
+└──────┬───────┘
+       ▲
+       │
+       │ <span class="cyan">Wi-Fi</span>
+       │
+┌──────┴───────┐
+│   LAPTOP     │
+└──────────────┘
+                </div>
+
+
+                <div class="success-box">
+
+                    <div class="success-title">
+                        The ESP32 is now independent from the PC. 📡
+                    </div>
+
+                    <p>
+                        The laptop no longer supplies power or a
+                        physical data connection. The board is running
+                        from the wall adapter and communicating over
+                        the network.
+                    </p>
+
+                </div>
+
+            </section>
+
+
+            <!-- ==================================================
+                 SECTION 09 — WIRELESS UPLOAD
+                 ================================================== -->
+
+            <section class="section">
+
+                <h2>
+                    📡 Step 3 — The Wireless Upload
+                </h2>
+
+                <p class="section-intro">
+                    Now we tell PlatformIO to use the ESP32's OTA
+                    service instead of a serial COM port.
+                </p>
+
+
+                <div class="steps">
+
+                    <div class="step">
+
+                        <strong>
+                            Open platformio.ini
+                        </strong>
+
+                        <p>
+                            Open the project's
+                            <code>platformio.ini</code>
+                            file.
+                        </p>
+
+                    </div>
+
+
+                    <div class="step">
+
+                        <strong>
+                            Add the OTA upload protocol
+                        </strong>
+
+                        <p>
+                            Add the OTA upload settings to your
+                            environment.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="code-wrap">
+
+                    <div class="code-header">
+
+                        <span class="code-language">
+                            INI
+                        </span>
+
+                        <button class="copy-btn">
+                            Copy
+                        </button>
+
+                    </div>
+
+
+                    <pre class="code">upload_protocol = espota
+upload_port = 192.168.1.50</pre>
+
+                </div>
+
+
+                <div class="note warning">
+
+                    <div class="note-title">
+                        Replace the IP
+                    </div>
+
+                    <p>
+                        Replace
+                        <code>192.168.1.50</code>
+                        with the actual IP address printed by your
+                        ESP32.
+                    </p>
+
+                </div>
+
+
+                <div class="steps">
+
+                    <div class="step">
+
+                        <strong>
+                            Save platformio.ini
+                        </strong>
+
+                        <p>
+                            Press
+                            <code>Ctrl + S</code>.
+                        </p>
+
+                    </div>
+
+
+                    <div class="step">
+
+                        <strong>
+                            Change the program
+                        </strong>
+
+                        <p>
+                            Find the heartbeat delay:
+                            <code>delay(1000);</code>
+                        </p>
+
+                        <p>
+                            Change it to:
+                            <code>delay(50);</code>
+                        </p>
+
+                    </div>
+
+
+                    <div class="step">
+
+                        <strong>
+                            Save main.cpp
+                        </strong>
+
+                        <p>
+                            Press
+                            <code>Ctrl + S</code>.
+                        </p>
+
+                    </div>
+
+
+                    <div class="step">
+
+                        <strong>
+                            Upload
+                        </strong>
+
+                        <p>
+                            With the ESP32 still powered across the
+                            room, click PlatformIO
+                            <strong>Upload →</strong>.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="flow">
+
+                    <div class="flow-step">
+                        💻 PlatformIO compiles the new program
+                    </div>
+
+                    <div class="flow-gap"></div>
+
+                    <div class="flow-step">
+                        📦 Firmware binary is produced
+                    </div>
+
+                    <div class="flow-gap"></div>
+
+                    <div class="flow-step">
+                        📡 OTA sends the binary through Wi-Fi
+                    </div>
+
+                    <div class="flow-gap"></div>
+
+                    <div class="flow-step">
+                        💾 ESP32 writes the new firmware
+                    </div>
+
+                    <div class="flow-gap"></div>
+
+                    <div class="flow-step">
+                        🔄 ESP32 restarts
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- ==================================================
+                 SECTION 10 — EXPERIMENT
+                 ================================================== -->
+
+            <section class="section">
+
+                <h2>
+                    🧪 Experiment
+                </h2>
+
+                <p class="section-intro">
+                    OTA becomes powerful when you stop thinking of the
+                    ESP32 as something that must physically return to
+                    your desk for every software change.
+                </p>
+
+
+                <div class="card">
+
+                    <h3>
+                        Try multiple wireless changes
+                    </h3>
+
+                    <p>
+                        Keep the ESP32 powered from the wall and modify
+                        the heartbeat behavior.
+                    </p>
+
+                </div>
+
+
+                <div class="grid">
+
+                    <div class="card">
+
+                        <div class="card-title">
+                            Slow heartbeat
+                        </div>
+
+                        <div class="code-wrap">
+
+                            <div class="code-header">
+
+                                <span class="code-language">
+                                    C++
+                                </span>
+
+                                <button class="copy-btn">
+                                    Copy
+                                </button>
+
+                            </div>
+
+                            <pre class="code">delay(1000);</pre>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="card-title">
+                            Fast heartbeat
+                        </div>
+
+                        <div class="code-wrap">
+
+                            <div class="code-header">
+
+                                <span class="code-language">
+                                    C++
+                                </span>
+
+                                <button class="copy-btn">
+                                    Copy
+                                </button>
+
+                            </div>
+
+                            <pre class="code">delay(50);</pre>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="note warning">
+
+                    <div class="note-title">
+                        The OTA rule
+                    </div>
+
+                    <p>
+                        Any firmware you upload wirelessly must itself
+                        continue to provide a working OTA path if you
+                        want future wireless updates. If you replace
+                        the OTA-capable firmware with a program that
+                        does not initialize the OTA service, the board
+                        may no longer be reachable through OTA.
+                    </p>
+
+                </div>
+
+
+                <div class="card">
+
+                    <h3>
+                        Production thinking
+                    </h3>
+
+                    <p>
+                        A real deployed product normally needs more
+                        than this beginner OTA setup: authentication,
+                        robust update validation, rollback/recovery,
+                        secure transport, version management, and
+                        protection against interrupted or malicious
+                        updates.
+                    </p>
+
+                </div>
+
+            </section>
+
+
+            <!-- ==================================================
+                 SECTION 11 — SECURITY CHALLENGE
+                 ================================================== -->
+
+            <section class="section">
+
+                <h2>
+                    🔥 Challenge — Secure OTA
+                </h2>
+
+                <p class="section-intro">
+                    An OTA service exposed to a network should not
+                    blindly accept firmware from every device that can
+                    reach it.
+                </p>
+
+
+                <div class="challenge">
+
+                    <h3>
+                        Your objective
+                    </h3>
+
+                    <p>
+                        Add password authentication to the OTA service
+                        and configure PlatformIO to provide the same
+                        password during upload.
+                    </p>
+
+                </div>
+
+
+                <div class="mini-title">
+                    Step 1 — Add the OTA password
+                </div>
+
+
+                <div class="code-wrap">
+
+                    <div class="code-header">
+
+                        <span class="code-language">
+                            C++
+                        </span>
+
+                        <button class="copy-btn">
+                            Copy
+                        </button>
+
+                    </div>
+
+
+                    <pre class="code">ArduinoOTA.setPassword(
+    "CHANGE_THIS_PASSWORD"
+);
+
+ArduinoOTA.begin();</pre>
+
+                </div>
+
+
+                <div class="mini-title">
+                    Step 2 — Configure PlatformIO
+                </div>
+
+
+                <div class="code-wrap">
+
+                    <div class="code-header">
+
+                        <span class="code-language">
+                            INI
+                        </span>
+
+                        <button class="copy-btn">
+                            Copy
+                        </button>
+
+                    </div>
+
+
+                    <pre class="code">upload_protocol = espota
+upload_port = 192.168.1.50
+upload_flags = --auth=CHANGE_THIS_PASSWORD</pre>
+
+                </div>
+
+
+                <div class="note danger">
+
+                    <div class="note-title">
+                        Never publish the real password
+                    </div>
+
+                    <p>
+                        Do not commit a real OTA password to a public
+                        repository. The example password here is only
+                        a placeholder for learning.
+                    </p>
+
+                </div>
+
+
+                <div class="mini-title">
+                    Security layers
+                </div>
+
+
+                <div class="grid three">
+
+                    <div class="card">
+
+                        <div class="card-icon">
+                            🔑
+                        </div>
+
+                        <div class="card-title">
+                            Authentication
+                        </div>
+
+                        <p class="card-text">
+                            The OTA service can require a password
+                            before accepting the update.
+                        </p>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="card-icon">
+                            📡
+                        </div>
+
+                        <div class="card-title">
+                            Network Boundary
+                        </div>
+
+                        <p class="card-text">
+                            Keep OTA access restricted to trusted
+                            networks rather than exposing it directly
+                            to the public Internet.
+                        </p>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="card-icon">
+                            🛡️
+                        </div>
+
+                        <div class="card-title">
+                            Production Security
+                        </div>
+
+                        <p class="card-text">
+                            Professional systems add stronger firmware
+                            authenticity and recovery mechanisms.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- ==================================================
+                 SECTION 12 — TROUBLESHOOTING
+                 ================================================== -->
+
+            <section class="section">
+
+                <h2>
+                    🐛 Troubleshooting
+                </h2>
+
+                <p class="section-intro">
+                    OTA depends on several things working together:
+                    power, Wi-Fi, IP addressing, firewall rules,
+                    firmware, and the upload configuration.
+                </p>
+
+
+                <div class="table-wrap">
+
+                    <table>
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    Problem
+                                </th>
+
+                                <th>
+                                    Likely Cause
+                                </th>
+
+                                <th>
+                                    Fix
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                            <tr>
+
+                                <td>
+                                    Upload timeout
+                                </td>
+
+                                <td>
+                                    Firewall or network connectivity
+                                    is blocking the OTA connection.
+                                </td>
+
+                                <td>
+                                    Check Windows Defender Firewall,
+                                    network connectivity, and whether
+                                    the ESP32 is reachable.
+                                </td>
+
+                            </tr>
+
+
+                            <tr>
+
+                                <td>
+                                    Board cannot be reached
+                                </td>
+
+                                <td>
+                                    The ESP32's IP address may have
+                                    changed.
+                                </td>
+
+                                <td>
+                                    Check the current IP address or
+                                    try the mDNS hostname if supported
+                                    by your network.
+                                </td>
+
+                            </tr>
+
+
+                            <tr>
+
+                                <td>
+                                    mDNS hostname fails
+                                </td>
+
+                                <td>
+                                    Your computer or network may not
+                                    resolve
+                                    <code>.local</code>
+                                    hostnames correctly.
+                                </td>
+
+                                <td>
+                                    Use the ESP32's current IP address
+                                    instead.
+                                </td>
+
+                            </tr>
+
+
+                            <tr>
+
+                                <td>
+                                    OTA service disappeared
+                                </td>
+
+                                <td>
+                                    The currently running firmware
+                                    does not initialize or service
+                                    OTA.
+                                </td>
+
+                                <td>
+                                    Recover over USB and reinstall an
+                                    OTA-capable firmware.
+                                </td>
+
+                            </tr>
+
+
+                            <tr>
+
+                                <td>
+                                    Wrong password
+                                </td>
+
+                                <td>
+                                    ESP32 OTA password and PlatformIO
+                                    authentication flag do not match.
+                                </td>
+
+                                <td>
+                                    Make both values identical.
+                                </td>
+
+                            </tr>
+
+
+                            <tr>
+
+                                <td>
+                                    ESP32 keeps disconnecting
+                                </td>
+
+                                <td>
+                                    Weak Wi-Fi signal or unstable
+                                    power.
+                                </td>
+
+                                <td>
+                                    Move the board closer to the
+                                    access point and verify the USB
+                                    wall adapter provides stable power.
+                                </td>
+
+                            </tr>
+
+
+                            <tr>
+
+                                <td>
+                                    Upload works but new program
+                                    does not stay available
+                                </td>
+
+                                <td>
+                                    The new firmware may not include
+                                    the OTA setup.
+                                </td>
+
+                                <td>
+                                    Make sure the replacement firmware
+                                    also initializes and services OTA.
+                                </td>
+
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+
+                <div class="note warning">
+
+                    <div class="note-title">
+                        Firewall rule
+                    </div>
+
+                    <p>
+                        If Windows asks whether Python, PlatformIO, or
+                        a related development process should be allowed
+                        through the firewall, allow network access on
+                        your trusted
+                        <strong>Private network</strong>
+                        when appropriate. Do not blindly expose
+                        development services to public networks.
+                    </p>
+
+                </div>
+
+
+                <div class="mini-title">
+                    Debug from inside out
+                </div>
+
+
+                <div class="flow">
+
+                    <div class="flow-step">
+                        01 → Is the ESP32 powered?
+                    </div>
+
+                    <div class="flow-gap"></div>
+
+                    <div class="flow-step">
+                        02 → Is it connected to Wi-Fi?
+                    </div>
+
+                    <div class="flow-gap"></div>
+
+                    <div class="flow-step">
+                        03 → Do you know its current IP?
+                    </div>
+
+                    <div class="flow-gap"></div>
+
+                    <div class="flow-step">
+                        04 → Is the OTA service running?
+                    </div>
+
+                    <div class="flow-gap"></div>
+
+                    <div class="flow-step">
+                        05 → Is PlatformIO targeting the correct IP?
+                    </div>
+
+                    <div class="flow-gap"></div>
+
+                    <div class="flow-step">
+                        06 → Is authentication configured correctly?
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- ==================================================
+                 SECTION 13 — VOCABULARY
+                 ================================================== -->
+
+            <section class="section">
+
+                <h2>
+                    🧠 New Vocabulary
+                </h2>
+
+                <p class="section-intro">
+                    These are the terms you should remember from this
+                    project.
+                </p>
+
+
+                <div class="grid">
+
+                    <div class="card vocab-card">
+
+                        <div class="vocab-word">
+                            OTA
+                        </div>
+
+                        <p class="card-text">
+                            <strong>Over-The-Air.</strong>
+                            Updating firmware through a network instead
+                            of a physical programming connection.
+                        </p>
+
+                    </div>
+
+
+                    <div class="card vocab-card">
+
+                        <div class="vocab-word">
+                            mDNS
+                        </div>
+
+                        <p class="card-text">
+                            <strong>Multicast DNS.</strong>
+                            A local-network discovery mechanism that
+                            lets devices advertise and resolve names
+                            such as
+                            <code>quantum-esp32.local</code>.
+                        </p>
+
+                    </div>
+
+
+                    <div class="card vocab-card">
+
+                        <div class="vocab-word">
+                            Binary
+                        </div>
+
+                        <p class="card-text">
+                            The compiled firmware image produced from
+                            your source code and transferred to the
+                            ESP32 during an update.
+                        </p>
+
+                    </div>
+
+
+                    <div class="card vocab-card">
+
+                        <div class="vocab-word">
+                            Firmware
+                        </div>
+
+                        <p class="card-text">
+                            Software stored on a microcontroller that
+                            controls how its hardware operates.
+                        </p>
+
+                    </div>
+
+
+                    <div class="card vocab-card">
+
+                        <div class="vocab-word">
+                            Network Flashing
+                        </div>
+
+                        <p class="card-text">
+                            Programming a device by transferring
+                            firmware through a network connection.
+                        </p>
+
+                    </div>
+
+
+                    <div class="card vocab-card">
+
+                        <div class="vocab-word">
+                            Authentication
+                        </div>
+
+                        <p class="card-text">
+                            Verifying that a client is authorized
+                            before allowing an operation such as an
+                            OTA update.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- ==================================================
+                 SECTION 14 — WHAT YOU LEARNED
+                 ================================================== -->
+
+            <section class="section">
+
+                <h2>
+                    🎯 What You Just Learned
+                </h2>
+
+                <p class="section-intro">
+                    This project changes the way you think about
+                    deployed embedded systems.
+                </p>
+
+
+                <div class="success-box">
+
+                    <div class="success-title">
+                        You unlocked Remote Hardware Management. 📡
+                    </div>
+
+                    <p>
+                        Your ESP32 no longer has to physically return
+                        to the laptop every time you want to deploy a
+                        new version of compatible firmware.
+                    </p>
+
+                </div>
+
+
+                <div class="grid three" style="margin-top: 18px;">
+
+                    <div class="card">
+
+                        <div class="card-icon">
+                            🌱
+                        </div>
+
+                        <div class="card-title">
+                            Seed Firmware
+                        </div>
+
+                        <p class="card-text">
+                            You learned why an OTA-capable program must
+                            be installed before wireless deployment can
+                            begin.
+                        </p>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="card-icon">
+                            📡
+                        </div>
+
+                        <div class="card-title">
+                            Network Upload
+                        </div>
+
+                        <p class="card-text">
+                            PlatformIO can send compiled firmware
+                            through the network to the ESP32.
+                        </p>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="card-icon">
+                            🔄
+                        </div>
+
+                        <div class="card-title">
+                            Automatic Restart
+                        </div>
+
+                        <p class="card-text">
+                            After an accepted update, the ESP32 can
+                            restart and boot the new application.
+                        </p>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="card-icon">
+                            📛
+                        </div>
+
+                        <div class="card-title">
+                            mDNS Discovery
+                        </div>
+
+                        <p class="card-text">
+                            A hostname can make local-device discovery
+                            easier than relying only on a changing IP.
+                        </p>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="card-icon">
+                            🔐
+                        </div>
+
+                        <div class="card-title">
+                            OTA Authentication
+                        </div>
+
+                        <p class="card-text">
+                            You learned that wireless deployment should
+                            not blindly trust every network client.
+                        </p>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="card-icon">
+                            🧠
+                        </div>
+
+                        <div class="card-title">
+                            Recovery Thinking
+                        </div>
+
+                        <p class="card-text">
+                            You learned why physical recovery remains
+                            important when network-based management
+                            fails.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="note">
+
+                    <div class="note-title">
+                        Professional connection
+                    </div>
+
+                    <p>
+                        OTA is one component of professional IoT device
+                        management. Larger systems add secure firmware
+                        signing, encrypted transport, version control,
+                        staged deployment, rollback, health checks,
+                        and fleet management.
+                    </p>
+
+                </div>
+
+            </section>
+
+
+            <!-- ==================================================
+                 SECTION 15 — NEXT PROJECT
+                 ================================================== -->
+
+            <section class="section">
+
+                <div class="hero">
+
+                    <div class="eyebrow">
+                        Project 32 // Internet Gadget
+                    </div>
+
+                    <h1>
+                        BUILD THE
+                        <br>
+                        DESK GADGET.
+                    </h1>
+
+                    <p class="hero-subtitle">
+                        You've mastered web control, cloud automation,
+                        and wireless firmware deployment.
+                        Now let's combine APIs, JSON, OLED graphics,
+                        and timed updates into one serious gadget.
+                    </p>
+
+                    <div class="terminal">
+                        HTTP API → JSON → ESP32 → OLED → LIVE DATA
+                    </div>
+
+                </div>
+
+
+                <h2>
+                    🚀 Project 32 — The API Crypto Ticker
+                </h2>
+
+                <p class="section-intro">
+                    The next project combines several concepts you
+                    have already learned into one compact Internet
+                    device.
+                </p>
+
+
+                <div class="success-box">
+
+                    <div class="success-title">
+                        The next mission
+                    </div>
+
+                    <p>
+                        Your ESP32 will connect to the Internet, request
+                        live cryptocurrency data from an API, parse the
+                        JSON response, and display the current Bitcoin
+                        price on an OLED screen.
+                    </p>
+
+                </div>
+
+
+                <div class="grid three" style="margin-top: 18px;">
+
+                    <div class="card">
+
+                        <div class="card-icon">
+                            🌐
+                        </div>
+
+                        <div class="card-title">
+                            HTTP API
+                        </div>
+
+                        <p class="card-text">
+                            Request live information from a remote
+                            Internet service.
+                        </p>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="card-icon">
+                            🧩
+                        </div>
+
+                        <div class="card-title">
+                            JSON
+                        </div>
+
+                        <p class="card-text">
+                            Parse structured data returned by the API.
+                        </p>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="card-icon">
+                            🖥️
+                        </div>
+
+                        <div class="card-title">
+                            OLED
+                        </div>
+
+                        <p class="card-text">
+                            Turn the raw Internet data into a physical
+                            display.
+                        </p>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="card-icon">
+                            ⏱️
+                        </div>
+
+                        <div class="card-title">
+                            millis()
+                        </div>
+
+                        <p class="card-text">
+                            Schedule updates without continuously
+                            blocking the program.
+                        </p>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="card-icon">
+                            📊
+                        </div>
+
+                        <div class="card-title">
+                            Live Data
+                        </div>
+
+                        <p class="card-text">
+                            Turn an ESP32 into a small real-time
+                            information terminal.
+                        </p>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="card-icon">
+                            ⚡
+                        </div>
+
+                        <div class="card-title">
+                            Full Integration
+                        </div>
+
+                        <p class="card-text">
+                            Multiple previous concepts finally become
+                            one working system.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="note warning">
+
+                    <div class="note-title">
+                        Project 31 complete
+                    </div>
+
+                    <p>
+                        You started with a USB cable and ended with
+                        wireless firmware deployment.
+                        <strong>Next.exe:</strong>
+                        build the Internet-connected desk gadget.
+                    </p>
+
+                </div>
+
+
+                <div class="success-box">
+
+                    <div class="success-title">
+                        Ready for Project 32? 🚀
+                    </div>
+
+                    <p>
+                        The next mission is:
+                        <strong>
+                            API Crypto Ticker.
+                        </strong>
+                    </p>
+
+                </div>
+
+            </section>
+
+
+            <!-- ==================================================
+                 BOTTOM NAVIGATION
+                 ================================================== -->
+
+            <div class="bottom-nav">
+
+                <button
+                    class="nav-btn"
+                    id="prevBtn"
+                    disabled
+                >
+                    ← Previous
+                </button>
+
+
+                <div
+                    class="page-indicator"
+                    id="pageIndicator"
+                >
+                    01 / 15
+                </div>
+
+
+                <button
+                    class="nav-btn"
+                    id="nextBtn"
+                >
+                    Next →
+                </button>
+
+            </div>
+
+        </div>
+
+    </main>
+
+
+    <!-- ========================================================
+         JAVASCRIPT
+         ======================================================== -->
+
+    <script>
+        const sections = [
+            ...document.querySelectorAll(".section")
+        ];
+
+        const navItems = [
+            ...document.querySelectorAll(".nav-item")
+        ];
+
+        const progressFill =
+            document.getElementById(
+                "progressFill"
+            );
+
+        const progressText =
+            document.getElementById(
+                "progressText"
+            );
+
+        const mobileProgress =
+            document.getElementById(
+                "mobileProgress"
+            );
+
+        const pageIndicator =
+            document.getElementById(
+                "pageIndicator"
+            );
+
+        const prevBtn =
+            document.getElementById(
+                "prevBtn"
+            );
+
+        const nextBtn =
+            document.getElementById(
+                "nextBtn"
+            );
+
+        let currentSection = 0;
+
+
+        function updateSection(index) {
+
+            index = Math.max(
+                0,
+                Math.min(
+                    index,
+                    sections.length - 1
+                )
+            );
+
+            currentSection = index;
+
+
+            sections.forEach(
+                (section, i) => {
+
+                    section.classList.toggle(
+                        "active",
+                        i === currentSection
+                    );
+
+                }
+            );
+
+
+            navItems.forEach(
+                (item, i) => {
+
+                    item.classList.toggle(
+                        "active",
+                        i === currentSection
+                    );
+
+                }
+            );
+
+
+            const progress =
+                (
+                    (currentSection + 1) /
+                    sections.length
+                ) * 100;
+
+
+            progressFill.style.width =
+                `${progress}%`;
+
+
+            const readablePage =
+                `${currentSection + 1} / ${sections.length}`;
+
+
+            progressText.textContent =
+                readablePage;
+
+
+            mobileProgress.textContent =
+                `${String(
+                    currentSection + 1
+                ).padStart(2, "0")} / ${sections.length}`;
+
+
+            pageIndicator.textContent =
+                `${String(
+                    currentSection + 1
+                ).padStart(2, "0")} / ${sections.length}`;
+
+
+            prevBtn.disabled =
+                currentSection === 0;
+
+
+            nextBtn.disabled =
+                currentSection ===
+                sections.length - 1;
+
+
+            window.scrollTo({
+                top: 0,
+                behavior: "smooth"
+            });
+
+
+            localStorage.setItem(
+                "qc-esp32-project-31-section",
+                currentSection
+            );
+        }
+
+
+        navItems.forEach(
+            (item) => {
+
+                item.addEventListener(
+                    "click",
+                    () => {
+
+                        updateSection(
+                            Number(
+                                item.dataset.section
+                            )
+                        );
+
+                    }
+                );
+
+            }
+        );
+
+
+        prevBtn.addEventListener(
+            "click",
+            () => {
+
+                updateSection(
+                    currentSection - 1
+                );
+
+            }
+        );
+
+
+        nextBtn.addEventListener(
+            "click",
+            () => {
+
+                updateSection(
+                    currentSection + 1
+                );
+
+            }
+        );
+
+
+        document.addEventListener(
+            "keydown",
+            (event) => {
+
+                if (
+                    event.target.tagName ===
+                        "INPUT" ||
+                    event.target.tagName ===
+                        "TEXTAREA"
+                ) {
+                    return;
+                }
+
+
+                if (
+                    event.key ===
+                    "ArrowLeft"
+                ) {
+
+                    updateSection(
+                        currentSection - 1
+                    );
+
+                }
+
+
+                if (
+                    event.key ===
+                    "ArrowRight"
+                ) {
+
+                    updateSection(
+                        currentSection + 1
+                    );
+
+                }
+
+            }
+        );
+
+
+        document
+            .querySelectorAll(".copy-btn")
+            .forEach(
+                (button) => {
+
+                    button.addEventListener(
+                        "click",
+                        async () => {
+
+                            const code =
+                                button
+                                    .closest(
+                                        ".code-wrap"
+                                    )
+                                    .querySelector(
+                                        "pre.code"
+                                    )
+                                    .innerText;
+
+
+                            try {
+
+                                await navigator
+                                    .clipboard
+                                    .writeText(
+                                        code
+                                    );
+
+
+                                const original =
+                                    button.textContent;
+
+
+                                button.textContent =
+                                    "Copied ✓";
+
+
+                                button.style.color =
+                                    "var(--green)";
+
+
+                                setTimeout(
+                                    () => {
+
+                                        button.textContent =
+                                            original;
+
+                                        button.style.color =
+                                            "";
+
+                                    },
+                                    1400
+                                );
+
+
+                            } catch {
+
+                                button.textContent =
+                                    "Copy failed";
+
+
+                                setTimeout(
+                                    () => {
+
+                                        button.textContent =
+                                            "Copy";
+
+                                    },
+                                    1400
+                                );
+
+                            }
+
+                        }
+                    );
+
+                }
+            );
+
+
+        const savedSection =
+            Number(
+                localStorage.getItem(
+                    "qc-esp32-project-31-section"
+                )
+            );
+
+
+        if (
+            Number.isInteger(savedSection) &&
+            savedSection >= 0 &&
+            savedSection < sections.length
+        ) {
+
+            updateSection(
+                savedSection
+            );
+
+        } else {
+
+            updateSection(0);
+
+        }
+    </script>
+
+</body>
+</html>

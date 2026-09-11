@@ -1,0 +1,4690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Project 35 — The Ultimate Integration | Quantum Core
+    </title>
+
+    <style>
+        :root {
+            --bg: #050807;
+            --panel: #0a100d;
+            --panel-2: #0d1511;
+            --green: #00ff88;
+            --green-dim: #00c96b;
+            --cyan: #00e5ff;
+            --yellow: #ffd166;
+            --red: #ff5577;
+            --text: #e7fff2;
+            --muted: #8aa99a;
+            --border: rgba(0, 255, 136, 0.16);
+            --sidebar: 285px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background:
+                radial-gradient(
+                    circle at 15% 10%,
+                    rgba(0, 255, 136, 0.08),
+                    transparent 30%
+                ),
+                radial-gradient(
+                    circle at 85% 80%,
+                    rgba(0, 229, 255, 0.05),
+                    transparent 30%
+                ),
+                var(--bg);
+            color: var(--text);
+            font-family:
+                Inter,
+                ui-sans-serif,
+                system-ui,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0.16;
+            background-image:
+                linear-gradient(
+                    rgba(255, 255, 255, 0.025) 1px,
+                    transparent 1px
+                ),
+                linear-gradient(
+                    90deg,
+                    rgba(255, 255, 255, 0.025) 1px,
+                    transparent 1px
+                );
+            background-size: 40px 40px;
+            mask-image: linear-gradient(
+                to bottom,
+                black,
+                transparent 90%
+            );
+            z-index: -1;
+        }
+
+        button {
+            font: inherit;
+        }
+
+        .mobile-header {
+            display: none;
+        }
+
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: var(--sidebar);
+            padding: 26px 18px;
+            background:
+                linear-gradient(
+                    180deg,
+                    rgba(7, 13, 10, 0.98),
+                    rgba(4, 8, 6, 0.98)
+                );
+            border-right: 1px solid var(--border);
+            overflow-y: auto;
+            z-index: 20;
+        }
+
+        .brand {
+            padding: 8px 10px 24px;
+        }
+
+        .brand-small {
+            color: var(--green);
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+        }
+
+        .brand h2 {
+            margin: 7px 0 0;
+            font-size: 22px;
+            letter-spacing: -0.04em;
+        }
+
+        .brand p {
+            margin: 6px 0 0;
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .progress-area {
+            padding: 0 10px 22px;
+        }
+
+        .progress-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            color: var(--muted);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .progress-track {
+            height: 5px;
+            overflow: hidden;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .progress-fill {
+            width: 10%;
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(
+                90deg,
+                var(--green),
+                var(--cyan)
+            );
+            box-shadow: 0 0 14px rgba(0, 255, 136, 0.35);
+            transition: width 0.3s ease;
+        }
+
+        .nav-label {
+            padding: 0 10px 8px;
+            color: #587264;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+        }
+
+        .nav-item {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            margin-bottom: 4px;
+            padding: 10px 11px;
+            border: 1px solid transparent;
+            border-radius: 10px;
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+            text-align: left;
+            transition:
+                background 0.2s ease,
+                border 0.2s ease,
+                color 0.2s ease,
+                transform 0.2s ease;
+        }
+
+        .nav-item:hover {
+            color: var(--text);
+            background: rgba(0, 255, 136, 0.04);
+            border-color: rgba(0, 255, 136, 0.08);
+        }
+
+        .nav-item.active {
+            color: var(--green);
+            background: rgba(0, 255, 136, 0.07);
+            border-color: rgba(0, 255, 136, 0.14);
+            box-shadow:
+                inset 3px 0 0 var(--green),
+                0 0 20px rgba(0, 255, 136, 0.03);
+        }
+
+        .nav-number {
+            min-width: 24px;
+            color: #536e60;
+            font-family: monospace;
+            font-size: 11px;
+        }
+
+        .nav-item.active .nav-number {
+            color: var(--green);
+        }
+
+        .nav-text {
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .main {
+            min-height: 100vh;
+            margin-left: var(--sidebar);
+        }
+
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 34px;
+            background: rgba(5, 8, 7, 0.78);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(14px);
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 12px var(--green);
+        }
+
+        .topbar-label {
+            color: var(--muted);
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .topbar-right {
+            color: #587264;
+            font-family: monospace;
+            font-size: 11px;
+        }
+
+        .content {
+            width: min(1100px, calc(100% - 52px));
+            margin: 0 auto;
+            padding: 42px 0 70px;
+        }
+
+        .section {
+            display: none;
+            animation: sectionIn 0.35s ease;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes sectionIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hero {
+            position: relative;
+            overflow: hidden;
+            padding: 38px;
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            background:
+                radial-gradient(
+                    circle at 85% 20%,
+                    rgba(0, 255, 136, 0.11),
+                    transparent 28%
+                ),
+                linear-gradient(
+                    135deg,
+                    rgba(10, 18, 14, 0.98),
+                    rgba(6, 12, 9, 0.98)
+                );
+            box-shadow:
+                0 25px 80px rgba(0, 0, 0, 0.35),
+                inset 0 1px 0 rgba(255, 255, 255, 0.025);
+        }
+
+        .hero::after {
+            content: "COMMAND CENTER";
+            position: absolute;
+            right: 25px;
+            bottom: 14px;
+            color: rgba(0, 255, 136, 0.035);
+            font-size: 62px;
+            font-weight: 900;
+            letter-spacing: -0.08em;
+            pointer-events: none;
+        }
+
+        .eyebrow {
+            margin-bottom: 10px;
+            color: var(--green);
+            font-family: monospace;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            margin: 0;
+            max-width: 900px;
+            color: #effff7;
+            font-size: clamp(36px, 5vw, 62px);
+            line-height: 0.98;
+            letter-spacing: -0.065em;
+        }
+
+        h2 {
+            margin: 0;
+            color: #effff7;
+            font-size: clamp(28px, 4vw, 42px);
+            letter-spacing: -0.05em;
+        }
+
+        h3 {
+            margin: 0 0 10px;
+            color: #eafff3;
+            font-size: 19px;
+            letter-spacing: -0.025em;
+        }
+
+        p {
+            color: #a5c0b0;
+            line-height: 1.75;
+        }
+
+        .hero-subtitle {
+            max-width: 800px;
+            margin: 22px 0 0;
+            color: #a9c6b6;
+            font-size: 16px;
+            line-height: 1.75;
+        }
+
+        .lead {
+            max-width: 850px;
+            font-size: 16px;
+        }
+
+        .terminal {
+            position: relative;
+            z-index: 1;
+            margin-top: 28px;
+            padding: 18px 20px;
+            border: 1px solid rgba(0, 255, 136, 0.14);
+            border-radius: 13px;
+            background: #030604;
+            color: var(--green);
+            font-family: monospace;
+            font-size: 13px;
+            line-height: 1.7;
+        }
+
+        .terminal .dim {
+            color: #5c7869;
+        }
+
+        .section-header {
+            margin-bottom: 26px;
+        }
+
+        .section-number {
+            margin-bottom: 8px;
+            color: var(--green);
+            font-family: monospace;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.15em;
+        }
+
+        .grid {
+            display: grid;
+            gap: 15px;
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .card {
+            padding: 21px;
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(13, 21, 17, 0.95),
+                    rgba(7, 13, 10, 0.95)
+                );
+        }
+
+        .card p {
+            margin: 8px 0 0;
+            font-size: 14px;
+        }
+
+        .icon-box {
+            width: 40px;
+            height: 40px;
+            display: grid;
+            place-items: center;
+            margin-bottom: 14px;
+            border: 1px solid rgba(0, 255, 136, 0.15);
+            border-radius: 11px;
+            background: rgba(0, 255, 136, 0.06);
+            color: var(--green);
+            font-size: 19px;
+        }
+
+        .callout {
+            margin: 20px 0;
+            padding: 18px 20px;
+            border-left: 3px solid var(--green);
+            border-radius: 0 12px 12px 0;
+            background: rgba(0, 255, 136, 0.055);
+        }
+
+        .callout.warning {
+            border-left-color: var(--yellow);
+            background: rgba(255, 209, 102, 0.055);
+        }
+
+        .callout.danger {
+            border-left-color: var(--red);
+            background: rgba(255, 85, 119, 0.055);
+        }
+
+        .callout strong {
+            color: var(--green);
+        }
+
+        .callout.warning strong {
+            color: var(--yellow);
+        }
+
+        .callout.danger strong {
+            color: var(--red);
+        }
+
+        .flow {
+            display: flex;
+            align-items: stretch;
+            gap: 10px;
+            margin: 22px 0;
+        }
+
+        .flow-box {
+            flex: 1;
+            min-width: 0;
+            padding: 17px;
+            border: 1px solid var(--border);
+            border-radius: 13px;
+            background: rgba(9, 17, 13, 0.95);
+            text-align: center;
+        }
+
+        .flow-box .title {
+            color: var(--green);
+            font-weight: 800;
+            font-size: 13px;
+        }
+
+        .flow-box .desc {
+            margin-top: 7px;
+            color: var(--muted);
+            font-size: 11px;
+            line-height: 1.5;
+        }
+
+        .flow-arrow {
+            display: grid;
+            place-items: center;
+            color: var(--cyan);
+            font-size: 18px;
+        }
+
+        .code-wrap {
+            position: relative;
+            margin: 18px 0;
+        }
+
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 9px 13px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-bottom: 0;
+            border-radius: 11px 11px 0 0;
+            background: #090f0c;
+        }
+
+        .code-language {
+            color: #688777;
+            font-family: monospace;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .copy-btn {
+            border: 0;
+            background: transparent;
+            color: #688777;
+            cursor: pointer;
+            font-family: monospace;
+            font-size: 10px;
+            font-weight: 800;
+        }
+
+        .copy-btn:hover {
+            color: var(--green);
+        }
+
+        pre.code {
+            margin: 0;
+            padding: 20px;
+            overflow-x: auto;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 0 0 11px 11px;
+            background: #020403;
+            color: #d9fbe8;
+            font-family:
+                "Cascadia Code",
+                "Fira Code",
+                Consolas,
+                monospace;
+            font-size: 12px;
+            line-height: 1.65;
+            tab-size: 4;
+        }
+
+        code.inline {
+            padding: 2px 6px;
+            border: 1px solid rgba(0, 255, 136, 0.12);
+            border-radius: 5px;
+            background: rgba(0, 255, 136, 0.05);
+            color: var(--green);
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+
+        .wiring {
+            margin-top: 18px;
+            padding: 22px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            background: #030604;
+        }
+
+        .wiring pre {
+            margin: 0;
+            color: #b9d6c6;
+            font-family: monospace;
+            font-size: 13px;
+            line-height: 1.8;
+        }
+
+        .architecture {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 24px 0;
+        }
+
+        .architecture-core {
+            position: relative;
+            padding: 27px;
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            border-radius: 18px;
+            background:
+                radial-gradient(
+                    circle at 50% 10%,
+                    rgba(0, 255, 136, 0.09),
+                    transparent 55%
+                ),
+                #07100b;
+        }
+
+        .architecture-core.core1 {
+            border-color: rgba(0, 229, 255, 0.18);
+            background:
+                radial-gradient(
+                    circle at 50% 10%,
+                    rgba(0, 229, 255, 0.08),
+                    transparent 55%
+                ),
+                #061015;
+        }
+
+        .core-label {
+            color: var(--green);
+            font-family: monospace;
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 0.14em;
+        }
+
+        .core1 .core-label {
+            color: var(--cyan);
+        }
+
+        .architecture-core h3 {
+            margin-top: 9px;
+            font-size: 27px;
+        }
+
+        .architecture-core p {
+            margin-bottom: 0;
+        }
+
+        .task-list {
+            display: grid;
+            gap: 8px;
+            margin-top: 17px;
+        }
+
+        .task {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 9px;
+            background: rgba(0, 0, 0, 0.18);
+            color: #9fbaaa;
+            font-size: 12px;
+        }
+
+        .task-dot {
+            width: 7px;
+            height: 7px;
+            flex: 0 0 auto;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 8px rgba(0, 255, 136, 0.4);
+        }
+
+        .core1 .task-dot {
+            background: var(--cyan);
+            box-shadow: 0 0 8px rgba(0, 229, 255, 0.4);
+        }
+
+        .steps {
+            counter-reset: step;
+            display: grid;
+            gap: 12px;
+        }
+
+        .step {
+            position: relative;
+            padding: 18px 18px 18px 60px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 13px;
+            background: rgba(8, 14, 11, 0.85);
+        }
+
+        .step::before {
+            counter-increment: step;
+            content: counter(step);
+            position: absolute;
+            left: 17px;
+            top: 17px;
+            width: 27px;
+            height: 27px;
+            display: grid;
+            place-items: center;
+            border-radius: 50%;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            color: var(--green);
+            font-family: monospace;
+            font-size: 11px;
+            font-weight: 900;
+        }
+
+        .step strong {
+            color: #eafff3;
+        }
+
+        .step p {
+            margin: 5px 0 0;
+            font-size: 13px;
+        }
+
+        .checklist {
+            display: grid;
+            gap: 9px;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .checklist li {
+            position: relative;
+            padding-left: 27px;
+            color: #aac6b5;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .checklist li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: var(--green);
+            font-weight: 900;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+            margin-top: 18px;
+            border: 1px solid var(--border);
+            border-radius: 13px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 680px;
+        }
+
+        th,
+        td {
+            padding: 13px 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            text-align: left;
+            font-size: 13px;
+        }
+
+        th {
+            color: var(--green);
+            background: rgba(0, 255, 136, 0.045);
+            font-family: monospace;
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        td {
+            color: #a7c3b2;
+        }
+
+        tr:last-child td {
+            border-bottom: 0;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 5px 8px;
+            border: 1px solid rgba(0, 255, 136, 0.13);
+            border-radius: 999px;
+            background: rgba(0, 255, 136, 0.05);
+            color: var(--green);
+            font-family: monospace;
+            font-size: 10px;
+            font-weight: 800;
+        }
+
+        .challenge {
+            padding: 24px;
+            border: 1px solid rgba(255, 209, 102, 0.18);
+            border-radius: 17px;
+            background:
+                radial-gradient(
+                    circle at 100% 0%,
+                    rgba(255, 209, 102, 0.07),
+                    transparent 35%
+                ),
+                rgba(18, 15, 7, 0.75);
+        }
+
+        .challenge .tag {
+            color: var(--yellow);
+            font-family: monospace;
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+        }
+
+        .challenge h3 {
+            margin-top: 8px;
+        }
+
+        .milestone {
+            position: relative;
+            overflow: hidden;
+            padding: 28px;
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            border-radius: 18px;
+            background:
+                radial-gradient(
+                    circle at 80% 0%,
+                    rgba(0, 255, 136, 0.09),
+                    transparent 38%
+                ),
+                #07100b;
+        }
+
+        .milestone-number {
+            color: var(--green);
+            font-family: monospace;
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 0.15em;
+        }
+
+        .milestone h3 {
+            margin-top: 9px;
+            font-size: 28px;
+        }
+
+        .nav-controls {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: 38px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .nav-btn {
+            min-width: 120px;
+            padding: 12px 17px;
+            border: 1px solid rgba(0, 255, 136, 0.15);
+            border-radius: 10px;
+            background: rgba(0, 255, 136, 0.045);
+            color: var(--green);
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 800;
+            transition:
+                background 0.2s ease,
+                border 0.2s ease,
+                transform 0.2s ease;
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            transform: translateY(-1px);
+            background: rgba(0, 255, 136, 0.08);
+            border-color: rgba(0, 255, 136, 0.28);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.25;
+            cursor: not-allowed;
+        }
+
+        .kbd {
+            padding: 3px 7px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom-color: rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            background: #0b120e;
+            color: #789386;
+            font-family: monospace;
+            font-size: 10px;
+        }
+
+        .footer-note {
+            margin-top: 25px;
+            color: #516c5d;
+            font-size: 11px;
+            text-align: center;
+        }
+
+        .highlight {
+            color: var(--green);
+        }
+
+        .cyan {
+            color: var(--cyan);
+        }
+
+        .yellow {
+            color: var(--yellow);
+        }
+
+        .red {
+            color: var(--red);
+        }
+
+        @media (max-width: 900px) {
+            .sidebar {
+                display: none;
+            }
+
+            .mobile-header {
+                position: sticky;
+                top: 0;
+                z-index: 30;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 13px 17px;
+                background: rgba(5, 8, 7, 0.92);
+                border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+                backdrop-filter: blur(14px);
+            }
+
+            .mobile-brand {
+                color: var(--green);
+                font-family: monospace;
+                font-size: 12px;
+                font-weight: 900;
+            }
+
+            .mobile-progress {
+                color: var(--muted);
+                font-family: monospace;
+                font-size: 11px;
+            }
+
+            .main {
+                margin-left: 0;
+            }
+
+            .topbar {
+                display: none;
+            }
+
+            .content {
+                width: min(100% - 28px, 1000px);
+                padding-top: 25px;
+            }
+
+            .hero {
+                padding: 27px 22px;
+            }
+
+            .hero::after {
+                display: none;
+            }
+
+            .grid-2,
+            .grid-3,
+            .architecture {
+                grid-template-columns: 1fr;
+            }
+
+            .flow {
+                flex-direction: column;
+            }
+
+            .flow-arrow {
+                transform: rotate(90deg);
+            }
+
+            .nav-controls {
+                position: sticky;
+                bottom: 0;
+                z-index: 5;
+                margin-left: -14px;
+                margin-right: -14px;
+                padding: 12px 14px;
+                background: rgba(5, 8, 7, 0.92);
+                backdrop-filter: blur(14px);
+            }
+        }
+
+        @media (max-width: 560px) {
+            h1 {
+                font-size: 39px;
+            }
+
+            h2 {
+                font-size: 30px;
+            }
+
+            .hero {
+                border-radius: 17px;
+            }
+
+            .card {
+                padding: 17px;
+            }
+
+            pre.code {
+                font-size: 11px;
+            }
+
+            .nav-btn {
+                min-width: 100px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ========================================================= -->
+    <!-- MOBILE HEADER -->
+    <!-- ========================================================= -->
+
+    <header class="mobile-header">
+        <div class="mobile-brand">
+            QUANTUM CORE // ESP32
+        </div>
+
+        <div
+            class="mobile-progress"
+            id="mobileProgress"
+        >
+            01 / 10
+        </div>
+    </header>
+
+
+    <!-- ========================================================= -->
+    <!-- SIDEBAR -->
+    <!-- ========================================================= -->
+
+    <aside class="sidebar">
+
+        <div class="brand">
+
+            <div class="brand-small">
+                Quantum Core
+            </div>
+
+            <h2>
+                ESP32 Library
+            </h2>
+
+            <p>
+                Project 35 // The Ultimate Integration
+            </p>
+
+        </div>
+
+
+        <div class="progress-area">
+
+            <div class="progress-meta">
+
+                <span>
+                    Progress
+                </span>
+
+                <span id="progressText">
+                    1 / 10
+                </span>
+
+            </div>
+
+            <div class="progress-track">
+
+                <div
+                    class="progress-fill"
+                    id="progressFill"
+                ></div>
+
+            </div>
+
+        </div>
+
+
+        <div class="nav-label">
+            Mission Steps
+        </div>
+
+
+        <button
+            class="nav-item active"
+            data-section="0"
+        >
+            <span class="nav-number">
+                01
+            </span>
+
+            <span class="nav-text">
+                Mission Brief
+            </span>
+        </button>
+
+
+        <button
+            class="nav-item"
+            data-section="1"
+        >
+            <span class="nav-number">
+                02
+            </span>
+
+            <span class="nav-text">
+                What We're Learning
+            </span>
+        </button>
+
+
+        <button
+            class="nav-item"
+            data-section="2"
+        >
+            <span class="nav-number">
+                03
+            </span>
+
+            <span class="nav-text">
+                System Architecture
+            </span>
+        </button>
+
+
+        <button
+            class="nav-item"
+            data-section="3"
+        >
+            <span class="nav-number">
+                04
+            </span>
+
+            <span class="nav-text">
+                Wiring
+            </span>
+        </button>
+
+
+        <button
+            class="nav-item"
+            data-section="4"
+        >
+            <span class="nav-number">
+                05
+            </span>
+
+            <span class="nav-text">
+                Master Library
+            </span>
+        </button>
+
+
+        <button
+            class="nav-item"
+            data-section="5"
+        >
+            <span class="nav-number">
+                06
+            </span>
+
+            <span class="nav-text">
+                Complete Code
+            </span>
+        </button>
+
+
+        <button
+            class="nav-item"
+            data-section="6"
+        >
+            <span class="nav-number">
+                07
+            </span>
+
+            <span class="nav-text">
+                Understand System
+            </span>
+        </button>
+
+
+        <button
+            class="nav-item"
+            data-section="7"
+        >
+            <span class="nav-number">
+                08
+            </span>
+
+            <span class="nav-text">
+                Build + Upload
+            </span>
+        </button>
+
+
+        <button
+            class="nav-item"
+            data-section="8"
+        >
+            <span class="nav-number">
+                09
+            </span>
+
+            <span class="nav-text">
+                Command Center
+            </span>
+        </button>
+
+
+        <button
+            class="nav-item"
+            data-section="9"
+        >
+            <span class="nav-number">
+                10
+            </span>
+
+            <span class="nav-text">
+                Course Complete
+            </span>
+        </button>
+
+    </aside>
+
+
+    <!-- ========================================================= -->
+    <!-- MAIN -->
+    <!-- ========================================================= -->
+
+    <main class="main">
+
+        <div class="topbar">
+
+            <div class="topbar-left">
+
+                <span class="status-dot"></span>
+
+                <span class="topbar-label">
+                    ESP32 / PROJECT 35 / ULTIMATE INTEGRATION
+                </span>
+
+            </div>
+
+            <div class="topbar-right">
+                COMMAND_CENTER // ONLINE
+            </div>
+
+        </div>
+
+
+        <div class="content">
+
+
+            <!-- ================================================= -->
+            <!-- SECTION 1 — MISSION BRIEF -->
+            <!-- ================================================= -->
+
+            <section class="section active">
+
+                <div class="hero">
+
+                    <div class="eyebrow">
+                        Project 35 // Final Build
+                    </div>
+
+                    <h1>
+                        THE ULTIMATE<br>
+                        COMMAND CENTER.
+                    </h1>
+
+                    <p class="hero-subtitle">
+                        Brooooo. ⚡
+                        <br><br>
+                        This is it.
+                        You've spent 34 projects learning individual
+                        pieces of ESP32 development.
+                        Now we're going to stop thinking in isolated
+                        examples and start thinking like a systems
+                        engineer.
+                        <br><br>
+                        Sensors.
+                        OLED.
+                        GPIO.
+                        Wi-Fi.
+                        HTTP.
+                        WebSockets.
+                        JSON.
+                        Cloud APIs.
+                        FreeRTOS.
+                        Dual-core task scheduling.
+                        <br><br>
+                        All inside one system.
+                    </p>
+
+                    <div class="terminal">
+
+                        <span class="dim">
+                            project:
+                        </span>
+                        ultimate-integration<br>
+
+                        <span class="dim">
+                            device:
+                        </span>
+                        ESP32 DevKit V1<br>
+
+                        <span class="dim">
+                            architecture:
+                        </span>
+                        dual-core FreeRTOS<br>
+
+                        <span class="dim">
+                            sensors:
+                        </span>
+                        DHT11<br>
+
+                        <span class="dim">
+                            display:
+                        </span>
+                        OLED 128x64<br>
+
+                        <span class="dim">
+                            network:
+                        </span>
+                        Wi-Fi + WebSocket + HTTP API<br>
+
+                        <span class="dim">
+                            system:
+                        </span>
+                        <span class="highlight">
+                            COMMAND CENTER
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <div
+                    class="grid grid-2"
+                    style="margin-top: 18px;"
+                >
+
+                    <div class="card">
+
+                        <div class="icon-box">
+                            🧠
+                        </div>
+
+                        <h3>
+                            From Scripts → Systems
+                        </h3>
+
+                        <p>
+                            Earlier projects taught individual
+                            technologies. This project teaches you how
+                            those technologies interact as one complete
+                            embedded system.
+                        </p>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="icon-box">
+                            ⚡
+                        </div>
+
+                        <h3>
+                            The Command Center
+                        </h3>
+
+                        <p>
+                            Your ESP32 will read a physical sensor,
+                            display local and cloud information,
+                            serve a web dashboard, receive WebSocket
+                            commands, and control physical hardware.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="callout warning">
+
+                    <strong>
+                        ⚠️ Architecture reality check:
+                    </strong>
+
+                    Two cores do not create magical zero-latency
+                    isolation. Network requests can still take time,
+                    tasks can still compete for resources, and shared
+                    data still needs synchronization. The goal is to
+                    design the workload so blocking network operations
+                    do not unnecessarily stall unrelated hardware work.
+
+                </div>
+
+            </section>
+
+
+            <!-- ================================================= -->
+            <!-- SECTION 2 — WHAT WE'RE LEARNING -->
+            <!-- ================================================= -->
+
+            <section class="section">
+
+                <div class="section-header">
+
+                    <div class="section-number">
+                        02 // CONCEPT
+                    </div>
+
+                    <h2>
+                        What Are We Learning?
+                    </h2>
+
+                    <p class="lead">
+                        Today isn't really about one function.
+                        It's about architecture.
+                    </p>
+
+                </div>
+
+
+                <div class="grid grid-3">
+
+                    <div class="card">
+
+                        <div class="icon-box">
+                            🧵
+                        </div>
+
+                        <h3>
+                            Shared Data
+                        </h3>
+
+                        <p>
+                            Multiple FreeRTOS tasks may need the same
+                            information. We'll learn why shared variables
+                            require careful access.
+                        </p>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="icon-box">
+                            🌐
+                        </div>
+
+                        <h3>
+                            Data Integration
+                        </h3>
+
+                        <p>
+                            Local sensor data and remote API data become
+                            one unified information system.
+                        </p>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="icon-box">
+                            🏗️
+                        </div>
+
+                        <h3>
+                            System Architecture
+                        </h3>
+
+                        <p>
+                            Instead of one giant loop doing everything,
+                            different responsibilities are divided into
+                            tasks.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="grid grid-2">
+
+                    <div class="card">
+
+                        <h3>
+                            01 // Thread Safety
+                        </h3>
+
+                        <p>
+                            Core 1 updates values such as the room
+                            temperature. Core 0 reads those values to
+                            construct WebSocket messages.
+                        </p>
+
+                        <p>
+                            We'll protect those shared values using a
+                            small FreeRTOS critical section.
+                        </p>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <h3>
+                            02 // Non-Blocking Architecture
+                        </h3>
+
+                        <p>
+                            An HTTP request to a remote server can take
+                            considerably longer than local GPIO work.
+                        </p>
+
+                        <p>
+                            By separating responsibilities into tasks,
+                            local hardware work can continue while the
+                            network task waits for its operation to finish.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="callout">
+
+                    <strong>
+                        🎯 The real lesson:
+                    </strong>
+
+                    Good embedded architecture is not simply
+                    "make it faster."
+                    It's about giving each responsibility an appropriate
+                    execution model and preventing one slow subsystem
+                    from unnecessarily controlling the entire system.
+
+                </div>
+
+            </section>
+
+
+            <!-- ================================================= -->
+            <!-- SECTION 3 — ARCHITECTURE -->
+            <!-- ================================================= -->
+
+            <section class="section">
+
+                <div class="section-header">
+
+                    <div class="section-number">
+                        03 // SYSTEM DESIGN
+                    </div>
+
+                    <h2>
+                        Design the Command Center
+                    </h2>
+
+                    <p class="lead">
+                        Before touching the code, understand who does
+                        what.
+                    </p>
+
+                </div>
+
+
+                <div class="architecture">
+
+                    <div class="architecture-core">
+
+                        <div class="core-label">
+                            PROCESSOR CORE 0
+                        </div>
+
+                        <h3>
+                            NETWORK BOSS
+                        </h3>
+
+                        <p>
+                            This task owns the network-facing workload.
+                        </p>
+
+                        <div class="task-list">
+
+                            <div class="task">
+                                <span class="task-dot"></span>
+                                HTTP Web Server
+                            </div>
+
+                            <div class="task">
+                                <span class="task-dot"></span>
+                                WebSocket processing
+                            </div>
+
+                            <div class="task">
+                                <span class="task-dot"></span>
+                                Cloud API request
+                            </div>
+
+                            <div class="task">
+                                <span class="task-dot"></span>
+                                JSON generation
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="architecture-core core1">
+
+                        <div class="core-label">
+                            PROCESSOR CORE 1
+                        </div>
+
+                        <h3>
+                            HARDWARE BOSS
+                        </h3>
+
+                        <p>
+                            This task owns local hardware and display work.
+                        </p>
+
+                        <div class="task-list">
+
+                            <div class="task">
+                                <span class="task-dot"></span>
+                                DHT11 temperature
+                            </div>
+
+                            <div class="task">
+                                <span class="task-dot"></span>
+                                OLED rendering
+                            </div>
+
+                            <div class="task">
+                                <span class="task-dot"></span>
+                                Physical LED state
+                            </div>
+
+                            <div class="task">
+                                <span class="task-dot"></span>
+                                Local UI refresh
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="flow">
+
+                    <div class="flow-box">
+
+                        <div class="title">
+                            DHT11
+                        </div>
+
+                        <div class="desc">
+                            Local physical data
+                        </div>
+
+                    </div>
+
+                    <div class="flow-arrow">
+                        →
+                    </div>
+
+                    <div class="flow-box">
+
+                        <div class="title">
+                            CORE 1
+                        </div>
+
+                        <div class="desc">
+                            Sensor + OLED task
+                        </div>
+
+                    </div>
+
+                    <div class="flow-arrow">
+                        →
+                    </div>
+
+                    <div class="flow-box">
+
+                        <div class="title">
+                            SHARED STATE
+                        </div>
+
+                        <div class="desc">
+                            Protected values
+                        </div>
+
+                    </div>
+
+                    <div class="flow-arrow">
+                        →
+                    </div>
+
+                    <div class="flow-box">
+
+                        <div class="title">
+                            CORE 0
+                        </div>
+
+                        <div class="desc">
+                            Network task
+                        </div>
+
+                    </div>
+
+                    <div class="flow-arrow">
+                        →
+                    </div>
+
+                    <div class="flow-box">
+
+                        <div class="title">
+                            PHONE
+                        </div>
+
+                        <div class="desc">
+                            WebSocket dashboard
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="callout warning">
+
+                    <strong>
+                        ⚠️ Shared-state principle:
+                    </strong>
+
+                    Core 0 and Core 1 are not separate computers.
+                    They share system memory and peripherals.
+                    If two tasks access the same data without a suitable
+                    synchronization strategy, timing-dependent bugs can
+                    occur.
+
+                </div>
+
+
+                <div class="table-wrap">
+
+                    <table>
+
+                        <thead>
+
+                            <tr>
+                                <th>
+                                    Component
+                                </th>
+
+                                <th>
+                                    Responsibility
+                                </th>
+
+                                <th>
+                                    Execution
+                                </th>
+                            </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                            <tr>
+
+                                <td>
+                                    DHT11
+                                </td>
+
+                                <td>
+                                    Room temperature
+                                </td>
+
+                                <td>
+                                    Core 1 task
+                                </td>
+
+                            </tr>
+
+                            <tr>
+
+                                <td>
+                                    OLED
+                                </td>
+
+                                <td>
+                                    Physical dashboard
+                                </td>
+
+                                <td>
+                                    Core 1 task
+                                </td>
+
+                            </tr>
+
+                            <tr>
+
+                                <td>
+                                    LED
+                                </td>
+
+                                <td>
+                                    Physical status indicator
+                                </td>
+
+                                <td>
+                                    Shared system state
+                                </td>
+
+                            </tr>
+
+                            <tr>
+
+                                <td>
+                                    WebServer
+                                </td>
+
+                                <td>
+                                    Browser interface
+                                </td>
+
+                                <td>
+                                    Core 0 task
+                                </td>
+
+                            </tr>
+
+                            <tr>
+
+                                <td>
+                                    WebSocket
+                                </td>
+
+                                <td>
+                                    Live browser updates
+                                </td>
+
+                                <td>
+                                    Core 0 task
+                                </td>
+
+                            </tr>
+
+                            <tr>
+
+                                <td>
+                                    Open-Meteo
+                                </td>
+
+                                <td>
+                                    Remote weather data
+                                </td>
+
+                                <td>
+                                    Core 0 task
+                                </td>
+
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </section>
+
+
+            <!-- ================================================= -->
+            <!-- SECTION 4 — WIRING -->
+            <!-- ================================================= -->
+
+            <section class="section">
+
+                <div class="section-header">
+
+                    <div class="section-number">
+                        04 // HARDWARE
+                    </div>
+
+                    <h2>
+                        Wire the Command Center
+                    </h2>
+
+                    <p class="lead">
+                        This is the packed board. Take it one subsystem
+                        at a time.
+                    </p>
+
+                </div>
+
+
+                <div class="grid grid-3">
+
+                    <div class="card">
+
+                        <div class="icon-box">
+                            📺
+                        </div>
+
+                        <h3>
+                            OLED
+                        </h3>
+
+                        <p>
+                            VCC → 3V3
+                            <br>
+                            GND → GND
+                            <br>
+                            SCL → D22
+                            <br>
+                            SDA → D21
+                        </p>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="icon-box">
+                            🌡️
+                        </div>
+
+                        <h3>
+                            DHT11
+                        </h3>
+
+                        <p>
+                            VCC → 3V3
+                            <br>
+                            DATA → D4
+                            <br>
+                            GND → GND
+                        </p>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="icon-box">
+                            💡
+                        </div>
+
+                        <h3>
+                            Status LED
+                        </h3>
+
+                        <p>
+                            D2 → 220–330Ω → LED long leg
+                            <br>
+                            LED short leg → GND
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="wiring">
+
+<pre>
+ESP32                         BREADBOARD
+
+3V3 ───────────────────────► OLED VCC
+ │
+ └─────────────────────────► DHT11 VCC
+
+
+GND ───────────────────────► BLUE GND RAIL
+                               │
+                               ├──► OLED GND
+                               ├──► DHT11 GND
+                               └──► LED short leg
+
+
+D22 ───────────────────────► OLED SCL
+
+D21 ───────────────────────► OLED SDA
+
+
+D4  ───────────────────────► DHT11 DATA
+
+
+D2 ─────► 220–330Ω ───────► LED long leg (+)
+                              LED short leg (−)
+                                   │
+                                   ▼
+                              BLUE GND RAIL
+</pre>
+
+                </div>
+
+
+                <div class="callout danger">
+
+                    <strong>
+                        ⚠️ LED protection:
+                    </strong>
+
+                    Use a 220–330Ω current-limiting resistor in series
+                    with the LED. Do not connect a bare LED directly to
+                    the ESP32 GPIO.
+
+                </div>
+
+
+                <div class="callout">
+
+                    <strong>
+                        🔌 I2C reminder:
+                    </strong>
+
+                    The OLED uses the same two I2C signal wires you've
+                    already learned: D21 is SDA and D22 is SCL on this
+                    common ESP32 DevKit setup.
+
+                </div>
+
+            </section>
+
+
+            <!-- ================================================= -->
+            <!-- SECTION 5 — PLATFORMIO -->
+            <!-- ================================================= -->
+
+            <section class="section">
+
+                <div class="section-header">
+
+                    <div class="section-number">
+                        05 // SETUP
+                    </div>
+
+                    <h2>
+                        Build the Master Library
+                    </h2>
+
+                    <p class="lead">
+                        This project combines the libraries you've been
+                        using throughout the course.
+                    </p>
+
+                </div>
+
+
+                <div class="steps">
+
+                    <div class="step">
+
+                        <strong>
+                            Open VS Code
+                        </strong>
+
+                        <p>
+                            Launch VS Code and open PlatformIO.
+                        </p>
+
+                    </div>
+
+
+                    <div class="step">
+
+                        <strong>
+                            Create the project
+                        </strong>
+
+                        <p>
+                            Choose
+                            <strong>
+                                New Project
+                            </strong>.
+                        </p>
+
+                    </div>
+
+
+                    <div class="step">
+
+                        <strong>
+                            Project name
+                        </strong>
+
+                        <p>
+                            Use:
+                            <code class="inline">
+                                ESP32-35-Ultimate
+                            </code>
+                        </p>
+
+                    </div>
+
+
+                    <div class="step">
+
+                        <strong>
+                            Board
+                        </strong>
+
+                        <p>
+                            Select:
+                            <strong>
+                                DOIT ESP32 DEVKIT V1
+                            </strong>
+                        </p>
+
+                    </div>
+
+
+                    <div class="step">
+
+                        <strong>
+                            Framework
+                        </strong>
+
+                        <p>
+                            Select:
+                            <strong>
+                                Arduino
+                            </strong>
+                        </p>
+
+                    </div>
+
+
+                    <div class="step">
+
+                        <strong>
+                            Open platformio.ini
+                        </strong>
+
+                        <p>
+                            Replace or update the library section using
+                            the master list below.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="code-wrap">
+
+                    <div class="code-header">
+
+                        <span class="code-language">
+                            INI / TOML
+                        </span>
+
+                        <button class="copy-btn">
+                            Copy
+                        </button>
+
+                    </div>
+
+
+                    <pre class="code">[env:esp32doit-devkit-v1]
+platform = espressif32
+board = esp32doit-devkit-v1
+framework = arduino
+monitor_speed = 115200
+
+lib_deps =
+    adafruit/DHT sensor library
+    adafruit/Adafruit Unified Sensor
+    adafruit/Adafruit SSD1306
+    adafruit/Adafruit GFX Library
+    bblanchon/ArduinoJson
+    links2004/WebSockets</pre>
+
+                </div>
+
+
+                <div class="grid grid-2">
+
+                    <div class="card">
+
+                        <h3>
+                            DHT Library
+                        </h3>
+
+                        <p>
+                            Lets the ESP32 communicate with the DHT11
+                            temperature and humidity sensor.
+                        </p>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <h3>
+                            SSD1306 + GFX
+                        </h3>
+
+                        <p>
+                            Provides the OLED display driver and graphics
+                            primitives.
+                        </p>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <h3>
+                            ArduinoJson
+                        </h3>
+
+                        <p>
+                            Parses and constructs structured JSON data.
+                        </p>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <h3>
+                            WebSockets
+                        </h3>
+
+                        <p>
+                            Provides the persistent WebSocket connection
+                            used by the browser dashboard.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="callout warning">
+
+                    <strong>
+                        📦 Library version note:
+                    </strong>
+
+                    Arduino libraries evolve. If an API in the example
+                    changes between library versions, follow the compiler
+                    error and the library's current documentation rather
+                    than assuming every version has identical APIs.
+
+                </div>
+
+            </section>
+
+
+            <!-- ================================================= -->
+            <!-- SECTION 6 — COMPLETE CODE -->
+            <!-- ================================================= -->
+
+            <section class="section">
+
+                <div class="section-header">
+
+                    <div class="section-number">
+                        06 // CODE
+                    </div>
+
+                    <h2>
+                        Complete Command Center Code
+                    </h2>
+
+                    <p class="lead">
+                        This is the full integration.
+                        Read the architecture after you've seen the whole
+                        system.
+                    </p>
+
+                </div>
+
+
+                <div class="callout warning">
+
+                    <strong>
+                        🚨 Before uploading:
+                    </strong>
+
+                    Replace
+                    <code class="inline">
+                        YOUR_WIFI_NAME
+                    </code>
+                    and
+                    <code class="inline">
+                        YOUR_PASSWORD
+                    </code>
+                    with your own Wi-Fi credentials.
+                    Do not publish real credentials in an open-source
+                    repository.
+
+                </div>
+
+
+                <div class="code-wrap">
+
+                    <div class="code-header">
+
+                        <span class="code-language">
+                            C++ // ESP32
+                        </span>
+
+                        <button class="copy-btn">
+                            Copy
+                        </button>
+
+                    </div>
+
+
+                    <pre class="code">/*
+ * ============================================================
+ * MY BRO'S THIRTY-FIFTH ESP32 PROGRAM:
+ * THE ULTIMATE COMMAND CENTER
+ * ============================================================
+ */
+
+#include &lt;Arduino.h&gt;
+#include &lt;WiFi.h&gt;
+#include &lt;WebServer.h&gt;
+#include &lt;WebSocketsServer.h&gt;
+#include &lt;HTTPClient.h&gt;
+#include &lt;ArduinoJson.h&gt;
+#include &lt;Wire.h&gt;
+#include &lt;Adafruit_GFX.h&gt;
+#include &lt;Adafruit_SSD1306.h&gt;
+#include "DHT.h"
+
+// ============================================================
+// NETWORK CONFIGURATION
+// ============================================================
+
+const char* ssid = "YOUR_WIFI_NAME";
+const char* password = "YOUR_PASSWORD";
+
+const char* weatherAPI =
+    "https://api.open-meteo.com/v1/forecast"
+    "?latitude=51.5"
+    "&longitude=-0.12"
+    "&current=temperature_2m";
+
+// ============================================================
+// SERVERS
+// ============================================================
+
+WebServer server(80);
+
+WebSocketsServer webSocket(81);
+
+// ============================================================
+// HARDWARE
+// ============================================================
+
+Adafruit_SSD1306 display(
+    128,
+    64,
+    &Wire,
+    -1
+);
+
+DHT dht(
+    4,
+    DHT11
+);
+
+const int LED_PIN = 2;
+
+// ============================================================
+// SHARED SYSTEM STATE
+// ============================================================
+
+bool ledState = false;
+
+float localTemp = 0.0;
+
+float globalTemp = 0.0;
+
+// FreeRTOS task handles
+TaskHandle_t Core0Task;
+TaskHandle_t Core1Task;
+
+// Small critical-section lock for shared variables.
+// This protects short reads/writes between the two tasks.
+portMUX_TYPE stateMux = portMUX_INITIALIZER_UNLOCKED;
+
+
+// ============================================================
+// SAFE SHARED STATE FUNCTIONS
+// ============================================================
+
+void setLedState(bool newState) {
+
+    portENTER_CRITICAL(&stateMux);
+
+    ledState = newState;
+
+    portEXIT_CRITICAL(&stateMux);
+}
+
+
+bool getLedState() {
+
+    bool value;
+
+    portENTER_CRITICAL(&stateMux);
+
+    value = ledState;
+
+    portEXIT_CRITICAL(&stateMux);
+
+    return value;
+}
+
+
+void setLocalTemp(float newTemp) {
+
+    portENTER_CRITICAL(&stateMux);
+
+    localTemp = newTemp;
+
+    portEXIT_CRITICAL(&stateMux);
+}
+
+
+float getLocalTemp() {
+
+    float value;
+
+    portENTER_CRITICAL(&stateMux);
+
+    value = localTemp;
+
+    portEXIT_CRITICAL(&stateMux);
+
+    return value;
+}
+
+
+void setGlobalTemp(float newTemp) {
+
+    portENTER_CRITICAL(&stateMux);
+
+    globalTemp = newTemp;
+
+    portEXIT_CRITICAL(&stateMux);
+}
+
+
+float getGlobalTemp() {
+
+    float value;
+
+    portENTER_CRITICAL(&stateMux);
+
+    value = globalTemp;
+
+    portEXIT_CRITICAL(&stateMux);
+
+    return value;
+}
+
+
+// ============================================================
+// WEBPAGE
+// ============================================================
+
+void handle_Homepage() {
+
+    String html =
+        "<!DOCTYPE html>"
+        "<html>"
+        "<head>"
+        "<meta name=\"viewport\" "
+        "content=\"width=device-width, initial-scale=1\">";
+
+    html +=
+        "<style>"
+        "body {"
+        "font-family: Arial;"
+        "text-align: center;"
+        "background: #111;"
+        "color: white;"
+        "margin-top: 30px;"
+        "}"
+        ".card {"
+        "background: #333;"
+        "padding: 20px;"
+        "border-radius: 10px;"
+        "margin: 10px auto;"
+        "width: 80%;"
+        "max-width: 500px;"
+        "}"
+        "button {"
+        "font-size: 20px;"
+        "padding: 15px;"
+        "width: 100%;"
+        "background: #00cc66;"
+        "color: white;"
+        "border: none;"
+        "border-radius: 5px;"
+        "}"
+        "</style>";
+
+    html += "<script>";
+
+    html +=
+        "var connection = "
+        "new WebSocket("
+        "'ws://' + location.hostname + ':81/'"
+        ");";
+
+    html +=
+        "connection.onmessage = function(event) {"
+        "var data = JSON.parse(event.data);"
+        "document.getElementById('led_stat').innerHTML = "
+        "data.led ? 'ON' : 'OFF';"
+        "document.getElementById('loc_temp').innerHTML = "
+        "data.loc_temp + ' &deg;C';"
+        "document.getElementById('glob_temp').innerHTML = "
+        "data.glob_temp + ' &deg;C';"
+        "};";
+
+    html +=
+        "function toggleLight() {"
+        "connection.send('TOGGLE');"
+        "}";
+
+    html += "</script>";
+
+    html +=
+        "</head>"
+        "<body>";
+
+    html +=
+        "<h1>🌐 Command Center</h1>";
+
+    html +=
+        "<div class=\"card\">"
+        "<h2>Room Temperature</h2>"
+        "<h1 id=\"loc_temp\" "
+        "style=\"color:#ff9933;\">"
+        "-- &deg;C"
+        "</h1>"
+        "</div>";
+
+    html +=
+        "<div class=\"card\">"
+        "<h2>London Temperature</h2>"
+        "<h1 id=\"glob_temp\" "
+        "style=\"color:#66b3ff;\">"
+        "-- &deg;C"
+        "</h1>"
+        "</div>";
+
+    html +=
+        "<div class=\"card\">"
+        "<h2>Desk Light: "
+        "<span id=\"led_stat\">OFF</span>"
+        "</h2>";
+
+    html +=
+        "<button onclick=\"toggleLight()\">"
+        "TOGGLE LIGHT"
+        "</button>"
+        "</div>";
+
+    html +=
+        "</body>"
+        "</html>";
+
+    server.send(
+        200,
+        "text/html",
+        html
+    );
+}
+
+
+// ============================================================
+// WEBSOCKET EVENT HANDLER
+// ============================================================
+
+void webSocketEvent(
+    uint8_t num,
+    WStype_t type,
+    uint8_t* payload,
+    size_t length
+) {
+
+    if (type != WStype_TEXT) {
+        return;
+    }
+
+    String msg =
+        String((char*)payload);
+
+    if (msg == "TOGGLE") {
+
+        bool newState =
+            !getLedState();
+
+        setLedState(newState);
+
+        digitalWrite(
+            LED_PIN,
+            newState ? HIGH : LOW
+        );
+    }
+}
+
+
+// ============================================================
+// CORE 0
+// NETWORK BOSS
+// ============================================================
+
+void Core0Code(void* pvParameters) {
+
+    unsigned long lastApiCheck = 0;
+
+    unsigned long lastWsPush = 0;
+
+    for (;;) {
+
+        // Process normal HTTP requests.
+        server.handleClient();
+
+        // Process WebSocket traffic.
+        webSocket.loop();
+
+        unsigned long currentMillis =
+            millis();
+
+        // ----------------------------------------------------
+        // SEND SYSTEM STATE TO CONNECTED BROWSERS
+        // ----------------------------------------------------
+
+        if (
+            currentMillis - lastWsPush >= 1000
+        ) {
+
+            lastWsPush =
+                currentMillis;
+
+            bool currentLed =
+                getLedState();
+
+            float currentLocalTemp =
+                getLocalTemp();
+
+            float currentGlobalTemp =
+                getGlobalTemp();
+
+            String wsJson =
+                "{"
+                "\"led\":" +
+                String(currentLed ? "true" : "false") +
+                ",\"loc_temp\":" +
+                String(currentLocalTemp, 1) +
+                ",\"glob_temp\":" +
+                String(currentGlobalTemp, 1) +
+                "}";
+
+            webSocket.broadcastTXT(
+                wsJson
+            );
+        }
+
+        // ----------------------------------------------------
+        // CLOUD API
+        // ----------------------------------------------------
+
+        if (
+            currentMillis - lastApiCheck >= 30000 ||
+            lastApiCheck == 0
+        ) {
+
+            lastApiCheck =
+                currentMillis;
+
+            if (
+                WiFi.status() == WL_CONNECTED
+            ) {
+
+                HTTPClient http;
+
+                http.begin(weatherAPI);
+
+                int httpCode =
+                    http.GET();
+
+                if (httpCode == 200) {
+
+                    String payload =
+                        http.getString();
+
+                    JsonDocument doc;
+
+                    DeserializationError error =
+                        deserializeJson(
+                            doc,
+                            payload
+                        );
+
+                    if (!error) {
+
+                        float temperature =
+                            doc["current"]["temperature_2m"]
+                            | 0.0f;
+
+                        setGlobalTemp(
+                            temperature
+                        );
+                    }
+                }
+
+                http.end();
+            }
+        }
+
+        // Give this task time to yield.
+        vTaskDelay(
+            10 / portTICK_PERIOD_MS
+        );
+    }
+}
+
+
+// ============================================================
+// CORE 1
+// HARDWARE BOSS
+// ============================================================
+
+void Core1Code(void* pvParameters) {
+
+    for (;;) {
+
+        // ----------------------------------------------------
+        // DHT11
+        // ----------------------------------------------------
+
+        float t =
+            dht.readTemperature();
+
+        if (!isnan(t)) {
+
+            setLocalTemp(t);
+        }
+
+        // ----------------------------------------------------
+        // READ SHARED VALUES
+        // ----------------------------------------------------
+
+        float roomTemperature =
+            getLocalTemp();
+
+        float worldTemperature =
+            getGlobalTemp();
+
+        bool currentLed =
+            getLedState();
+
+        // ----------------------------------------------------
+        // OLED
+        // ----------------------------------------------------
+
+        display.clearDisplay();
+
+        display.setTextSize(1);
+
+        display.setTextColor(
+            WHITE
+        );
+
+        display.setCursor(
+            0,
+            0
+        );
+
+        display.println(
+            "ESP32 COMMAND HUB"
+        );
+
+        display.drawLine(
+            0,
+            10,
+            128,
+            10,
+            WHITE
+        );
+
+        display.setCursor(
+            0,
+            15
+        );
+
+        display.print(
+            "Room:   "
+        );
+
+        display.print(
+            roomTemperature,
+            1
+        );
+
+        display.println(
+            " C"
+        );
+
+        display.setCursor(
+            0,
+            30
+        );
+
+        display.print(
+            "London: "
+        );
+
+        display.print(
+            worldTemperature,
+            1
+        );
+
+        display.println(
+            " C"
+        );
+
+        // ----------------------------------------------------
+        // LIGHT STATUS
+        // ----------------------------------------------------
+
+        if (currentLed) {
+
+            display.fillRoundRect(
+                0,
+                45,
+                128,
+                18,
+                4,
+                WHITE
+            );
+
+            display.setTextColor(
+                BLACK
+            );
+
+            display.setCursor(
+                20,
+                50
+            );
+
+            display.print(
+                "LIGHT IS ON!"
+            );
+
+            display.setTextColor(
+                WHITE
+            );
+        }
+
+        display.display();
+
+        // DHT11 should not be polled rapidly.
+        vTaskDelay(
+            2000 / portTICK_PERIOD_MS
+        );
+    }
+}
+
+
+// ============================================================
+// SETUP
+// ============================================================
+
+void setup() {
+
+    Serial.begin(115200);
+
+    pinMode(
+        LED_PIN,
+        OUTPUT
+    );
+
+    digitalWrite(
+        LED_PIN,
+        LOW
+    );
+
+    dht.begin();
+
+    // --------------------------------------------------------
+    // OLED INITIALIZATION
+    // --------------------------------------------------------
+
+    if (
+        !display.begin(
+            SSD1306_SWITCHCAPVCC,
+            0x3C
+        )
+    ) {
+
+        for (;;) {
+            delay(1000);
+        }
+    }
+
+    display.clearDisplay();
+
+    display.setTextColor(
+        WHITE
+    );
+
+    display.setTextSize(1);
+
+    display.setCursor(
+        0,
+        20
+    );
+
+    display.println(
+        "BOOTING COMMAND HUB..."
+    );
+
+    display.display();
+
+    // --------------------------------------------------------
+    // WIFI
+    // --------------------------------------------------------
+
+    WiFi.begin(
+        ssid,
+        password
+    );
+
+    Serial.print(
+        "Connecting to Wi-Fi"
+    );
+
+    while (
+        WiFi.status() != WL_CONNECTED
+    ) {
+
+        delay(500);
+
+        Serial.print(".");
+    }
+
+    Serial.println();
+
+    Serial.println(
+        "Wi-Fi Connected!"
+    );
+
+    Serial.print(
+        "Open this IP: http://"
+    );
+
+    Serial.println(
+        WiFi.localIP()
+    );
+
+    // --------------------------------------------------------
+    // WEB SERVER
+    // --------------------------------------------------------
+
+    server.on(
+        "/",
+        handle_Homepage
+    );
+
+    server.begin();
+
+    // --------------------------------------------------------
+    // WEBSOCKET
+    // --------------------------------------------------------
+
+    webSocket.begin();
+
+    webSocket.onEvent(
+        webSocketEvent
+    );
+
+    // --------------------------------------------------------
+    // FREE RTOS TASKS
+    // --------------------------------------------------------
+
+    xTaskCreatePinnedToCore(
+        Core0Code,
+        "NetBoss",
+        10000,
+        NULL,
+        1,
+        &Core0Task,
+        0
+    );
+
+    xTaskCreatePinnedToCore(
+        Core1Code,
+        "HwBoss",
+        10000,
+        NULL,
+        1,
+        &Core1Task,
+        1
+    );
+
+    Serial.println(
+        "Command Center tasks started."
+    );
+}
+
+
+// ============================================================
+// ARDUINO LOOP
+// ============================================================
+
+void loop() {
+
+    // The project work is handled by
+    // the FreeRTOS tasks above.
+
+}</pre>
+
+                </div>
+
+
+                <div class="callout">
+
+                    <strong>
+                        🧠 This is the important upgrade:
+                    </strong>
+
+                    The two tasks don't directly manipulate the same
+                    shared variables whenever they feel like it.
+                    The small
+                    <code class="inline">
+                        get...
+                    </code>
+                    and
+                    <code class="inline">
+                        set...
+                    </code>
+                    functions provide a controlled access point for
+                    shared state.
+
+                </div>
+
+            </section>
+
+
+            <!-- ================================================= -->
+            <!-- SECTION 7 — UNDERSTAND -->
+            <!-- ================================================= -->
+
+            <section class="section">
+
+                <div class="section-header">
+
+                    <div class="section-number">
+                        07 // DEEP DIVE
+                    </div>
+
+                    <h2>
+                        Understand the System
+                    </h2>
+
+                    <p class="lead">
+                        This is where the individual projects finally
+                        connect together.
+                    </p>
+
+                </div>
+
+
+                <div class="grid grid-2">
+
+                    <div class="card">
+
+                        <h3>
+                            🌡️ Local Temperature
+                        </h3>
+
+                        <p>
+                            Core 1 reads the DHT11 and updates the shared
+                            room-temperature value.
+                        </p>
+
+                        <div class="flow">
+
+                            <div class="flow-box">
+                                <div class="title">
+                                    DHT11
+                                </div>
+
+                                <div class="desc">
+                                    Physical sensor
+                                </div>
+                            </div>
+
+                            <div class="flow-arrow">
+                                →
+                            </div>
+
+                            <div class="flow-box">
+                                <div class="title">
+                                    localTemp
+                                </div>
+
+                                <div class="desc">
+                                    Shared state
+                                </div>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <h3>
+                            🌍 Global Temperature
+                        </h3>
+
+                        <p>
+                            Core 0 periodically sends an HTTP request to
+                            Open-Meteo and stores the returned temperature.
+                        </p>
+
+                        <div class="flow">
+
+                            <div class="flow-box">
+                                <div class="title">
+                                    API
+                                </div>
+
+                                <div class="desc">
+                                    Remote server
+                                </div>
+                            </div>
+
+                            <div class="flow-arrow">
+                                →
+                            </div>
+
+                            <div class="flow-box">
+                                <div class="title">
+                                    globalTemp
+                                </div>
+
+                                <div class="desc">
+                                    Shared state
+                                </div>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <h3>
+                            📱 WebSocket JSON
+                        </h3>
+
+                        <p>
+                            Core 0 packages the current system state into
+                            JSON and broadcasts it to connected browsers
+                            once per second.
+                        </p>
+
+                        <div class="code-wrap">
+
+                            <div class="code-header">
+
+                                <span class="code-language">
+                                    JSON
+                                </span>
+
+                            </div>
+
+                            <pre class="code">{
+    "led": true,
+    "loc_temp": 25.4,
+    "glob_temp": 17.8
+}</pre>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <h3>
+                            💡 LED State
+                        </h3>
+
+                        <p>
+                            A WebSocket message from the phone changes the
+                            software state. The physical LED and OLED use
+                            that state to represent the command.
+                        </p>
+
+                        <div class="flow">
+
+                            <div class="flow-box">
+                                <div class="title">
+                                    PHONE
+                                </div>
+
+                                <div class="desc">
+                                    TOGGLE
+                                </div>
+                            </div>
+
+                            <div class="flow-arrow">
+                                →
+                            </div>
+
+                            <div class="flow-box">
+                                <div class="title">
+                                    ledState
+                                </div>
+
+                                <div class="desc">
+                                    Shared state
+                                </div>
+                            </div>
+
+                            <div class="flow-arrow">
+                                →
+                            </div>
+
+                            <div class="flow-box">
+                                <div class="title">
+                                    LED + OLED
+                                </div>
+
+                                <div class="desc">
+                                    Physical response
+                                </div>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="callout warning">
+
+                    <strong>
+                        ⏱️ Why this architecture matters:
+                    </strong>
+
+                    The API request can be slow because it depends on
+                    Wi-Fi and an external server. During that network
+                    operation, the Core 1 hardware task remains a separate
+                    schedulable task. This does not mean every operation
+                    in the entire system becomes non-blocking; it means
+                    we've isolated one potentially slow responsibility
+                    from the local hardware task.
+
+                </div>
+
+
+                <h3>
+                    The OLED inversion trick
+                </h3>
+
+                <p>
+                    When the LED is ON, the OLED draws a filled white
+                    rounded rectangle and switches text to black.
+                    That produces a simple inverted status banner.
+                </p>
+
+
+                <div class="code-wrap">
+
+                    <div class="code-header">
+
+                        <span class="code-language">
+                            C++ // OLED UI
+                        </span>
+
+                        <button class="copy-btn">
+                            Copy
+                        </button>
+
+                    </div>
+
+                    <pre class="code">display.fillRoundRect(
+    0,
+    45,
+    128,
+    18,
+    4,
+    WHITE
+);
+
+display.setTextColor(BLACK);
+
+display.setCursor(20, 50);
+
+display.print("LIGHT IS ON!");
+
+display.setTextColor(WHITE);</pre>
+
+                </div>
+
+
+                <div class="table-wrap">
+
+                    <table>
+
+                        <thead>
+
+                            <tr>
+                                <th>
+                                    Technology
+                                </th>
+
+                                <th>
+                                    Role in Final System
+                                </th>
+                            </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                            <tr>
+                                <td>
+                                    GPIO
+                                </td>
+
+                                <td>
+                                    Physical LED control
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    DHT11
+                                </td>
+
+                                <td>
+                                    Local temperature sensing
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    I2C
+                                </td>
+
+                                <td>
+                                    OLED communication
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    HTTP
+                                </td>
+
+                                <td>
+                                    Cloud API requests
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    JSON
+                                </td>
+
+                                <td>
+                                    Structured system data
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    WebServer
+                                </td>
+
+                                <td>
+                                    Browser dashboard
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    WebSocket
+                                </td>
+
+                                <td>
+                                    Near-real-time state updates
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    FreeRTOS
+                                </td>
+
+                                <td>
+                                    Task scheduling
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    Dual-core scheduling
+                                </td>
+
+                                <td>
+                                    Separating network and hardware workloads
+                                </td>
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </section>
+
+
+            <!-- ================================================= -->
+            <!-- SECTION 8 — BUILD -->
+            <!-- ================================================= -->
+
+            <section class="section">
+
+                <div class="section-header">
+
+                    <div class="section-number">
+                        08 // DEPLOY
+                    </div>
+
+                    <h2>
+                        Build + Upload
+                    </h2>
+
+                    <p class="lead">
+                        You've got the architecture.
+                        Now deploy it.
+                    </p>
+
+                </div>
+
+
+                <div class="steps">
+
+                    <div class="step">
+
+                        <strong>
+                            Save everything
+                        </strong>
+
+                        <p>
+                            Press
+                            <code class="inline">
+                                Ctrl + S
+                            </code>
+                            in both
+                            <code class="inline">
+                                platformio.ini
+                            </code>
+                            and
+                            <code class="inline">
+                                main.cpp
+                            </code>.
+                        </p>
+
+                    </div>
+
+
+                    <div class="step">
+
+                        <strong>
+                            Build
+                        </strong>
+
+                        <p>
+                            Click PlatformIO
+                            <strong>
+                                Build ✓
+                            </strong>.
+                        </p>
+
+                    </div>
+
+
+                    <div class="step">
+
+                        <strong>
+                            Connect USB
+                        </strong>
+
+                        <p>
+                            Connect the ESP32 to the computer and make sure
+                            the correct serial port is selected.
+                        </p>
+
+                    </div>
+
+
+                    <div class="step">
+
+                        <strong>
+                            Upload
+                        </strong>
+
+                        <p>
+                            Click PlatformIO
+                            <strong>
+                                Upload →
+                            </strong>.
+                        </p>
+
+                    </div>
+
+
+                    <div class="step">
+
+                        <strong>
+                            Open Serial Monitor
+                        </strong>
+
+                        <p>
+                            Use
+                            <strong>
+                                115200 baud
+                            </strong>.
+                        </p>
+
+                    </div>
+
+
+                    <div class="step">
+
+                        <strong>
+                            Find the IP address
+                        </strong>
+
+                        <p>
+                            The ESP32 prints the address assigned by your
+                            router.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="code-wrap">
+
+                    <div class="code-header">
+
+                        <span class="code-language">
+                            SERIAL
+                        </span>
+
+                    </div>
+
+                    <pre class="code">Connecting to Wi-Fi...
+Wi-Fi Connected!
+Open this IP: http://192.168.x.x
+Command Center tasks started.</pre>
+
+                </div>
+
+
+                <div class="callout">
+
+                    <strong>
+                        📱 Network requirement:
+                    </strong>
+
+                    Your phone normally needs to be able to reach the
+                    ESP32 over the same local network. If your phone is
+                    isolated from the ESP32 by guest-network or client
+                    isolation settings, the dashboard may not connect.
+
+                </div>
+
+
+                <div class="callout warning">
+
+                    <strong>
+                        🌐 API requirement:
+                    </strong>
+
+                    The cloud temperature depends on Internet access.
+                    Your local OLED and DHT11 can still function even if
+                    the remote API cannot be reached.
+
+                </div>
+
+            </section>
+
+
+            <!-- ================================================= -->
+            <!-- SECTION 9 — RESULT -->
+            <!-- ================================================= -->
+
+            <section class="section">
+
+                <div class="section-header">
+
+                    <div class="section-number">
+                        09 // COMMAND CENTER
+                    </div>
+
+                    <h2>
+                        Watch the System Come Alive
+                    </h2>
+
+                    <p class="lead">
+                        This is the moment all 34 previous projects
+                        converge.
+                    </p>
+
+                </div>
+
+
+                <div class="milestone">
+
+                    <div class="milestone-number">
+                        SYSTEM BOOT SEQUENCE
+                    </div>
+
+                    <h3>
+                        01 → 02 → 03 → 04
+                    </h3>
+
+                    <p>
+                        OLED initializes.
+                        Wi-Fi connects.
+                        Web server starts.
+                        WebSocket server starts.
+                        FreeRTOS tasks begin running.
+                    </p>
+
+                </div>
+
+
+                <div class="grid grid-2" style="margin-top: 15px;">
+
+                    <div class="card">
+
+                        <div class="icon-box">
+                            📺
+                        </div>
+
+                        <h3>
+                            Physical Dashboard
+                        </h3>
+
+                        <p>
+                            The OLED shows:
+                        </p>
+
+                        <ul class="checklist">
+
+                            <li>
+                                ESP32 COMMAND HUB
+                            </li>
+
+                            <li>
+                                Room temperature
+                            </li>
+
+                            <li>
+                                London temperature
+                            </li>
+
+                            <li>
+                                Light status
+                            </li>
+
+                        </ul>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="icon-box">
+                            📱
+                        </div>
+
+                        <h3>
+                            Web Dashboard
+                        </h3>
+
+                        <p>
+                            Open the printed IP address on your phone.
+                            The browser receives system data through the
+                            WebSocket connection.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="flow">
+
+                    <div class="flow-box">
+
+                        <div class="title">
+                            SENSOR
+                        </div>
+
+                        <div class="desc">
+                            DHT11 reads room temperature
+                        </div>
+
+                    </div>
+
+                    <div class="flow-arrow">
+                        →
+                    </div>
+
+                    <div class="flow-box">
+
+                        <div class="title">
+                            ESP32
+                        </div>
+
+                        <div class="desc">
+                            Shared system state
+                        </div>
+
+                    </div>
+
+                    <div class="flow-arrow">
+                        →
+                    </div>
+
+                    <div class="flow-box">
+
+                        <div class="title">
+                            WEBSOCKET
+                        </div>
+
+                        <div class="desc">
+                            JSON state pushed to browser
+                        </div>
+
+                    </div>
+
+                    <div class="flow-arrow">
+                        →
+                    </div>
+
+                    <div class="flow-box">
+
+                        <div class="title">
+                            PHONE
+                        </div>
+
+                        <div class="desc">
+                            Dashboard updates
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <h3 style="margin-top: 30px;">
+                    Now press the button.
+                </h3>
+
+                <div class="card">
+
+                    <p>
+                        Tap:
+                    </p>
+
+                    <div
+                        style="
+                            padding: 18px;
+                            border: 1px solid rgba(0, 255, 136, 0.2);
+                            border-radius: 12px;
+                            background: rgba(0, 255, 136, 0.06);
+                            color: var(--green);
+                            font-family: monospace;
+                            font-weight: 900;
+                            text-align: center;
+                        "
+                    >
+                        TOGGLE LIGHT
+                    </div>
+
+                    <p>
+                        The WebSocket sends
+                        <code class="inline">
+                            TOGGLE
+                        </code>
+                        to the ESP32.
+                    </p>
+
+                    <p>
+                        The network task changes the shared LED state.
+                    </p>
+
+                    <p>
+                        The physical LED changes.
+                    </p>
+
+                    <p>
+                        The OLED sees the new state on its next refresh
+                        and displays the inverted status banner.
+                    </p>
+
+                    <p>
+                        The next WebSocket state broadcast tells the
+                        browser that the light is now ON.
+                    </p>
+
+                </div>
+
+
+                <div class="callout">
+
+                    <strong>
+                        🔥 This is systems integration.
+                    </strong>
+
+                    One user action crossed several boundaries:
+
+                    <br><br>
+
+                    Browser
+                    →
+                    WebSocket
+                    →
+                    ESP32 task
+                    →
+                    shared state
+                    →
+                    GPIO
+                    →
+                    OLED
+                    →
+                    WebSocket
+                    →
+                    browser.
+
+                </div>
+
+
+                <div class="callout warning">
+
+                    <strong>
+                        ⏱️ "Real-time" clarification:
+                    </strong>
+
+                    The system is designed for low-latency,
+                    near-real-time updates. It does not provide
+                    mathematically zero latency. Wi-Fi transmission,
+                    scheduling, processing, display refresh and Internet
+                    services all introduce real delays.
+
+                </div>
+
+            </section>
+
+
+            <!-- ================================================= -->
+            <!-- SECTION 10 — COURSE COMPLETE -->
+            <!-- ================================================= -->
+
+            <section class="section">
+
+                <div class="hero">
+
+                    <div class="eyebrow">
+                        Project 35 // Mission Complete
+                    </div>
+
+                    <h1>
+                        YOU BUILT<br>
+                        A SYSTEM.
+                    </h1>
+
+                    <p class="hero-subtitle">
+
+                        Bro.
+                        <br><br>
+
+                        Stop for a second and look at what you just did.
+                        😎⚡
+                        <br><br>
+
+                        You didn't just make an LED blink.
+                        You didn't just connect an ESP32 to Wi-Fi.
+                        You didn't just display a sensor value.
+                        <br><br>
+
+                        You assembled a complete embedded IoT architecture.
+
+                    </p>
+
+                    <div class="terminal">
+
+                        <span class="dim">
+                            GPIO:
+                        </span>
+                        ONLINE<br>
+
+                        <span class="dim">
+                            SENSOR:
+                        </span>
+                        ONLINE<br>
+
+                        <span class="dim">
+                            OLED:
+                        </span>
+                        ONLINE<br>
+
+                        <span class="dim">
+                            HTTP:
+                        </span>
+                        ONLINE<br>
+
+                        <span class="dim">
+                            WEBSOCKET:
+                        </span>
+                        ONLINE<br>
+
+                        <span class="dim">
+                            JSON:
+                        </span>
+                        ONLINE<br>
+
+                        <span class="dim">
+                            FREERTOS:
+                        </span>
+                        ONLINE<br>
+
+                        <span class="dim">
+                            SYSTEM:
+                        </span>
+
+                        <span class="highlight">
+                            COMMAND CENTER
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <div
+                    class="grid grid-3"
+                    style="margin-top: 18px;"
+                >
+
+                    <div class="card">
+
+                        <div class="icon-box">
+                            💻
+                        </div>
+
+                        <h3>
+                            Front-End
+                        </h3>
+
+                        <p>
+                            HTML, CSS, JavaScript and WebSocket JSON parsing
+                            create the browser interface.
+                        </p>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="icon-box">
+                            🌐
+                        </div>
+
+                        <h3>
+                            Back-End
+                        </h3>
+
+                        <p>
+                            HTTP server, WebSocket server and external API
+                            client connect the device to software systems.
+                        </p>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="icon-box">
+                            ⚙️
+                        </div>
+
+                        <h3>
+                            Embedded
+                        </h3>
+
+                        <p>
+                            GPIO, DHT11, I2C, OLED and FreeRTOS bring the
+                            physical machine to life.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="card" style="margin-top: 15px;">
+
+                    <h3>
+                        🧠 Your ESP32 Mastery Stack
+                    </h3>
+
+                    <div class="table-wrap">
+
+                        <table>
+
+                            <thead>
+
+                                <tr>
+                                    <th>
+                                        Level
+                                    </th>
+
+                                    <th>
+                                        What You Learned
+                                    </th>
+                                </tr>
+
+                            </thead>
+
+                            <tbody>
+
+                                <tr>
+                                    <td>
+                                        Hardware
+                                    </td>
+
+                                    <td>
+                                        GPIO, LEDs, buttons, sensors
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td>
+                                        Logic
+                                    </td>
+
+                                    <td>
+                                        Conditions, state machines,
+                                        variables and control flow
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td>
+                                        Timing
+                                    </td>
+
+                                    <td>
+                                        millis(), non-blocking design
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td>
+                                        Analog
+                                    </td>
+
+                                    <td>
+                                        Potentiometers, PWM and LDRs
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td>
+                                        Sensors
+                                    </td>
+
+                                    <td>
+                                        DHT11 and ultrasonic sensing
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td>
+                                        Displays
+                                    </td>
+
+                                    <td>
+                                        OLED + I2C graphics
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td>
+                                        Networking
+                                    </td>
+
+                                    <td>
+                                        Wi-Fi, HTTP and WebSockets
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td>
+                                        APIs
+                                    </td>
+
+                                    <td>
+                                        HTTP requests and JSON parsing
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td>
+                                        IoT Cloud
+                                    </td>
+
+                                    <td>
+                                        ThingSpeak, Webhooks and cloud
+                                        integration
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td>
+                                        Wireless Development
+                                    </td>
+
+                                    <td>
+                                        OTA concepts
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td>
+                                        Radio
+                                    </td>
+
+                                    <td>
+                                        ESP-NOW concepts
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td>
+                                        RTOS
+                                    </td>
+
+                                    <td>
+                                        FreeRTOS tasks, scheduling,
+                                        core pinning and watchdog behavior
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td>
+                                        Architecture
+                                    </td>
+
+                                    <td>
+                                        Combining all of the above into
+                                        one integrated system
+                                    </td>
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+
+                <div class="callout">
+
+                    <strong>
+                        🎯 The biggest lesson:
+                    </strong>
+
+                    Professional engineering isn't about knowing the
+                    largest number of functions.
+
+                    <br><br>
+
+                    It's about knowing how to divide a problem into
+                    responsibilities, how those responsibilities
+                    communicate, and how to make the whole system behave
+                    predictably.
+
+                </div>
+
+
+                <div class="milestone" style="margin-top: 18px;">
+
+                    <div class="milestone-number">
+                        FINAL MASTER ROADMAP
+                    </div>
+
+                    <h3>
+                        PROJECT 35 COMPLETE.
+                    </h3>
+
+                    <p>
+                        You have reached the end of the technical ESP32
+                        project sequence.
+                    </p>
+
+                    <p>
+                        But the course itself isn't quite finished.
+                    </p>
+
+                    <p>
+                        There is one final chapter:
+                    </p>
+
+                    <p
+                        style="
+                            color: var(--green);
+                            font-family: monospace;
+                            font-size: 16px;
+                            font-weight: 900;
+                        "
+                    >
+                        PROJECT 36 → THE CAPSTONE REFLECTION
+                    </p>
+
+                </div>
+
+
+                <div class="card" style="margin-top: 15px;">
+
+                    <h3>
+                        🚀 What comes next?
+                    </h3>
+
+                    <p>
+                        Project 36 isn't another giant wiring diagram.
+                        It's where you step back, review the entire
+                        journey, understand what you've actually learned,
+                        and decide what you want to build next.
+                    </p>
+
+                    <p>
+                        From beginner GPIO experiments to a complete
+                        FreeRTOS-based IoT Command Center.
+                    </p>
+
+                    <p
+                        style="
+                            color: var(--green);
+                            font-family: monospace;
+                            font-weight: 900;
+                        "
+                    >
+                        NEXT.EXE → PROJECT 36
+                    </p>
+
+                </div>
+
+
+                <div class="footer-note">
+                    Use ← and → to navigate • Progress is saved locally
+                </div>
+
+            </section>
+
+
+            <!-- ================================================= -->
+            <!-- NAVIGATION -->
+            <!-- ================================================= -->
+
+            <div class="nav-controls">
+
+                <button
+                    class="nav-btn"
+                    id="prevBtn"
+                    disabled
+                >
+                    ← Previous
+                </button>
+
+
+                <span
+                    style="
+                        display: flex;
+                        align-items: center;
+                        gap: 6px;
+                        color: #506a5c;
+                        font-size: 10px;
+                    "
+                >
+                    <span class="kbd">
+                        ←
+                    </span>
+
+                    <span class="kbd">
+                        →
+                    </span>
+                </span>
+
+
+                <button
+                    class="nav-btn"
+                    id="nextBtn"
+                >
+                    Next →
+                </button>
+
+            </div>
+
+        </div>
+
+    </main>
+
+
+    <!-- ========================================================= -->
+    <!-- JAVASCRIPT -->
+    <!-- ========================================================= -->
+
+    <script>
+
+        const sections = [
+            ...document.querySelectorAll(".section")
+        ];
+
+        const navItems = [
+            ...document.querySelectorAll(".nav-item")
+        ];
+
+        const progressFill =
+            document.getElementById("progressFill");
+
+        const progressText =
+            document.getElementById("progressText");
+
+        const mobileProgress =
+            document.getElementById("mobileProgress");
+
+        const prevBtn =
+            document.getElementById("prevBtn");
+
+        const nextBtn =
+            document.getElementById("nextBtn");
+
+        let currentSection = 0;
+
+
+        function updateSection(index) {
+
+            index = Math.max(
+                0,
+                Math.min(
+                    index,
+                    sections.length - 1
+                )
+            );
+
+            currentSection = index;
+
+
+            sections.forEach(
+                (section, i) => {
+
+                    section.classList.toggle(
+                        "active",
+                        i === currentSection
+                    );
+
+                }
+            );
+
+
+            navItems.forEach(
+                (item, i) => {
+
+                    item.classList.toggle(
+                        "active",
+                        i === currentSection
+                    );
+
+                }
+            );
+
+
+            const progress =
+                (
+                    (currentSection + 1) /
+                    sections.length
+                ) * 100;
+
+
+            progressFill.style.width =
+                `${progress}%`;
+
+
+            progressText.textContent =
+                `${currentSection + 1} / ${sections.length}`;
+
+
+            mobileProgress.textContent =
+                `${String(currentSection + 1).padStart(2, "0")} / ${sections.length}`;
+
+
+            prevBtn.disabled =
+                currentSection === 0;
+
+
+            nextBtn.disabled =
+                currentSection ===
+                sections.length - 1;
+
+
+            window.scrollTo({
+                top: 0,
+                behavior: "smooth"
+            });
+
+
+            localStorage.setItem(
+                "qc-esp32-project-35-section",
+                currentSection
+            );
+
+        }
+
+
+        navItems.forEach(
+            (item) => {
+
+                item.addEventListener(
+                    "click",
+                    () => {
+
+                        updateSection(
+                            Number(
+                                item.dataset.section
+                            )
+                        );
+
+                    }
+                );
+
+            }
+        );
+
+
+        prevBtn.addEventListener(
+            "click",
+            () => {
+
+                updateSection(
+                    currentSection - 1
+                );
+
+            }
+        );
+
+
+        nextBtn.addEventListener(
+            "click",
+            () => {
+
+                updateSection(
+                    currentSection + 1
+                );
+
+            }
+        );
+
+
+        document.addEventListener(
+            "keydown",
+            (event) => {
+
+                if (
+                    event.target.tagName === "INPUT" ||
+                    event.target.tagName === "TEXTAREA"
+                ) {
+
+                    return;
+
+                }
+
+
+                if (
+                    event.key === "ArrowLeft"
+                ) {
+
+                    updateSection(
+                        currentSection - 1
+                    );
+
+                }
+
+
+                if (
+                    event.key === "ArrowRight"
+                ) {
+
+                    updateSection(
+                        currentSection + 1
+                    );
+
+                }
+
+            }
+        );
+
+
+        document
+            .querySelectorAll(".copy-btn")
+            .forEach(
+                (button) => {
+
+                    button.addEventListener(
+                        "click",
+                        async () => {
+
+                            const code =
+                                button
+                                    .closest(".code-wrap")
+                                    .querySelector("pre.code")
+                                    .innerText;
+
+
+                            try {
+
+                                await navigator.clipboard.writeText(
+                                    code
+                                );
+
+
+                                const original =
+                                    button.textContent;
+
+
+                                button.textContent =
+                                    "Copied ✓";
+
+
+                                button.style.color =
+                                    "var(--green)";
+
+
+                                setTimeout(
+                                    () => {
+
+                                        button.textContent =
+                                            original;
+
+                                        button.style.color =
+                                            "";
+
+                                    },
+                                    1400
+                                );
+
+                            } catch {
+
+                                const original =
+                                    button.textContent;
+
+
+                                button.textContent =
+                                    "Copy failed";
+
+
+                                setTimeout(
+                                    () => {
+
+                                        button.textContent =
+                                            original;
+
+                                    },
+                                    1400
+                                );
+
+                            }
+
+                        }
+                    );
+
+                }
+            );
+
+
+        const savedSection =
+            Number(
+                localStorage.getItem(
+                    "qc-esp32-project-35-section"
+                )
+            );
+
+
+        if (
+            Number.isInteger(savedSection) &&
+            savedSection >= 0 &&
+            savedSection < sections.length
+        ) {
+
+            updateSection(
+                savedSection
+            );
+
+        } else {
+
+            updateSection(0);
+
+        }
+
+    </script>
+
+</body>
+</html>

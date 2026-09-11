@@ -1,0 +1,3973 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Project 17 — Website → LED Control | Quantum Core
+    </title>
+
+    <style>
+        :root {
+            --bg: #050807;
+            --panel: #0b100e;
+            --panel-2: #0e1512;
+            --green: #39ff88;
+            --cyan: #42e8ff;
+            --yellow: #ffd84a;
+            --red: #ff4f6d;
+            --text: #e8f5ed;
+            --muted: #8ca095;
+            --border: rgba(57, 255, 136, 0.16);
+            --border-bright: rgba(57, 255, 136, 0.35);
+            --sidebar: 285px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
+            color: var(--text);
+            background:
+                radial-gradient(
+                    circle at 20% 0%,
+                    rgba(57, 255, 136, 0.08),
+                    transparent 30%
+                ),
+                radial-gradient(
+                    circle at 90% 20%,
+                    rgba(66, 232, 255, 0.06),
+                    transparent 28%
+                ),
+                var(--bg);
+            font-family:
+                Inter,
+                ui-sans-serif,
+                system-ui,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.16;
+            background-image:
+                linear-gradient(
+                    rgba(255, 255, 255, 0.025) 1px,
+                    transparent 1px
+                ),
+                linear-gradient(
+                    90deg,
+                    rgba(255, 255, 255, 0.025) 1px,
+                    transparent 1px
+                );
+            background-size: 32px 32px;
+            mask-image: linear-gradient(
+                to bottom,
+                black,
+                transparent 85%
+            );
+        }
+
+        button,
+        input,
+        textarea {
+            font: inherit;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        /* =====================================================
+           SIDEBAR
+           ===================================================== */
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 20;
+            width: var(--sidebar);
+            height: 100vh;
+            padding: 26px 18px;
+            overflow-y: auto;
+            border-right: 1px solid var(--border);
+            background:
+                linear-gradient(
+                    180deg,
+                    rgba(9, 15, 12, 0.98),
+                    rgba(5, 8, 7, 0.98)
+                );
+            backdrop-filter: blur(18px);
+        }
+
+        .brand {
+            padding: 4px 10px 22px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .brand-kicker {
+            color: var(--green);
+            font-family: "Courier New", monospace;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+        }
+
+        .brand-title {
+            margin-top: 7px;
+            font-size: 21px;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+        }
+
+        .brand-subtitle {
+            margin-top: 5px;
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .progress-area {
+            padding: 18px 10px 16px;
+        }
+
+        .progress-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 9px;
+        }
+
+        .progress-label {
+            color: var(--muted);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .progress-number {
+            color: var(--green);
+            font-family: "Courier New", monospace;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .progress-track {
+            height: 4px;
+            overflow: hidden;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.07);
+        }
+
+        .progress-fill {
+            width: 7%;
+            height: 100%;
+            border-radius: inherit;
+            background: var(--green);
+            box-shadow: 0 0 12px rgba(57, 255, 136, 0.7);
+            transition: width 0.35s ease;
+        }
+
+        .nav {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            width: 100%;
+            padding: 10px 11px;
+            border: 1px solid transparent;
+            border-radius: 9px;
+            color: var(--muted);
+            background: transparent;
+            text-align: left;
+            transition:
+                color 0.2s ease,
+                background 0.2s ease,
+                border-color 0.2s ease;
+        }
+
+        .nav-item:hover {
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.025);
+        }
+
+        .nav-item.active {
+            color: var(--green);
+            border-color: var(--border);
+            background: rgba(57, 255, 136, 0.07);
+            box-shadow: inset 2px 0 0 var(--green);
+        }
+
+        .nav-number {
+            width: 24px;
+            color: inherit;
+            font-family: "Courier New", monospace;
+            font-size: 10px;
+            opacity: 0.75;
+        }
+
+        .nav-name {
+            font-size: 12px;
+            font-weight: 650;
+        }
+
+        /* =====================================================
+           MOBILE HEADER
+           ===================================================== */
+
+        .mobile-header {
+            display: none;
+            position: sticky;
+            top: 0;
+            z-index: 15;
+            padding: 13px 16px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(5, 8, 7, 0.92);
+            backdrop-filter: blur(18px);
+        }
+
+        .mobile-header-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .mobile-brand {
+            color: var(--green);
+            font-family: "Courier New", monospace;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+        }
+
+        .mobile-progress {
+            color: var(--muted);
+            font-family: "Courier New", monospace;
+            font-size: 11px;
+        }
+
+        /* =====================================================
+           MAIN
+           ===================================================== */
+
+        .main {
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            margin-left: var(--sidebar);
+        }
+
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            min-height: 62px;
+            padding: 0 34px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+            background: rgba(5, 8, 7, 0.78);
+            backdrop-filter: blur(18px);
+        }
+
+        .topbar-label {
+            color: var(--muted);
+            font-family: "Courier New", monospace;
+            font-size: 11px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .topbar-label span {
+            color: var(--green);
+        }
+
+        .topbar-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 10px var(--green);
+        }
+
+        .content {
+            width: min(1100px, calc(100% - 48px));
+            margin: 0 auto;
+            padding: 42px 0 90px;
+        }
+
+        /* =====================================================
+           SECTIONS
+           ===================================================== */
+
+        .section {
+            display: none;
+            animation: sectionIn 0.35s ease;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes sectionIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .section-label {
+            margin-bottom: 12px;
+            color: var(--green);
+            font-family: "Courier New", monospace;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+        }
+
+        .section-title {
+            margin: 0;
+            font-size: clamp(30px, 4vw, 48px);
+            line-height: 1.03;
+            letter-spacing: -0.045em;
+        }
+
+        .section-subtitle {
+            max-width: 780px;
+            margin: 15px 0 0;
+            color: var(--muted);
+            font-size: 16px;
+            line-height: 1.75;
+        }
+
+        /* =====================================================
+           HERO
+           ===================================================== */
+
+        .hero {
+            position: relative;
+            overflow: hidden;
+            padding: 42px;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            background:
+                radial-gradient(
+                    circle at 85% 15%,
+                    rgba(57, 255, 136, 0.09),
+                    transparent 32%
+                ),
+                linear-gradient(
+                    145deg,
+                    rgba(15, 24, 19, 0.96),
+                    rgba(8, 13, 10, 0.96)
+                );
+            box-shadow:
+                0 25px 80px rgba(0, 0, 0, 0.35),
+                inset 0 1px 0 rgba(255, 255, 255, 0.035);
+        }
+
+        .hero::after {
+            content: "17";
+            position: absolute;
+            right: 25px;
+            bottom: -45px;
+            color: rgba(57, 255, 136, 0.035);
+            font-family: "Courier New", monospace;
+            font-size: 190px;
+            font-weight: 900;
+            line-height: 1;
+            pointer-events: none;
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+            padding: 7px 10px;
+            border: 1px solid rgba(57, 255, 136, 0.2);
+            border-radius: 999px;
+            color: var(--green);
+            background: rgba(57, 255, 136, 0.05);
+            font-family: "Courier New", monospace;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .eyebrow-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 9px var(--green);
+        }
+
+        .hero h1 {
+            max-width: 850px;
+            margin: 0;
+            font-size: clamp(38px, 6vw, 72px);
+            line-height: 0.98;
+            letter-spacing: -0.06em;
+        }
+
+        .hero h1 span {
+            color: var(--green);
+        }
+
+        .hero p {
+            max-width: 800px;
+            margin: 22px 0 0;
+            color: #a8b8af;
+            font-size: 17px;
+            line-height: 1.75;
+        }
+
+        .terminal {
+            position: relative;
+            z-index: 2;
+            margin-top: 30px;
+            padding: 15px 17px;
+            border: 1px solid rgba(57, 255, 136, 0.14);
+            border-radius: 10px;
+            background: #030504;
+            color: #9ab1a2;
+            font-family: "Courier New", monospace;
+            font-size: 12px;
+            line-height: 1.8;
+        }
+
+        .prompt {
+            color: var(--green);
+        }
+
+        .terminal-command {
+            color: var(--text);
+        }
+
+        /* =====================================================
+           CARDS
+           ===================================================== */
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+            margin-top: 28px;
+        }
+
+        .grid.three {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .card {
+            padding: 22px;
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            background: rgba(11, 16, 14, 0.82);
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.025);
+        }
+
+        .card h3 {
+            margin: 0 0 10px;
+            font-size: 16px;
+            letter-spacing: -0.015em;
+        }
+
+        .card p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.7;
+        }
+
+        .icon-box {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 38px;
+            height: 38px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--green);
+            background: rgba(57, 255, 136, 0.06);
+            font-family: "Courier New", monospace;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .big-card {
+            margin-top: 25px;
+            padding: 28px;
+            border: 1px solid var(--border);
+            border-radius: 17px;
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(14, 21, 17, 0.94),
+                    rgba(8, 12, 10, 0.94)
+                );
+        }
+
+        .big-card h3 {
+            margin: 0 0 12px;
+            font-size: 20px;
+        }
+
+        .big-card p {
+            margin: 0;
+            color: var(--muted);
+            line-height: 1.75;
+        }
+
+        .big-card p + p {
+            margin-top: 15px;
+        }
+
+        .list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 20px 0 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .list li {
+            position: relative;
+            padding: 13px 15px 13px 34px;
+            border: 1px solid rgba(255, 255, 255, 0.055);
+            border-radius: 10px;
+            color: #aab8af;
+            background: rgba(255, 255, 255, 0.018);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .list li::before {
+            content: ">";
+            position: absolute;
+            left: 14px;
+            color: var(--green);
+            font-family: "Courier New", monospace;
+            font-weight: 900;
+        }
+
+        /* =====================================================
+           NUMBERED STEPS
+           ===================================================== */
+
+        .number-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 22px;
+        }
+
+        .number-item {
+            display: grid;
+            grid-template-columns: 36px 1fr;
+            gap: 12px;
+            align-items: start;
+        }
+
+        .number {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--green);
+            background: rgba(57, 255, 136, 0.05);
+            font-family: "Courier New", monospace;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .number-item strong {
+            display: block;
+            margin-bottom: 4px;
+            color: var(--text);
+            font-size: 14px;
+        }
+
+        .number-item span {
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.65;
+        }
+
+        /* =====================================================
+           WEB REQUEST FLOW
+           ===================================================== */
+
+        .flow {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 25px;
+            padding: 24px;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            background: rgba(57, 255, 136, 0.025);
+        }
+
+        .flow-node {
+            min-width: 125px;
+            padding: 13px 14px;
+            border: 1px solid rgba(57, 255, 136, 0.18);
+            border-radius: 9px;
+            color: var(--green);
+            background: rgba(57, 255, 136, 0.045);
+            font-family: "Courier New", monospace;
+            font-size: 11px;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .flow-node.cyan {
+            color: var(--cyan);
+            border-color: rgba(66, 232, 255, 0.18);
+            background: rgba(66, 232, 255, 0.035);
+        }
+
+        .flow-node.yellow {
+            color: var(--yellow);
+            border-color: rgba(255, 216, 74, 0.18);
+            background: rgba(255, 216, 74, 0.035);
+        }
+
+        .flow-arrow {
+            color: var(--muted);
+            font-family: "Courier New", monospace;
+            font-size: 14px;
+        }
+
+        /* =====================================================
+           PHONE CONTROL VISUAL
+           ===================================================== */
+
+        .control-demo {
+            display: grid;
+            grid-template-columns: minmax(230px, 320px) minmax(0, 1fr);
+            gap: 30px;
+            align-items: center;
+            margin-top: 28px;
+            padding: 28px;
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            background:
+                radial-gradient(
+                    circle at 20% 50%,
+                    rgba(57, 255, 136, 0.07),
+                    transparent 30%
+                ),
+                #030604;
+        }
+
+        .phone {
+            width: 210px;
+            margin: 0 auto;
+            padding: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.16);
+            border-radius: 28px;
+            background: #080d0a;
+            box-shadow:
+                0 20px 50px rgba(0, 0, 0, 0.4),
+                inset 0 0 20px rgba(57, 255, 136, 0.025);
+        }
+
+        .phone-speaker {
+            width: 45px;
+            height: 4px;
+            margin: 3px auto 10px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .phone-screen {
+            min-height: 290px;
+            padding: 18px 13px;
+            overflow: hidden;
+            border-radius: 20px;
+            background: #f4f6f4;
+            color: #111;
+        }
+
+        .phone-title {
+            margin-bottom: 7px;
+            font-size: 15px;
+            font-weight: 800;
+        }
+
+        .phone-text {
+            margin-bottom: 15px;
+            color: #4d574f;
+            font-size: 10px;
+            line-height: 1.5;
+        }
+
+        .phone-button {
+            margin-bottom: 10px;
+            padding: 12px;
+            border-radius: 7px;
+            color: white;
+            font-size: 11px;
+            font-weight: 800;
+            text-align: center;
+        }
+
+        .phone-button.on {
+            background: #17994d;
+        }
+
+        .phone-button.off {
+            background: #d42f4c;
+        }
+
+        .physical-led-demo {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            min-height: 160px;
+            padding: 25px;
+            border: 1px solid rgba(57, 255, 136, 0.1);
+            border-radius: 14px;
+            background: rgba(0, 0, 0, 0.25);
+        }
+
+        .led-large {
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            background: #092315;
+            box-shadow: none;
+            transition:
+                background 0.3s ease,
+                box-shadow 0.3s ease;
+        }
+
+        .led-large.on {
+            background: var(--green);
+            box-shadow:
+                0 0 20px var(--green),
+                0 0 60px rgba(57, 255, 136, 0.45);
+        }
+
+        .demo-arrow {
+            color: var(--green);
+            font-family: "Courier New", monospace;
+            font-size: 28px;
+        }
+
+        .demo-text h3 {
+            margin: 0 0 7px;
+            font-size: 17px;
+        }
+
+        .demo-text p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.7;
+        }
+
+        /* =====================================================
+           ROUTE CARDS
+           ===================================================== */
+
+        .route-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 14px;
+            margin-top: 25px;
+        }
+
+        .route-card {
+            padding: 20px;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: rgba(11, 16, 14, 0.82);
+        }
+
+        .route-path {
+            margin-bottom: 10px;
+            color: var(--green);
+            font-family: "Courier New", monospace;
+            font-size: 20px;
+            font-weight: 800;
+        }
+
+        .route-card h3 {
+            margin: 0 0 7px;
+            font-size: 14px;
+        }
+
+        .route-card p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.65;
+        }
+
+        /* =====================================================
+           WIRING
+           ===================================================== */
+
+        .wiring {
+            margin-top: 26px;
+            padding: 25px;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            background: #050806;
+        }
+
+        .wiring-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .wiring-title h3 {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .wiring-badge {
+            padding: 5px 8px;
+            border: 1px solid rgba(57, 255, 136, 0.18);
+            border-radius: 999px;
+            color: var(--green);
+            font-family: "Courier New", monospace;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .wire-diagram {
+            overflow-x: auto;
+            margin-top: 18px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 11px;
+            background: #020403;
+        }
+
+        .wire-diagram pre {
+            margin: 0;
+            color: #a9bdb0;
+            font-family: "Courier New", monospace;
+            font-size: 12px;
+            line-height: 1.7;
+        }
+
+        .wire-note {
+            margin-top: 17px;
+            padding: 14px 15px;
+            border-left: 3px solid var(--yellow);
+            border-radius: 7px;
+            color: #c9c0a0;
+            background: rgba(255, 216, 74, 0.055);
+            font-size: 12px;
+            line-height: 1.65;
+        }
+
+        .danger-note {
+            margin-top: 17px;
+            padding: 15px;
+            border-left: 3px solid var(--red);
+            border-radius: 7px;
+            color: #e7b4be;
+            background: rgba(255, 79, 109, 0.055);
+            font-size: 12px;
+            line-height: 1.7;
+        }
+
+        /* =====================================================
+           CODE
+           ===================================================== */
+
+        .code-wrap {
+            position: relative;
+            margin-top: 25px;
+            overflow: hidden;
+            border: 1px solid rgba(57, 255, 136, 0.16);
+            border-radius: 14px;
+            background: #020403;
+        }
+
+        .code-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 13px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .code-language {
+            color: var(--muted);
+            font-family: "Courier New", monospace;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .copy-btn {
+            padding: 5px 9px;
+            border: 1px solid rgba(57, 255, 136, 0.15);
+            border-radius: 6px;
+            color: var(--muted);
+            background: transparent;
+            font-family: "Courier New", monospace;
+            font-size: 10px;
+            transition:
+                color 0.2s ease,
+                border-color 0.2s ease,
+                background 0.2s ease;
+        }
+
+        .copy-btn:hover {
+            color: var(--green);
+            border-color: rgba(57, 255, 136, 0.3);
+            background: rgba(57, 255, 136, 0.05);
+        }
+
+        pre.code {
+            overflow-x: auto;
+            margin: 0;
+            padding: 20px;
+            color: #c6d5cc;
+            font-family: "Courier New", monospace;
+            font-size: 12px;
+            line-height: 1.65;
+            tab-size: 4;
+        }
+
+        /* =====================================================
+           CALLOUTS
+           ===================================================== */
+
+        .callout {
+            margin-top: 24px;
+            padding: 18px 20px;
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--green);
+            border-radius: 11px;
+            background: rgba(57, 255, 136, 0.035);
+        }
+
+        .callout-title {
+            margin-bottom: 7px;
+            color: var(--green);
+            font-family: "Courier New", monospace;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .callout p {
+            margin: 0;
+            color: #aebdb4;
+            font-size: 13px;
+            line-height: 1.7;
+        }
+
+        .yellow-callout {
+            border-left-color: var(--yellow);
+            background: rgba(255, 216, 74, 0.035);
+        }
+
+        .yellow-callout .callout-title {
+            color: var(--yellow);
+        }
+
+        .red-callout {
+            border-left-color: var(--red);
+            background: rgba(255, 79, 109, 0.035);
+        }
+
+        .red-callout .callout-title {
+            color: var(--red);
+        }
+
+        .cyan-callout {
+            border-left-color: var(--cyan);
+            background: rgba(66, 232, 255, 0.035);
+        }
+
+        .cyan-callout .callout-title {
+            color: var(--cyan);
+        }
+
+        /* =====================================================
+           TABLE
+           ===================================================== */
+
+        .table-wrap {
+            margin-top: 25px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+        }
+
+        table {
+            width: 100%;
+            min-width: 600px;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 14px 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+            text-align: left;
+        }
+
+        th {
+            color: var(--green);
+            background: rgba(57, 255, 136, 0.045);
+            font-family: "Courier New", monospace;
+            font-size: 10px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        td {
+            color: #aab8af;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        tr:last-child td {
+            border-bottom: 0;
+        }
+
+        td strong {
+            color: var(--text);
+        }
+
+        /* =====================================================
+           NAVIGATION
+           ===================================================== */
+
+        .bottom-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            margin-top: 55px;
+            padding-top: 24px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .nav-btn {
+            min-width: 135px;
+            padding: 11px 15px;
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            border-radius: 9px;
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.025);
+            transition:
+                color 0.2s ease,
+                border-color 0.2s ease,
+                background 0.2s ease,
+                opacity 0.2s ease;
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            color: var(--green);
+            border-color: var(--border-bright);
+            background: rgba(57, 255, 136, 0.045);
+        }
+
+        .nav-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.3;
+        }
+
+        .nav-btn .small {
+            display: block;
+            margin-bottom: 3px;
+            color: var(--muted);
+            font-family: "Courier New", monospace;
+            font-size: 9px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .nav-btn.next {
+            text-align: right;
+        }
+
+        /* =====================================================
+           INLINE CODE
+           ===================================================== */
+
+        code {
+            padding: 2px 5px;
+            border: 1px solid rgba(57, 255, 136, 0.1);
+            border-radius: 5px;
+            color: var(--green);
+            background: rgba(57, 255, 136, 0.045);
+            font-family: "Courier New", monospace;
+            font-size: 0.9em;
+        }
+
+        /* =====================================================
+           RESPONSIVE
+           ===================================================== */
+
+        @media (max-width: 1100px) {
+            :root {
+                --sidebar: 250px;
+            }
+
+            .content {
+                width: min(100% - 38px, 1000px);
+            }
+
+            .topbar {
+                padding: 0 25px;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .sidebar {
+                display: none;
+            }
+
+            .mobile-header {
+                display: block;
+            }
+
+            .main {
+                margin-left: 0;
+            }
+
+            .topbar {
+                display: none;
+            }
+
+            .content {
+                width: calc(100% - 28px);
+                padding-top: 24px;
+            }
+
+            .hero {
+                padding: 28px 23px;
+            }
+
+            .grid,
+            .grid.three,
+            .route-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .control-demo {
+                grid-template-columns: 1fr;
+            }
+
+            .phone {
+                width: 205px;
+            }
+        }
+
+        @media (max-width: 560px) {
+            .section-title {
+                font-size: 33px;
+            }
+
+            .hero h1 {
+                font-size: 43px;
+            }
+
+            .hero p {
+                font-size: 14px;
+            }
+
+            .bottom-nav {
+                flex-direction: column;
+            }
+
+            .nav-btn {
+                width: 100%;
+            }
+
+            .nav-btn.next {
+                text-align: left;
+            }
+
+            .flow {
+                justify-content: flex-start;
+            }
+
+            .flow-arrow {
+                display: none;
+            }
+
+            .control-demo {
+                padding: 18px;
+            }
+
+            .physical-led-demo {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .wire-diagram pre,
+            pre.code {
+                font-size: 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- =====================================================
+         SIDEBAR
+         ===================================================== -->
+
+    <aside class="sidebar">
+
+        <div class="brand">
+            <div class="brand-kicker">
+                Quantum Core / ESP-32
+            </div>
+
+            <div class="brand-title">
+                Project 17
+            </div>
+
+            <div class="brand-subtitle">
+                Website → LED Control
+            </div>
+        </div>
+
+        <div class="progress-area">
+
+            <div class="progress-header">
+                <span class="progress-label">
+                    Progress
+                </span>
+
+                <span
+                    class="progress-number"
+                    id="progressText"
+                >
+                    1 / 14
+                </span>
+            </div>
+
+            <div class="progress-track">
+                <div
+                    class="progress-fill"
+                    id="progressFill"
+                ></div>
+            </div>
+
+        </div>
+
+        <nav class="nav">
+
+            <button
+                class="nav-item active"
+                data-section="0"
+            >
+                <span class="nav-number">01</span>
+                <span class="nav-name">Welcome</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="1"
+            >
+                <span class="nav-number">02</span>
+                <span class="nav-name">What We Learn</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="2"
+            >
+                <span class="nav-number">03</span>
+                <span class="nav-name">Wiring</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="3"
+            >
+                <span class="nav-number">04</span>
+                <span class="nav-name">Create Project</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="4"
+            >
+                <span class="nav-number">05</span>
+                <span class="nav-name">Complete Code</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="5"
+            >
+                <span class="nav-number">06</span>
+                <span class="nav-name">Understand Code</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="6"
+            >
+                <span class="nav-number">07</span>
+                <span class="nav-name">Build + Upload</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="7"
+            >
+                <span class="nav-number">08</span>
+                <span class="nav-name">Expected Result</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="8"
+            >
+                <span class="nav-number">09</span>
+                <span class="nav-name">Experiment</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="9"
+            >
+                <span class="nav-number">10</span>
+                <span class="nav-name">Challenge</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="10"
+            >
+                <span class="nav-number">11</span>
+                <span class="nav-name">Troubleshooting</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="11"
+            >
+                <span class="nav-number">12</span>
+                <span class="nav-name">Vocabulary</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="12"
+            >
+                <span class="nav-number">13</span>
+                <span class="nav-name">What You Learned</span>
+            </button>
+
+            <button
+                class="nav-item"
+                data-section="13"
+            >
+                <span class="nav-number">14</span>
+                <span class="nav-name">Next Project</span>
+            </button>
+
+        </nav>
+    </aside>
+
+    <!-- =====================================================
+         MOBILE HEADER
+         ===================================================== -->
+
+    <header class="mobile-header">
+
+        <div class="mobile-header-inner">
+
+            <div class="mobile-brand">
+                QUANTUM CORE / ESP32
+            </div>
+
+            <div
+                class="mobile-progress"
+                id="mobileProgress"
+            >
+                01 / 14
+            </div>
+
+        </div>
+
+    </header>
+
+    <!-- =====================================================
+         MAIN
+         ===================================================== -->
+
+    <main class="main">
+
+        <div class="topbar">
+
+            <div class="topbar-label">
+                ESP32 LIBRARY
+                <span>/ PROJECT 17</span>
+            </div>
+
+            <div class="topbar-status">
+                <span class="status-dot"></span>
+                Learning Mode
+            </div>
+
+        </div>
+
+        <div class="content">
+
+            <!-- =================================================
+                 SECTION 01 — WELCOME
+                 ================================================= -->
+
+            <section class="section active">
+
+                <div class="hero">
+
+                    <div class="eyebrow">
+                        <span class="eyebrow-dot"></span>
+                        PROJECT 17 / WEB → HARDWARE
+                    </div>
+
+                    <h1>
+                        Website
+                        <span>→ LED Control</span>
+                    </h1>
+
+                    <p>
+                        Hey my broo 👋
+                        <br><br>
+
+                        Welcome back! ⚡
+                        <br><br>
+
+                        In Project 16, you successfully hosted a
+                        static webpage on your ESP32 and visited it
+                        from your phone.
+                    </p>
+
+                    <p>
+                        That was amazing — but the website was just
+                        text. It couldn't actually <strong>do</strong>
+                        anything.
+                    </p>
+
+                    <p>
+                        Today we're crossing one of the biggest
+                        bridges in IoT:
+                        <strong>
+                            connecting a webpage to physical
+                            hardware.
+                        </strong>
+                    </p>
+
+                    <p>
+                        You'll put an LED back on your breadboard,
+                        add clickable buttons to your smartphone
+                        webpage, and make the ESP32 respond to those
+                        buttons by changing a real GPIO pin.
+                    </p>
+
+                    <div class="terminal">
+
+                        <span class="prompt">
+                            my-bro@quantum-core:~$
+                        </span>
+
+                        esp32-guide --project 17
+
+                        <br>
+
+                        <span class="prompt">
+                            input:
+                        </span>
+
+                        smartphone-browser
+
+                        <br>
+
+                        <span class="prompt">
+                            network:
+                        </span>
+
+                        local-wifi
+
+                        <br>
+
+                        <span class="prompt">
+                            output:
+                        </span>
+
+                        physical-led
+
+                        <br>
+
+                        <span class="prompt">
+                            mission:
+                        </span>
+
+                        WEB → GPIO
+
+                    </div>
+
+                </div>
+
+                <div class="callout">
+
+                    <div class="callout-title">
+                        Mission
+                    </div>
+
+                    <p>
+                        Go from
+                        <strong>
+                            "My ESP32 hosts a static website."
+                        </strong>
+                        to
+                        <strong>
+                            "My smartphone browser can control
+                            physical hardware."
+                        </strong>
+                        😎
+                    </p>
+
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 02 — WHAT WE LEARN
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="section-label">
+                    02 / What We Learn
+                </div>
+
+                <h2 class="section-title">
+                    HTTP Routes + Web-to-GPIO Bridging
+                </h2>
+
+                <p class="section-subtitle">
+                    The key idea is simple: a browser request can
+                    become a physical hardware action.
+                </p>
+
+                <div class="route-grid">
+
+                    <div class="route-card">
+
+                        <div class="route-path">
+                            /
+                        </div>
+
+                        <h3>
+                            Homepage
+                        </h3>
+
+                        <p>
+                            The main webpage containing the
+                            controls.
+                        </p>
+
+                    </div>
+
+                    <div class="route-card">
+
+                        <div class="route-path">
+                            /on
+                        </div>
+
+                        <h3>
+                            Turn ON
+                        </h3>
+
+                        <p>
+                            The ESP32 receives this route and runs
+                            <code>digitalWrite(LED_PIN, HIGH)</code>.
+                        </p>
+
+                    </div>
+
+                    <div class="route-card">
+
+                        <div class="route-path">
+                            /off
+                        </div>
+
+                        <h3>
+                            Turn OFF
+                        </h3>
+
+                        <p>
+                            The ESP32 receives this route and runs
+                            <code>digitalWrite(LED_PIN, LOW)</code>.
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <div class="flow">
+
+                    <div class="flow-node cyan">
+                        PHONE
+                    </div>
+
+                    <div class="flow-arrow">
+                        →
+                    </div>
+
+                    <div class="flow-node">
+                        HTTP REQUEST
+                    </div>
+
+                    <div class="flow-arrow">
+                        →
+                    </div>
+
+                    <div class="flow-node yellow">
+                        ESP32 ROUTE
+                    </div>
+
+                    <div class="flow-arrow">
+                        →
+                    </div>
+
+                    <div class="flow-node">
+                        GPIO
+                    </div>
+
+                    <div class="flow-arrow">
+                        →
+                    </div>
+
+                    <div class="flow-node">
+                        LED
+                    </div>
+
+                </div>
+
+                <div class="grid">
+
+                    <div class="card">
+
+                        <div class="icon-box">
+                            /ON
+                        </div>
+
+                        <h3>
+                            HTTP Routes
+                        </h3>
+
+                        <p>
+                            A route is a specific path on the web
+                            server. The browser requests that path,
+                            and the server decides what action
+                            belongs to it.
+                        </p>
+
+                    </div>
+
+                    <div class="card">
+
+                        <div class="icon-box">
+                            GPIO
+                        </div>
+
+                        <h3>
+                            Web-to-GPIO
+                        </h3>
+
+                        <p>
+                            The ESP32 becomes the bridge between
+                            software and hardware: HTTP request in,
+                            GPIO action out.
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <div class="callout cyan-callout">
+
+                    <div class="callout-title">
+                        The Big Idea
+                    </div>
+
+                    <p>
+                        Your phone does not directly control the
+                        GPIO pin. Your phone sends an
+                        <strong>HTTP request</strong>
+                        to the ESP32. The ESP32 interprets that
+                        request and changes the GPIO.
+                    </p>
+
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 03 — WIRING
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="section-label">
+                    03 / Wiring
+                </div>
+
+                <h2 class="section-title">
+                    Bring Back the LED
+                </h2>
+
+                <p class="section-subtitle">
+                    Time to reconnect physical hardware. This is
+                    the same basic LED circuit you've used before.
+                </p>
+
+                <div class="wiring">
+
+                    <div class="wiring-title">
+
+                        <h3>
+                            LED Circuit
+                        </h3>
+
+                        <span class="wiring-badge">
+                            GPIO 2
+                        </span>
+
+                    </div>
+
+                    <div class="grid">
+
+                        <div class="card">
+
+                            <div class="icon-box">
+                                +
+                            </div>
+
+                            <h3>
+                                LED Long Leg
+                            </h3>
+
+                            <p>
+                                Connect the LED's long leg
+                                (anode) to
+                                <strong>D2 / GPIO 2</strong>
+                                through a
+                                <strong>220–330 Ω resistor</strong>.
+                            </p>
+
+                        </div>
+
+                        <div class="card">
+
+                            <div class="icon-box">
+                                −
+                            </div>
+
+                            <h3>
+                                LED Short Leg
+                            </h3>
+
+                            <p>
+                                Connect the LED's short leg
+                                (cathode) to the breadboard's
+                                blue GND rail.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                    <div class="wire-diagram">
+
+<pre>
+ ESP32                         BREADBOARD
+
+ D2 / GPIO 2 ──[220–330Ω]────► LED LONG LEG (+)
+
+ GND ────────────────────────► [BLUE GND RAIL]
+                                      ▲
+                                      │
+                              LED SHORT LEG (-)
+</pre>
+
+                    </div>
+
+                    <div class="wire-note">
+
+                        <strong>
+                            LED safety:
+                        </strong>
+
+                        Always use a
+                        <strong>
+                            220–330 Ω current-limiting resistor
+                        </strong>
+                        in series with the LED. Do not connect a
+                        bare LED directly between a GPIO pin and
+                        GND.
+
+                    </div>
+
+                </div>
+
+                <div class="callout">
+
+                    <div class="callout-title">
+                        No Button This Time
+                    </div>
+
+                    <p>
+                        Notice that the physical button is gone.
+                        That's intentional. Your
+                        <strong>
+                            smartphone is becoming the button.
+                        </strong>
+                    </p>
+
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 04 — CREATE PROJECT
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="section-label">
+                    04 / Create Project
+                </div>
+
+                <h2 class="section-title">
+                    Build the WebLED Project
+                </h2>
+
+                <p class="section-subtitle">
+                    We'll use the same PlatformIO + Arduino setup
+                    from Project 16.
+                </p>
+
+                <div class="number-list">
+
+                    <div class="number-item">
+
+                        <div class="number">
+                            01
+                        </div>
+
+                        <div>
+                            <strong>
+                                Open VS Code
+                            </strong>
+
+                            <span>
+                                Launch VS Code and open PlatformIO.
+                            </span>
+                        </div>
+
+                    </div>
+
+                    <div class="number-item">
+
+                        <div class="number">
+                            02
+                        </div>
+
+                        <div>
+                            <strong>
+                                Create a New Project
+                            </strong>
+
+                            <span>
+                                Open PlatformIO → New Project.
+                            </span>
+                        </div>
+
+                    </div>
+
+                    <div class="number-item">
+
+                        <div class="number">
+                            03
+                        </div>
+
+                        <div>
+                            <strong>
+                                Name the project
+                            </strong>
+
+                            <span>
+                                Use
+                                <code>
+                                    ESP32-17-WebLED
+                                </code>.
+                            </span>
+                        </div>
+
+                    </div>
+
+                    <div class="number-item">
+
+                        <div class="number">
+                            04
+                        </div>
+
+                        <div>
+                            <strong>
+                                Select the board
+                            </strong>
+
+                            <span>
+                                Choose
+                                <strong>
+                                    DOIT ESP32 DEVKIT V1
+                                </strong>.
+                            </span>
+                        </div>
+
+                    </div>
+
+                    <div class="number-item">
+
+                        <div class="number">
+                            05
+                        </div>
+
+                        <div>
+                            <strong>
+                                Select the framework
+                            </strong>
+
+                            <span>
+                                Choose
+                                <strong>
+                                    Arduino
+                                </strong>.
+                            </span>
+                        </div>
+
+                    </div>
+
+                    <div class="number-item">
+
+                        <div class="number">
+                            06
+                        </div>
+
+                        <div>
+                            <strong>
+                                Open main.cpp
+                            </strong>
+
+                            <span>
+                                Open
+                                <code>
+                                    src/main.cpp
+                                </code>
+                                and replace the default code.
+                            </span>
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="callout yellow-callout">
+
+                    <div class="callout-title">
+                        Open-Source Credential Rule
+                    </div>
+
+                    <p>
+                        Keep
+                        <code>
+                            YOUR_WIFI_NAME
+                        </code>
+                        and
+                        <code>
+                            YOUR_PASSWORD
+                        </code>
+                        as placeholders in any public repository.
+                        Replace them locally when testing, and
+                        <strong>
+                            never commit your real Wi-Fi password
+                        </strong>
+                        to Git or GitHub.
+                    </p>
+
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 05 — COMPLETE CODE
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="section-label">
+                    05 / Complete Code
+                </div>
+
+                <h2 class="section-title">
+                    The Web-Controlled GPIO
+                </h2>
+
+                <p class="section-subtitle">
+                    Delete the default code and paste this into
+                    <code>src/main.cpp</code>.
+                </p>
+
+                <div class="code-wrap">
+
+                    <div class="code-header">
+
+                        <span class="code-language">
+                            C++
+                        </span>
+
+                        <button class="copy-btn">
+                            Copy
+                        </button>
+
+                    </div>
+
+                    <pre class="code">/*
+ * ============================================================
+ * MY BRO'S SEVENTEENTH ESP32 PROGRAM: WEB GPIO CONTROL
+ * ============================================================
+ */
+
+#include &lt;WiFi.h&gt;
+#include &lt;WebServer.h&gt;
+
+const char* ssid = "YOUR_WIFI_NAME";
+const char* password = "YOUR_PASSWORD";
+
+WebServer server(80);
+
+const int LED_PIN = 2;
+
+// ============================================================
+// 1. THE HOMEPAGE ROUTE ("/")
+// ============================================================
+void handle_Homepage() {
+    String html = "&lt;h1&gt;ESP32 Smart Light Control&lt;/h1&gt;";
+    html += "&lt;p&gt;Click a button to control the physical LED:&lt;/p&gt;";
+
+    // HTML Links that act as buttons pointing to our routes
+    html += "&lt;p&gt;&lt;a href=\"/on\"&gt;";
+    html += "&lt;button style=\"font-size:20px;background:green;color:white;\"&gt;";
+    html += "TURN ON";
+    html += "&lt;/button&gt;&lt;/a&gt;&lt;/p&gt;";
+
+    html += "&lt;p&gt;&lt;a href=\"/off\"&gt;";
+    html += "&lt;button style=\"font-size:20px;background:red;color:white;\"&gt;";
+    html += "TURN OFF";
+    html += "&lt;/button&gt;&lt;/a&gt;&lt;/p&gt;";
+
+    server.send(200, "text/html", html);
+}
+
+// ============================================================
+// 2. THE "TURN ON" ROUTE ("/on")
+// ============================================================
+void handle_On() {
+    digitalWrite(LED_PIN, HIGH);
+
+    String html = "&lt;h1&gt;Light is ON!&lt;/h1&gt;";
+    html += "&lt;p&gt;&lt;a href=\"/\"&gt;Back to Home&lt;/a&gt;&lt;/p&gt;";
+
+    server.send(200, "text/html", html);
+}
+
+// ============================================================
+// 3. THE "TURN OFF" ROUTE ("/off")
+// ============================================================
+void handle_Off() {
+    digitalWrite(LED_PIN, LOW);
+
+    String html = "&lt;h1&gt;Light is OFF!&lt;/h1&gt;";
+    html += "&lt;p&gt;&lt;a href=\"/\"&gt;Back to Home&lt;/a&gt;&lt;/p&gt;";
+
+    server.send(200, "text/html", html);
+}
+
+void setup() {
+    Serial.begin(115200);
+
+    pinMode(LED_PIN, OUTPUT);
+
+    // Connect to Wi-Fi
+    WiFi.begin(ssid, password);
+
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(500);
+        Serial.print(".");
+    }
+
+    Serial.println("\nWi-Fi Connected!");
+
+    Serial.print("Open this IP on your phone: http://");
+    Serial.println(WiFi.localIP());
+
+    // Register our routes
+    server.on("/", handle_Homepage);
+    server.on("/on", handle_On);
+    server.on("/off", handle_Off);
+
+    // Start the server
+    server.begin();
+
+    Serial.println("Web server started.");
+}
+
+void loop() {
+    // Listen for incoming browser requests
+    server.handleClient();
+}</pre>
+
+                </div>
+
+                <div class="callout yellow-callout">
+
+                    <div class="callout-title">
+                        Before Uploading
+                    </div>
+
+                    <p>
+                        Replace the Wi-Fi placeholders with your
+                        actual local Wi-Fi credentials on your
+                        development machine. If you're using this
+                        project publicly, keep those real credentials
+                        out of the repository.
+                    </p>
+
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 06 — UNDERSTAND CODE
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="section-label">
+                    06 / Understand Code
+                </div>
+
+                <h2 class="section-title">
+                    Decode the Web → GPIO Bridge
+                </h2>
+
+                <p class="section-subtitle">
+                    Three routes create the connection between your
+                    smartphone interface and the physical LED.
+                </p>
+
+                <div class="control-demo">
+
+                    <div class="phone">
+
+                        <div class="phone-speaker"></div>
+
+                        <div class="phone-screen">
+
+                            <div class="phone-title">
+                                ESP32 Smart Light Control
+                            </div>
+
+                            <div class="phone-text">
+                                Click a button to control the
+                                physical LED:
+                            </div>
+
+                            <div class="phone-button on">
+                                TURN ON
+                            </div>
+
+                            <div class="phone-button off">
+                                TURN OFF
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="physical-led-demo">
+
+                        <div
+                            class="led-large on"
+                        ></div>
+
+                        <div class="demo-arrow">
+                            →
+                        </div>
+
+                        <div class="demo-text">
+
+                            <h3>
+                                HTTP → GPIO
+                            </h3>
+
+                            <p>
+                                The phone requests
+                                <code>/on</code>.
+                                The ESP32 executes
+                                <code>
+                                    digitalWrite(LED_PIN, HIGH)
+                                </code>.
+                                The physical LED turns ON.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="grid">
+
+                    <div class="card">
+
+                        <div class="icon-box">
+                            &lt;/&gt;
+                        </div>
+
+                        <h3>
+                            HTML Buttons
+                        </h3>
+
+                        <p>
+                            The
+                            <code>&lt;button&gt;</code>
+                            element creates a large clickable
+                            control on the phone webpage.
+                        </p>
+
+                    </div>
+
+                    <div class="card">
+
+                        <div class="icon-box">
+                            /ON
+                        </div>
+
+                        <h3>
+                            HTML Links
+                        </h3>
+
+                        <p>
+                            The
+                            <code>&lt;a href="/on"&gt;</code>
+                            link tells the browser which route to
+                            request when the button is clicked.
+                        </p>
+
+                    </div>
+
+                    <div class="card">
+
+                        <div class="icon-box">
+                            API
+                        </div>
+
+                        <h3>
+                            <code>server.on()</code>
+                        </h3>
+
+                        <p>
+                            This registers a route and connects it
+                            to the C++ function that should run when
+                            the route is requested.
+                        </p>
+
+                    </div>
+
+                    <div class="card">
+
+                        <div class="icon-box">
+                            200
+                        </div>
+
+                        <h3>
+                            <code>server.send()</code>
+                        </h3>
+
+                        <p>
+                            The ESP32 responds to the browser with
+                            an HTTP status code, content type, and
+                            webpage content.
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <div class="big-card">
+
+                    <h3>
+                        What Happens When You Tap TURN ON?
+                    </h3>
+
+                    <div class="flow">
+
+                        <div class="flow-node cyan">
+                            TAP BUTTON
+                        </div>
+
+                        <div class="flow-arrow">
+                            →
+                        </div>
+
+                        <div class="flow-node">
+                            GET /on
+                        </div>
+
+                        <div class="flow-arrow">
+                            →
+                        </div>
+
+                        <div class="flow-node yellow">
+                            handle_On()
+                        </div>
+
+                        <div class="flow-arrow">
+                            →
+                        </div>
+
+                        <div class="flow-node">
+                            GPIO HIGH
+                        </div>
+
+                        <div class="flow-arrow">
+                            →
+                        </div>
+
+                        <div class="flow-node">
+                            LED ON
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 07 — BUILD + UPLOAD
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="section-label">
+                    07 / Build + Upload
+                </div>
+
+                <h2 class="section-title">
+                    Put the Bridge Online
+                </h2>
+
+                <p class="section-subtitle">
+                    The ESP32 needs to join your Wi-Fi before your
+                    phone can reach its web server.
+                </p>
+
+                <div class="number-list">
+
+                    <div class="number-item">
+
+                        <div class="number">
+                            01
+                        </div>
+
+                        <div>
+                            <strong>
+                                Build
+                            </strong>
+
+                            <span>
+                                Click PlatformIO
+                                <strong>
+                                    Build (✓)
+                                </strong>.
+                            </span>
+                        </div>
+
+                    </div>
+
+                    <div class="number-item">
+
+                        <div class="number">
+                            02
+                        </div>
+
+                        <div>
+                            <strong>
+                                Upload
+                            </strong>
+
+                            <span>
+                                Click
+                                <strong>
+                                    Upload (→)
+                                </strong>
+                                and wait for the firmware to flash.
+                            </span>
+                        </div>
+
+                    </div>
+
+                    <div class="number-item">
+
+                        <div class="number">
+                            03
+                        </div>
+
+                        <div>
+                            <strong>
+                                Open Serial Monitor
+                            </strong>
+
+                            <span>
+                                Open the Serial Monitor at
+                                <code>
+                                    115200
+                                </code>
+                                baud.
+                            </span>
+                        </div>
+
+                    </div>
+
+                    <div class="number-item">
+
+                        <div class="number">
+                            04
+                        </div>
+
+                        <div>
+                            <strong>
+                                Find the IP address
+                            </strong>
+
+                            <span>
+                                Look for the line beginning with
+                                <code>
+                                    Open this IP on your phone:
+                                </code>.
+                            </span>
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="terminal">
+
+                    <span class="prompt">
+                        serial@esp32:~$
+                    </span>
+
+                    Wi-Fi Connected!
+
+                    <br>
+
+                    <span class="prompt">
+                        serial@esp32:~$
+                    </span>
+
+                    Open this IP on your phone:
+                    http://192.168.1.42
+
+                    <br>
+
+                    <span class="prompt">
+                        serial@esp32:~$
+                    </span>
+
+                    Web server started.
+
+                </div>
+
+                <div class="callout">
+
+                    <div class="callout-title">
+                        Important
+                    </div>
+
+                    <p>
+                        Write down the IP address. Your phone will
+                        use this local network address to reach the
+                        ESP32.
+                    </p>
+
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 08 — EXPECTED RESULT
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="section-label">
+                    08 / Expected Result
+                </div>
+
+                <h2 class="section-title">
+                    Your Phone Controls the LED
+                </h2>
+
+                <p class="section-subtitle">
+                    This is the moment where the software and
+                    hardware finally become one system.
+                </p>
+
+                <div class="control-demo">
+
+                    <div class="phone">
+
+                        <div class="phone-speaker"></div>
+
+                        <div class="phone-screen">
+
+                            <div class="phone-title">
+                                ESP32 Smart Light Control
+                            </div>
+
+                            <div class="phone-text">
+                                Click a button to control the
+                                physical LED:
+                            </div>
+
+                            <div class="phone-button on">
+                                TURN ON
+                            </div>
+
+                            <div class="phone-button off">
+                                TURN OFF
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="physical-led-demo">
+
+                        <div class="led-large on"></div>
+
+                        <div class="demo-arrow">
+                            →
+                        </div>
+
+                        <div class="demo-text">
+
+                            <h3>
+                                Physical LED
+                            </h3>
+
+                            <p>
+                                Tap
+                                <strong>
+                                    TURN ON
+                                </strong>
+                                on your phone and the GPIO becomes
+                                HIGH.
+                            </p>
+
+                            <p style="margin-top: 12px;">
+                                Tap
+                                <strong>
+                                    TURN OFF
+                                </strong>
+                                and the GPIO becomes LOW.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="number-list">
+
+                    <div class="number-item">
+
+                        <div class="number">
+                            01
+                        </div>
+
+                        <div>
+                            <strong>
+                                Open the ESP32 IP
+                            </strong>
+
+                            <span>
+                                Type the IP address into your phone's
+                                actual browser URL bar.
+                            </span>
+                        </div>
+
+                    </div>
+
+                    <div class="number-item">
+
+                        <div class="number">
+                            02
+                        </div>
+
+                        <div>
+                            <strong>
+                                Tap TURN ON
+                            </strong>
+
+                            <span>
+                                The browser requests
+                                <code>/on</code>.
+                            </span>
+                        </div>
+
+                    </div>
+
+                    <div class="number-item">
+
+                        <div class="number">
+                            03
+                        </div>
+
+                        <div>
+                            <strong>
+                                Watch the desk
+                            </strong>
+
+                            <span>
+                                The physical LED connected to
+                                GPIO 2 turns ON.
+                            </span>
+                        </div>
+
+                    </div>
+
+                    <div class="number-item">
+
+                        <div class="number">
+                            04
+                        </div>
+
+                        <div>
+                            <strong>
+                                Tap TURN OFF
+                            </strong>
+
+                            <span>
+                                The browser requests
+                                <code>/off</code>, and the physical
+                                LED turns OFF.
+                            </span>
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="callout">
+
+                    <div class="callout-title">
+                        Achievement Unlocked
+                    </div>
+
+                    <p>
+                        You are no longer just viewing a webpage
+                        hosted by your ESP32.
+                        <strong>
+                            Your webpage now controls hardware.
+                        </strong>
+                        🤯
+                    </p>
+
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 09 — EXPERIMENT
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="section-label">
+                    09 / Experiment
+                </div>
+
+                <h2 class="section-title">
+                    Build a <code>/toggle</code> Route
+                </h2>
+
+                <p class="section-subtitle">
+                    Right now you need two buttons. What if one
+                    button could simply reverse the current state?
+                </p>
+
+                <div class="big-card">
+
+                    <h3>
+                        The Idea
+                    </h3>
+
+                    <p>
+                        Create a new route called
+                        <code>
+                            /toggle
+                        </code>.
+                    </p>
+
+                    <p>
+                        When the browser visits that route, the
+                        ESP32 should read the current LED state and
+                        switch it to the opposite state.
+                    </p>
+
+                </div>
+
+                <div class="flow">
+
+                    <div class="flow-node cyan">
+                        /toggle
+                    </div>
+
+                    <div class="flow-arrow">
+                        →
+                    </div>
+
+                    <div class="flow-node">
+                        digitalRead()
+                    </div>
+
+                    <div class="flow-arrow">
+                        →
+                    </div>
+
+                    <div class="flow-node yellow">
+                        IF / ELSE
+                    </div>
+
+                    <div class="flow-arrow">
+                        →
+                    </div>
+
+                    <div class="flow-node">
+                        HIGH ↔ LOW
+                    </div>
+
+                </div>
+
+                <div class="grid">
+
+                    <div class="card">
+
+                        <h3>
+                            If LED is ON
+                        </h3>
+
+                        <p>
+                            Read HIGH, then change the GPIO to LOW.
+                        </p>
+
+                    </div>
+
+                    <div class="card">
+
+                        <h3>
+                            If LED is OFF
+                        </h3>
+
+                        <p>
+                            Read LOW, then change the GPIO to HIGH.
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <div class="callout yellow-callout">
+
+                    <div class="callout-title">
+                        Think First
+                    </div>
+
+                    <p>
+                        Don't immediately copy a solution. Try to
+                        write the route yourself. You already know
+                        every ingredient:
+                        <code>server.on()</code>,
+                        <code>digitalRead()</code>,
+                        <code>digitalWrite()</code>,
+                        <code>if / else</code>, and
+                        <code>server.send()</code>.
+                    </p>
+
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 10 — CHALLENGE
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="section-label">
+                    10 / Challenge
+                </div>
+
+                <h2 class="section-title">
+                    Make the Website Know the LED State
+                </h2>
+
+                <p class="section-subtitle">
+                    Your webpage currently gives you buttons, but
+                    it doesn't tell you the current physical state.
+                </p>
+
+                <div class="big-card">
+
+                    <h3>
+                        Your Objective
+                    </h3>
+
+                    <p>
+                        Add a status message to the homepage showing
+                        whether the LED is currently ON or OFF.
+                    </p>
+
+                    <ul class="list">
+
+                        <li>
+                            Inside
+                            <code>
+                                handle_Homepage()
+                            </code>,
+                            use
+                            <code>
+                                digitalRead(LED_PIN)
+                            </code>.
+                        </li>
+
+                        <li>
+                            Use an
+                            <code>
+                                if / else
+                            </code>
+                            statement.
+                        </li>
+
+                        <li>
+                            Add different HTML text depending on
+                            the current state.
+                        </li>
+
+                        <li>
+                            Display
+                            <strong>
+                                ON
+                            </strong>
+                            when the GPIO is HIGH.
+                        </li>
+
+                        <li>
+                            Display
+                            <strong>
+                                OFF
+                            </strong>
+                            when the GPIO is LOW.
+                        </li>
+
+                        <li>
+                            Refresh the homepage after changing
+                            the LED.
+                        </li>
+
+                    </ul>
+
+                </div>
+
+                <div class="code-wrap">
+
+                    <div class="code-header">
+
+                        <span class="code-language">
+                            Target HTML
+                        </span>
+
+                        <button class="copy-btn">
+                            Copy
+                        </button>
+
+                    </div>
+
+                    <pre class="code">&lt;p&gt;Current Status:
+&lt;b style="color:green;"&gt;ON&lt;/b&gt;
+&lt;/p&gt;
+
+&lt;p&gt;Current Status:
+&lt;b style="color:red;"&gt;OFF&lt;/b&gt;
+&lt;/p&gt;</pre>
+
+                </div>
+
+                <div class="callout">
+
+                    <div class="callout-title">
+                        Hint
+                    </div>
+
+                    <p>
+                        Remember: the website is generated by C++.
+                        That means your C++ program can decide what
+                        HTML gets added to the string before the
+                        browser receives it.
+                    </p>
+
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 11 — TROUBLESHOOTING
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="section-label">
+                    11 / Troubleshooting
+                </div>
+
+                <h2 class="section-title">
+                    Debug the Web Bridge
+                </h2>
+
+                <p class="section-subtitle">
+                    When a web-controlled device fails, debug the
+                    chain: phone → Wi-Fi → HTTP → route → GPIO.
+                </p>
+
+                <div class="grid">
+
+                    <div class="card">
+
+                        <div class="icon-box">
+                            01
+                        </div>
+
+                        <h3>
+                            Button gives an error
+                        </h3>
+
+                        <p>
+                            Check that the link contains the correct
+                            leading slash:
+                            <code>
+                                href="/on"
+                            </code>
+                            rather than
+                            <code>
+                                href="on"
+                            </code>.
+                        </p>
+
+                    </div>
+
+                    <div class="card">
+
+                        <div class="icon-box">
+                            02
+                        </div>
+
+                        <h3>
+                            Page won't load
+                        </h3>
+
+                        <p>
+                            Make sure the phone and ESP32 are on the
+                            same local Wi-Fi network and that you are
+                            typing the ESP32 IP into the browser's
+                            URL bar.
+                        </p>
+
+                    </div>
+
+                    <div class="card">
+
+                        <div class="icon-box">
+                            03
+                        </div>
+
+                        <h3>
+                            LED doesn't change
+                        </h3>
+
+                        <p>
+                            Check the LED wiring, resistor, GND
+                            connection, and that the code uses
+                            GPIO 2 as
+                            <code>
+                                LED_PIN
+                            </code>.
+                        </p>
+
+                    </div>
+
+                    <div class="card">
+
+                        <div class="icon-box">
+                            04
+                        </div>
+
+                        <h3>
+                            Website feels clunky
+                        </h3>
+
+                        <p>
+                            That's expected. Each button is a normal
+                            HTTP link, so the browser requests another
+                            page and reloads the document.
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <div class="table-wrap">
+
+                    <table>
+
+                        <thead>
+
+                            <tr>
+                                <th>
+                                    Problem
+                                </th>
+
+                                <th>
+                                    Check
+                                </th>
+
+                                <th>
+                                    Likely Cause
+                                </th>
+                            </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                            <tr>
+
+                                <td>
+                                    <strong>
+                                        Page won't load
+                                    </strong>
+                                </td>
+
+                                <td>
+                                    Phone Wi-Fi
+                                </td>
+
+                                <td>
+                                    Phone and ESP32 are not on the
+                                    same local network.
+                                </td>
+
+                            </tr>
+
+                            <tr>
+
+                                <td>
+                                    <strong>
+                                        404 / missing route
+                                    </strong>
+                                </td>
+
+                                <td>
+                                    <code>server.on()</code>
+                                </td>
+
+                                <td>
+                                    The route was not registered or
+                                    the URL path doesn't match.
+                                </td>
+
+                            </tr>
+
+                            <tr>
+
+                                <td>
+                                    <strong>
+                                        LED stays OFF
+                                    </strong>
+                                </td>
+
+                                <td>
+                                    D2 + resistor + GND
+                                </td>
+
+                                <td>
+                                    Hardware wiring or GPIO mismatch.
+                                </td>
+
+                            </tr>
+
+                            <tr>
+
+                                <td>
+                                    <strong>
+                                        Blank response
+                                    </strong>
+                                </td>
+
+                                <td>
+                                    <code>server.send()</code>
+                                </td>
+
+                                <td>
+                                    The route function may not be
+                                    sending a valid response.
+                                </td>
+
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+                <div class="callout red-callout">
+
+                    <div class="callout-title">
+                        Network Reality
+                    </div>
+
+                    <p>
+                        This project controls the ESP32 over your
+                        <strong>
+                            local network
+                        </strong>.
+                        The phrase "anywhere in my house" means any
+                        place where your phone can reach the ESP32
+                        through that same network. This project does
+                        <strong>
+                            not
+                        </strong>
+                        expose the ESP32 directly to the public
+                        Internet.
+                    </p>
+
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 12 — VOCABULARY
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="section-label">
+                    12 / New Vocabulary
+                </div>
+
+                <h2 class="section-title">
+                    Words You Now Own
+                </h2>
+
+                <p class="section-subtitle">
+                    These terms will become extremely important as
+                    we build larger IoT systems.
+                </p>
+
+                <div class="table-wrap">
+
+                    <table>
+
+                        <thead>
+
+                            <tr>
+                                <th>
+                                    Word
+                                </th>
+
+                                <th>
+                                    Meaning
+                                </th>
+                            </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                            <tr>
+
+                                <td>
+                                    <strong>
+                                        Route / Endpoint
+                                    </strong>
+                                </td>
+
+                                <td>
+                                    A specific URL path on a server,
+                                    such as
+                                    <code>
+                                        /on
+                                    </code>
+                                    or
+                                    <code>
+                                        /off
+                                    </code>,
+                                    that can trigger a particular
+                                    action.
+                                </td>
+
+                            </tr>
+
+                            <tr>
+
+                                <td>
+                                    <strong>
+                                        HTTP Request
+                                    </strong>
+                                </td>
+
+                                <td>
+                                    A message sent by a client such
+                                    as a browser to a server asking
+                                    for a resource or action.
+                                </td>
+
+                            </tr>
+
+                            <tr>
+
+                                <td>
+                                    <strong>
+                                        GPIO
+                                    </strong>
+                                </td>
+
+                                <td>
+                                    A General-Purpose Input/Output
+                                    pin used by the ESP32 to interact
+                                    with electrical hardware.
+                                </td>
+
+                            </tr>
+
+                            <tr>
+
+                                <td>
+                                    <strong>
+                                        Web-to-GPIO
+                                    </strong>
+                                </td>
+
+                                <td>
+                                    Using a web request as the trigger
+                                    for a physical GPIO operation.
+                                </td>
+
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+                <div class="grid">
+
+                    <div class="card">
+
+                        <h3>
+                            Client
+                        </h3>
+
+                        <p>
+                            Your smartphone browser is the client.
+                            It sends HTTP requests to the ESP32.
+                        </p>
+
+                    </div>
+
+                    <div class="card">
+
+                        <h3>
+                            Server
+                        </h3>
+
+                        <p>
+                            Your ESP32 is the server. It listens for
+                            requests and decides how to respond.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 13 — WHAT YOU LEARNED
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="section-label">
+                    13 / What You Just Learned
+                </div>
+
+                <h2 class="section-title">
+                    You Built an IoT Smart Switch.
+                </h2>
+
+                <p class="section-subtitle">
+                    This is a major architectural milestone.
+                </p>
+
+                <div class="big-card">
+
+                    <h3>
+                        Software → Network → Hardware
+                    </h3>
+
+                    <p>
+                        Your smartphone creates an HTTP request.
+                        The Wi-Fi network carries that request to
+                        the ESP32. The ESP32 identifies the requested
+                        route, executes C++ code, changes a GPIO
+                        state, and controls a physical LED.
+                    </p>
+
+                    <p>
+                        That's the fundamental pattern behind a huge
+                        number of connected-device systems.
+                    </p>
+
+                </div>
+
+                <div class="flow">
+
+                    <div class="flow-node cyan">
+                        USER
+                    </div>
+
+                    <div class="flow-arrow">
+                        →
+                    </div>
+
+                    <div class="flow-node cyan">
+                        BROWSER
+                    </div>
+
+                    <div class="flow-arrow">
+                        →
+                    </div>
+
+                    <div class="flow-node">
+                        HTTP
+                    </div>
+
+                    <div class="flow-arrow">
+                        →
+                    </div>
+
+                    <div class="flow-node yellow">
+                        ESP32
+                    </div>
+
+                    <div class="flow-arrow">
+                        →
+                    </div>
+
+                    <div class="flow-node">
+                        GPIO
+                    </div>
+
+                    <div class="flow-arrow">
+                        →
+                    </div>
+
+                    <div class="flow-node">
+                        LED
+                    </div>
+
+                </div>
+
+                <div class="grid three">
+
+                    <div class="card">
+
+                        <div class="icon-box">
+                            HTTP
+                        </div>
+
+                        <h3>
+                            Web Architecture
+                        </h3>
+
+                        <p>
+                            You learned that webpages can be used
+                            as control interfaces for devices.
+                        </p>
+
+                    </div>
+
+                    <div class="card">
+
+                        <div class="icon-box">
+                            /ON
+                        </div>
+
+                        <h3>
+                            Multiple Routes
+                        </h3>
+
+                        <p>
+                            Different URL paths can trigger
+                            different functions.
+                        </p>
+
+                    </div>
+
+                    <div class="card">
+
+                        <div class="icon-box">
+                            ⚡
+                        </div>
+
+                        <h3>
+                            Physical Control
+                        </h3>
+
+                        <p>
+                            You connected a network request directly
+                            to a real electrical output.
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <div class="callout">
+
+                    <div class="callout-title">
+                        Massive Milestone
+                    </div>
+
+                    <p>
+                        You've crossed the line from
+                        <strong>
+                            embedded programming
+                        </strong>
+                        into
+                        <strong>
+                            IoT development
+                        </strong>.
+                        The ESP32 can now receive commands from a
+                        networked user interface and act on the
+                        physical world. 🚀
+                    </p>
+
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 SECTION 14 — NEXT PROJECT
+                 ================================================= -->
+
+            <section class="section">
+
+                <div class="section-label">
+                    14 / Next Project
+                </div>
+
+                <h2 class="section-title">
+                    One LED Was Just the Beginning.
+                </h2>
+
+                <p class="section-subtitle">
+                    A real smart-home dashboard doesn't control one
+                    device with three ugly links. It controls an
+                    entire collection of devices from one interface.
+                </p>
+
+                <div
+                    class="hero"
+                    style="margin-top: 28px;"
+                >
+
+                    <div class="eyebrow">
+
+                        <span class="eyebrow-dot"></span>
+
+                        NEXT / PROJECT 18
+
+                    </div>
+
+                    <h1>
+                        Multi-LED
+                        <span>Web Control Panel</span>
+                    </h1>
+
+                    <p>
+                        In Project 18, we're going to expand the
+                        idea you just built.
+                    </p>
+
+                    <p>
+                        Instead of one physical LED, you'll control
+                        multiple independent LEDs from one
+                        smartphone dashboard.
+                    </p>
+
+                    <div class="terminal">
+
+                        <span class="prompt">
+                            my-bro@quantum-core:~$
+                        </span>
+
+                        next.exe
+
+                        <br>
+
+                        <span class="prompt">
+                            target:
+                        </span>
+
+                        MULTI-DEVICE DASHBOARD
+
+                        <br>
+
+                        <span class="prompt">
+                            outputs:
+                        </span>
+
+                        LED_1 + LED_2 + LED_3
+
+                        <br>
+
+                        <span class="prompt">
+                            interface:
+                        </span>
+
+                        SMARTPHONE WEB PANEL
+
+                        <br>
+
+                        <span class="prompt">
+                            status:
+                        </span>
+
+                        READY 🔥
+
+                    </div>
+
+                </div>
+
+                <div class="big-card">
+
+                    <h3>
+                        Project 17 Complete ✓
+                    </h3>
+
+                    <p>
+                        You learned HTTP routes, endpoints,
+                        browser requests, HTML controls,
+                        <code>server.on()</code>,
+                        <code>server.send()</code>, and the
+                        complete Web → Wi-Fi → ESP32 → GPIO chain.
+                    </p>
+
+                    <p>
+                        You have officially built your first
+                        network-controlled physical device.
+                    </p>
+
+                    <div class="terminal">
+
+                        <span class="prompt">
+                            my-bro@quantum-core:~$
+                        </span>
+
+                        next
+
+                    </div>
+
+                </div>
+
+            </section>
+
+            <!-- =================================================
+                 BOTTOM NAVIGATION
+                 ================================================= -->
+
+            <div class="bottom-nav">
+
+                <button
+                    class="nav-btn"
+                    id="prevBtn"
+                    disabled
+                >
+
+                    <span class="small">
+                        Previous
+                    </span>
+
+                    ← Previous
+
+                </button>
+
+                <button
+                    class="nav-btn next"
+                    id="nextBtn"
+                >
+
+                    <span class="small">
+                        Next
+                    </span>
+
+                    Next →
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- =====================================================
+         JAVASCRIPT
+         ===================================================== -->
+
+    <script>
+        const sections = [
+            ...document.querySelectorAll(".section")
+        ];
+
+        const navItems = [
+            ...document.querySelectorAll(".nav-item")
+        ];
+
+        const progressFill =
+            document.getElementById("progressFill");
+
+        const progressText =
+            document.getElementById("progressText");
+
+        const mobileProgress =
+            document.getElementById("mobileProgress");
+
+        const prevBtn =
+            document.getElementById("prevBtn");
+
+        const nextBtn =
+            document.getElementById("nextBtn");
+
+        let currentSection = 0;
+
+        const STORAGE_KEY =
+            "qc-esp32-project-17-section";
+
+        function updateSection(index) {
+            index = Math.max(
+                0,
+                Math.min(
+                    index,
+                    sections.length - 1
+                )
+            );
+
+            currentSection = index;
+
+            sections.forEach((section, i) => {
+                section.classList.toggle(
+                    "active",
+                    i === currentSection
+                );
+            });
+
+            navItems.forEach((item, i) => {
+                item.classList.toggle(
+                    "active",
+                    i === currentSection
+                );
+            });
+
+            const progress =
+                ((currentSection + 1) /
+                    sections.length) *
+                100;
+
+            progressFill.style.width =
+                `${progress}%`;
+
+            progressText.textContent =
+                `${currentSection + 1} / ${sections.length}`;
+
+            mobileProgress.textContent =
+                `${String(currentSection + 1).padStart(2, "0")} / ${sections.length}`;
+
+            prevBtn.disabled =
+                currentSection === 0;
+
+            nextBtn.disabled =
+                currentSection ===
+                sections.length - 1;
+
+            window.scrollTo({
+                top: 0,
+                behavior: "smooth"
+            });
+
+            localStorage.setItem(
+                STORAGE_KEY,
+                currentSection
+            );
+        }
+
+        navItems.forEach(item => {
+            item.addEventListener(
+                "click",
+                () => {
+                    updateSection(
+                        Number(
+                            item.dataset.section
+                        )
+                    );
+                }
+            );
+        });
+
+        prevBtn.addEventListener(
+            "click",
+            () => {
+                updateSection(
+                    currentSection - 1
+                );
+            }
+        );
+
+        nextBtn.addEventListener(
+            "click",
+            () => {
+                updateSection(
+                    currentSection + 1
+                );
+            }
+        );
+
+        document.addEventListener(
+            "keydown",
+            event => {
+                if (
+                    event.target.tagName ===
+                        "INPUT" ||
+                    event.target.tagName ===
+                        "TEXTAREA"
+                ) {
+                    return;
+                }
+
+                if (
+                    event.key ===
+                    "ArrowLeft"
+                ) {
+                    updateSection(
+                        currentSection - 1
+                    );
+                }
+
+                if (
+                    event.key ===
+                    "ArrowRight"
+                ) {
+                    updateSection(
+                        currentSection + 1
+                    );
+                }
+            }
+        );
+
+        document
+            .querySelectorAll(".copy-btn")
+            .forEach(button => {
+
+                button.addEventListener(
+                    "click",
+                    async () => {
+
+                        const code =
+                            button
+                                .closest(
+                                    ".code-wrap"
+                                )
+                                .querySelector(
+                                    "pre.code"
+                                )
+                                .innerText;
+
+                        try {
+
+                            await navigator.clipboard.writeText(
+                                code
+                            );
+
+                            const original =
+                                button.textContent;
+
+                            button.textContent =
+                                "Copied ✓";
+
+                            button.style.color =
+                                "var(--green)";
+
+                            setTimeout(
+                                () => {
+
+                                    button.textContent =
+                                        original;
+
+                                    button.style.color =
+                                        "";
+
+                                },
+                                1400
+                            );
+
+                        } catch {
+
+                            button.textContent =
+                                "Copy failed";
+
+                            setTimeout(
+                                () => {
+
+                                    button.textContent =
+                                        "Copy";
+
+                                },
+                                1400
+                            );
+                        }
+                    }
+                );
+            });
+
+        const savedSection =
+            Number(
+                localStorage.getItem(
+                    STORAGE_KEY
+                )
+            );
+
+        if (
+            Number.isInteger(
+                savedSection
+            ) &&
+            savedSection >= 0 &&
+            savedSection <
+                sections.length
+        ) {
+
+            updateSection(
+                savedSection
+            );
+
+        } else {
+
+            updateSection(0);
+
+        }
+    </script>
+
+</body>
+</html>
