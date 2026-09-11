@@ -70,9 +70,8 @@ function Routed() {
   // Workspace mode removes max-w, padding, and the system monitor sidebar.
   // Add any new full-screen lab here; it automatically inherits the layout.
   const isWorkspace =
-    (root === 'beta' && !!segments[1]) ||
-    (root === 'labs' && segments[1] === 'linux') ||
-    (root === 'library' && segments[1] === 'esp32' && !!segments[2]);
+    (root === 'beta' && !!segments[1]) ||     // /beta/<slug>
+    (root === 'labs' && segments[1] === 'linux'); // /labs/linux
 
   const page = renderPage(segments);
   return <AppShell workspace={isWorkspace}>{page}</AppShell>;
@@ -86,7 +85,17 @@ function renderPage(segments: string[]) {
     case 'library':
       if (!sub) return <LibraryCategoriesPage />;
       if (sub === 'cyber') return <LibraryPage />;
-      if (sub === 'esp32') return extra ? <Esp32GuidePage slug={decodeURIComponent(extra)} /> : <Esp32LibraryPage />;
+      if (sub === 'esp32') {
+        const mode = extra as 'projects' | 'resources' | undefined;
+        if (!extra) return <Esp32LibraryPage mode="home" />;
+        if (mode === 'projects') {
+          return segments[3]
+            ? <Esp32GuidePage slug={decodeURIComponent(segments[3])} />
+            : <Esp32LibraryPage mode="projects" />;
+        }
+        if (mode === 'resources') return <Esp32LibraryPage mode="resources" />;
+        return <Esp32GuidePage slug={decodeURIComponent(extra)} />;
+      }
       return <TextbookPage slug={sub} />; // existing volume deep-links (e.g. /library/volume1) unchanged
     case 'labs':
       if (sub === 'linux') return <LinuxLabPage />;

@@ -102,48 +102,74 @@ function betaProjectsPlugin(): Plugin {
 // ===========================================================
 // ESP-32 Library Manifest Plugin
 //
-// Scans public/library/ESP-32/ at build time and in dev mode for
-// .html guide files and writes public/library/ESP-32/manifest.json
-// so the ESP-32 Library page can discover guides at runtime with
-// zero React/TS changes per guide.
+// Scans two dedicated ESP-32 directories:
+//   public/library/ESP-32/projects/
+//   public/library/ESP-32/resources/
 //
-// To add a new ESP-32 guide:
-//   1. Drop <name>.html into public/library/ESP-32/
-//   2. Done — display name is <name> (only the .html extension is
-//      stripped; no other transformation), sorted alphabetically.
-//
-// Handles a missing/empty folder gracefully (writes an empty array).
+// Projects are discovered from .html guide files.
+// Resources are discovered from every file placed in resources/.
+// The React app reads these scoped manifests at runtime.
 // ===========================================================
 
-function generateEsp32Manifest(esp32Dir: string): void {
-  const manifestPath = path.join(esp32Dir, 'manifest.json');
+function getResourceType(fileName: string): string {
+  const ext = path.extname(fileName).toLowerCase();
+  if (['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp'].includes(ext)) return 'image';
+  if (['.mp4', '.webm', '.mov', '.m4v', '.avi'].includes(ext)) return 'video';
+  if (['.mp3', '.wav', '.ogg', '.m4a', '.flac'].includes(ext)) return 'audio';
+  if (['.pdf'].includes(ext)) return 'pdf';
+  if (['.zip', '.rar', '.7z', '.tar', '.gz'].includes(ext)) return 'archive';
+  if (['.c', '.h', '.cpp', '.hpp', '.ino', '.py', '.js', '.ts', '.tsx', '.html', '.css', '.json', '.ini', '.txt', '.md'].includes(ext)) return 'code';
+  return 'file';
+}
 
-  if (!fs.existsSync(esp32Dir)) {
-    fs.mkdirSync(esp32Dir, { recursive: true });
-    fs.writeFileSync(manifestPath, JSON.stringify([], null, 2));
-    return;
-  }
+function toDisplayTitle(fileName: string): string {
+  return fileName.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ');
+}
 
-  const entries = fs.readdirSync(esp32Dir, { withFileTypes: true });
-  const guides = entries
+function generateEsp32Manifests(esp32Dir: string): void {
+  const projectsDir = path.join(esp32Dir, 'projects');
+  const resourcesDir = path.join(esp32Dir, 'resources');
+  const projectsManifestPath = path.join(projectsDir, 'manifest.json');
+  const resourcesManifestPath = path.join(resourcesDir, 'manifest.json');
+
+  fs.mkdirSync(projectsDir, { recursive: true });
+  fs.mkdirSync(resourcesDir, { recursive: true });
+
+  const projectEntries = fs.readdirSync(projectsDir, { withFileTypes: true });
+  const guides = projectEntries
     .filter((e) => e.isFile() && e.name.toLowerCase().endsWith('.html'))
     .map((e) => {
-      const title = e.name.slice(0, -'.html'.length); // strip only the extension
+      const title = e.name.slice(0, -'.html'.length);
       return {
         slug: title,
         title,
-        file: `/library/ESP-32/${e.name}`,
+        file: `/library/ESP-32/projects/${e.name}`,
       };
     })
-    .sort((a, b) =>
-      a.title.localeCompare(b.title, undefined, {
-        numeric: true,
-        sensitivity: 'base',
-      })
-);
+    .sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: 'base' }));
 
-  fs.writeFileSync(manifestPath, JSON.stringify(guides, null, 2));
-  console.log(`\x1b[36m[esp32-library]\x1b[0m manifest updated — ${guides.length} guide(s)`);
+  const resourceEntries = fs.readdirSync(resourcesDir, { withFileTypes: true });
+  const resourceItems = resourceEntries
+    .filter((e) => e.isFile() && e.name !== 'manifest.json')
+    .map((e) => {
+      const filePath = path.join(resourcesDir, e.name);
+      const stat = fs.statSync(filePath);
+      return {
+        name: e.name,
+        title: toDisplayTitle(e.name),
+        file: `/library/ESP-32/resources/${encodeURIComponent(e.name)}`,
+        type: getResourceType(e.name),
+        extension: path.extname(e.name).slice(1).toUpperCase(),
+        size: stat.size,
+      };
+    })
+    .sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: 'base' }));
+
+  fs.writeFileSync(projectsManifestPath, JSON.stringify(guides, null, 2));
+  fs.writeFileSync(resourcesManifestPath, JSON.stringify(resourceItems, null, 2));
+
+  console.log(`\x1b[36m[esp32-library]\x1b[0m projects manifest updated — ${guides.length} guide(s)`);
+  console.log(`\x1b[36m[esp32-library]\x1b[0m resources manifest updated — ${resourceItems.length} resource(s)`);
 }
 
 function esp32LibraryPlugin(): Plugin {
@@ -157,20 +183,21 @@ function esp32LibraryPlugin(): Plugin {
     },
 
     buildStart() {
-      generateEsp32Manifest(esp32Dir);
+      generateEsp32Manifests(esp32Dir);
     },
 
     configureServer(server) {
-      generateEsp32Manifest(esp32Dir);
+      generateEsp32Manifests(esp32Dir);
 
-      // Watch for added / removed / renamed guides in dev mode
+      // Watch both project guides and arbitrary resources in dev mode.
       server.watcher.add(esp32Dir);
       server.watcher.on('all', (event, filePath) => {
         if (
           filePath.startsWith(esp32Dir) &&
-          !filePath.endsWith('manifest.json')
+          !filePath.endsWith(`${path.sep}projects${path.sep}manifest.json`) &&
+          !filePath.endsWith(`${path.sep}resources${path.sep}manifest.json`)
         ) {
-          generateEsp32Manifest(esp32Dir);
+          generateEsp32Manifests(esp32Dir);
           server.ws.send({ type: 'full-reload' });
         }
       });
