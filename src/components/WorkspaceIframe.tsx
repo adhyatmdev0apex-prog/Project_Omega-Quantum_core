@@ -61,7 +61,12 @@ export const WorkspaceIframe = forwardRef<HTMLIFrameElement, WorkspaceIframeProp
     };
 
     return (
-      <div className={cn('relative overflow-hidden bg-ink-950', className)}>
+      <div
+        className={cn(
+          'relative flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-ink-950',
+          className,
+        )}
+>
         {/* Loading overlay */}
         {!loaded && !error && (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-ink-950">
