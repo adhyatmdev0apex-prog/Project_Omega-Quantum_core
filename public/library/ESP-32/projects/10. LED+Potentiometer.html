@@ -1673,7 +1673,7 @@ html
                         <ul class="learning-list">
 
                             <li>
-                                ESP32 <strong>D2</strong> →
+                                ESP32 <strong>D24</strong> →
                                 resistor → LED long leg
                             </li>
 
@@ -1702,7 +1702,7 @@ ESP32                 BREADBOARD
 D34 ────────────────► Potentiometer Middle Leg
 
 
-D2 ─────► 220–330Ω resistor ─────► LED Long Leg
+D24 ─────► 220–330Ω resistor ─────► LED Long Leg
 
 LED Short Leg ───────────────────► Blue GND Rail
 
@@ -1855,15 +1855,17 @@ GND ─────────────────────────�
                     </div>
 
                     <pre class="code">/*
+/*
  * ============================================================
  * MY BRO'S TENTH ESP32 PROGRAM: ANALOG & SERIAL MONITOR
  * ============================================================
  */
 
 const int POT_PIN = 34; // The pin connected to the middle of the knob
-const int LED_PIN = 2;  // The pin connected to our LED
+const int LED_PIN = 25; // The pin connected to our LED
 
-void setup() {
+void setup()
+{
     // 1. START SERIAL COMMUNICATION
     // Tell the ESP32 to talk to the PC at 115200 baud.
     Serial.begin(115200);
@@ -1871,44 +1873,49 @@ void setup() {
     // Configure the LED as an output.
     pinMode(LED_PIN, OUTPUT);
 
-    // Analog input pins don't need pinMode() for analogRead().
-    // D34 is our analog input pin.
+    // GPIO 34 is an analog input.
+    // analogRead() does not require pinMode() here.
 }
 
-void loop() {
+void loop()
+{
     // --------------------------------------------------------
     // STEP 1: READ THE ANALOG VALUE
     // --------------------------------------------------------
-    // analogRead() returns a value from approximately
-    // 0 to 4095 for the ESP32's ADC reading.
+
+    // With the default 12-bit resolution,
+    // analogRead() returns a value from 0 to 4095.
     int potValue = analogRead(POT_PIN);
 
     // --------------------------------------------------------
     // STEP 2: MATHEMATICS (MAPPING)
     // --------------------------------------------------------
-    // PWM brightness uses a 0-255 range.
-    // map() converts the 0-4095 reading into 0-255.
+
+    // Convert the ADC range into the PWM range.
     int pwmValue = map(potValue, 0, 4095, 0, 255);
 
     // --------------------------------------------------------
     // STEP 3: OUTPUT TO LED
     // --------------------------------------------------------
-    // analogWrite() creates a PWM output.
+
+    // analogWrite() produces a PWM signal.
     // A larger value means a higher duty cycle.
     analogWrite(LED_PIN, pwmValue);
 
     // --------------------------------------------------------
     // STEP 4: SEND DATA TO THE PC
     // --------------------------------------------------------
-    // Print both the raw reading and mapped PWM value.
+
     Serial.print("Raw Knob: ");
     Serial.print(potValue);
 
-    Serial.print("  |  LED Power: ");
+    Serial.print("  |  PWM Value: ");
     Serial.println(pwmValue);
 
-    // Wait briefly so the Serial Monitor is readable.
+    // Slow the output slightly so the Serial Monitor
+    // remains easy to read.
     delay(50);
+}
 }</pre>
 
                 </div>
