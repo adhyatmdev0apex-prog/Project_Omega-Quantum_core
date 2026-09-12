@@ -1771,15 +1771,15 @@
                         <ul class="learning-list">
 
                             <li>
-                                LED 1 → <strong>D2</strong>
+                                LED 1 → <strong>D25</strong>
                             </li>
 
                             <li>
-                                LED 2 → <strong>D4</strong>
+                                LED 2 → <strong>D26</strong>
                             </li>
 
                             <li>
-                                LED 3 → <strong>D5</strong>
+                                LED 3 → <strong>D27</strong>
                             </li>
 
                             <li>
@@ -1802,9 +1802,9 @@ ESP32                 BREADBOARD
 
 D34 ────────────────► Potentiometer Middle Leg
 
-D2 ─────► 220–330Ω ─────► LED 1 Long Leg
-D4 ─────► 220–330Ω ─────► LED 2 Long Leg
-D5 ─────► 220–330Ω ─────► LED 3 Long Leg
+D25 ─────► 220–330Ω ─────► LED 1 Long Leg
+D26 ─────► 220–330Ω ─────► LED 2 Long Leg
+D27 ─────► 220–330Ω ─────► LED 3 Long Leg
 
 LED 1 Short Leg ────────► Blue GND Rail
 LED 2 Short Leg ────────► Blue GND Rail
@@ -1967,12 +1967,13 @@ GND ─────────────────────► Blue GND 
  * MY BRO'S ELEVENTH ESP32 PROGRAM: 3-LED VOLUME METER
  * ============================================================
  */
+#include "Arduino.h"
 
 const int POT_PIN = 34;
 
-const int LED_1 = 2;
-const int LED_2 = 4;
-const int LED_3 = 5;
+const int LED_1 = 25;
+const int LED_2 = 26;
+const int LED_3 = 27;
 
 void setup() {
     Serial.begin(115200);
