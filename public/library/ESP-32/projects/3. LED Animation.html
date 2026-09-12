@@ -1845,11 +1845,11 @@
 
 <pre class="code"><span class="comment">/*
  * ============================================================
- * MY BRO'S THIRD ESP32 PROGRAM: MULTI-LED ANIMATION
+ * MY BRO'S THIRD ESP32 PROGRAM: 3-LED LOADING PATTERN
  * ============================================================
  */</span>
 
-<span class="comment">// Give our three pins easy-to-read names</span>
+<span class="comment">// Give our three LED pins easy-to-read names</span>
 <span class="keyword">const int</span> LED_LEFT = <span class="number">2</span>;
 <span class="keyword">const int</span> LED_MID = <span class="number">4</span>;
 <span class="keyword">const int</span> LED_RIGHT = <span class="number">5</span>;
@@ -1864,39 +1864,63 @@
 
 <span class="keyword">void</span> <span class="function">loop</span>()
 {
-    <span class="comment">// We create a variable to hold our wait time.</span>
-    <span class="comment">// Now we only have to change this one number to speed up or slow down!</span>
-    <span class="keyword">int</span> waitTime = <span class="number">300</span>;
+    <span class="comment">// Change this number to make the loading animation</span>
+    <span class="comment">// faster or slower.</span>
+    <span class="keyword">const int</span> waitTime = <span class="number">300</span>;
 
     <span class="comment">// --------------------------------------------------------</span>
-    <span class="comment">// PATTERN 1: (0 1 1)</span>
-    <span class="comment">// Left is OFF, Mid and Right are ON</span>
-    <span class="comment">// --------------------------------------------------------</span>
-
-    <span class="function">digitalWrite</span>(LED_LEFT, LOW);
-    <span class="function">digitalWrite</span>(LED_MID, HIGH);
-    <span class="function">digitalWrite</span>(LED_RIGHT, HIGH);
-
-    <span class="comment">// Wait so we can see it</span>
-    <span class="function">delay</span>(waitTime);
-
-    <span class="comment">// --------------------------------------------------------</span>
-    <span class="comment">// PATTERN 2: (1 0 1)</span>
-    <span class="comment">// Left is ON, Mid is OFF, Right is ON</span>
+    <span class="comment">// PATTERN 1: (1 0 0)</span>
+    <span class="comment">// Left is ON, Mid and Right are OFF</span>
     <span class="comment">// --------------------------------------------------------</span>
 
     <span class="function">digitalWrite</span>(LED_LEFT, HIGH);
     <span class="function">digitalWrite</span>(LED_MID, LOW);
-    <span class="function">digitalWrite</span>(LED_RIGHT, HIGH);
+    <span class="function">digitalWrite</span>(LED_RIGHT, LOW);
 
-    <span class="comment">// Wait so we can see it</span>
+    <span class="comment">// Wait so we can see the pattern</span>
     <span class="function">delay</span>(waitTime);
 
     <span class="comment">// --------------------------------------------------------</span>
-    <span class="comment">// The loop restarts!</span>
+    <span class="comment">// PATTERN 2: (0 1 0)</span>
+    <span class="comment">// Left is OFF, Mid is ON, Right is OFF</span>
     <span class="comment">// --------------------------------------------------------</span>
-}</pre>
 
+    <span class="function">digitalWrite</span>(LED_LEFT, LOW);
+    <span class="function">digitalWrite</span>(LED_MID, HIGH);
+    <span class="function">digitalWrite</span>(LED_RIGHT, LOW);
+
+    <span class="comment">// Wait so we can see the pattern</span>
+    <span class="function">delay</span>(waitTime);
+
+    <span class="comment">// --------------------------------------------------------</span>
+    <span class="comment">// PATTERN 3: (0 0 1)</span>
+    <span class="comment">// Left is OFF, Mid is OFF, Right is ON</span>
+    <span class="comment">// --------------------------------------------------------</span>
+
+    <span class="function">digitalWrite</span>(LED_LEFT, LOW);
+    <span class="function">digitalWrite</span>(LED_MID, LOW);
+    <span class="function">digitalWrite</span>(LED_RIGHT, HIGH);
+
+    <span class="comment">// Wait so we can see the pattern</span>
+    <span class="function">delay</span>(waitTime);
+
+    <span class="comment">// --------------------------------------------------------</span>
+    <span class="comment">// PATTERN 4: (0 1 0)</span>
+    <span class="comment">// Move back toward the left</span>
+    <span class="comment">// --------------------------------------------------------</span>
+
+    <span class="function">digitalWrite</span>(LED_LEFT, LOW);
+    <span class="function">digitalWrite</span>(LED_MID, HIGH);
+    <span class="function">digitalWrite</span>(LED_RIGHT, LOW);
+
+    <span class="comment">// Wait so we can see the pattern</span>
+    <span class="function">delay</span>(waitTime);
+
+    <span class="comment">// --------------------------------------------------------</span>
+    <span class="comment">// The loop restarts:
+    // LEFT → MIDDLE → RIGHT → MIDDLE → LEFT...
+    // --------------------------------------------------------</span>
+}</pre>
                     </div>
 
                     <div class="info">
