@@ -1525,7 +1525,7 @@ Teach the ESP32 to automatically react to darkness.
 
                             <div class="step-text">
                                 Connect the LED long leg to
-                                <strong>D2</strong>.
+                                <strong>D25</strong>.
                             </div>
                         </div>
 
@@ -1617,7 +1617,7 @@ Teach the ESP32 to automatically react to darkness.
                       │ (Resistor Leg 2 AND LED Short Leg
                       │  connect here)
                       
-  D2 ────────► LED Long Leg
+  D25 ────────► LED Long Leg
                 </pre>
 
                 <div class="callout">
@@ -1776,9 +1776,10 @@ Teach the ESP32 to automatically react to darkness.
  * MY BRO'S TWELFTH ESP32 PROGRAM: AUTOMATIC NIGHT LIGHT
  * ============================================================
  */
+#include "Arduino.h"
 
 const int SENSOR_PIN = 34; // Where we read the LDR
-const int LED_PIN = 2;     // Where our night light is connected
+const int LED_PIN = 25;     // Where our night light is connected
 
 // We set a threshold limit.
 // Any number lower than this is considered "DARK".
