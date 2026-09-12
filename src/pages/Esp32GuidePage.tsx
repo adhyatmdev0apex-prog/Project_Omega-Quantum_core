@@ -13,7 +13,7 @@ import { Icon } from '../components/Icon';
 export function Esp32GuidePage({ slug }: { slug: string }) {
   const { navigate } = useRouter();
 
-  const file = `/library/ESP-32/${slug}.html`;
+  const file = `/library/ESP-32/projects/${slug}.html`;
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-3">
