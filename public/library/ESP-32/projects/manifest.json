@@ -1,13 +1,13 @@
 [
   {
-    "slug": "1. First Step:Blink LED",
-    "title": "1. First Step:Blink LED",
-    "file": "/library/ESP-32/projects/1.%20First%20Step%3ABlink%20LED.html"
+    "slug": "1. First Step_Blink LED",
+    "title": "1. First Step_Blink LED",
+    "file": "/library/ESP-32/projects/1.%20First%20Step_Blink%20LED.html"
   },
   {
-    "slug": "2. LED:Blink Patterns",
-    "title": "2. LED:Blink Patterns",
-    "file": "/library/ESP-32/projects/2.%20LED%3ABlink%20Patterns.html"
+    "slug": "2. LED_Blink Patterns",
+    "title": "2. LED_Blink Patterns",
+    "file": "/library/ESP-32/projects/2.%20LED_Blink%20Patterns.html"
   },
   {
     "slug": "3. LED Animation",
